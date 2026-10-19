@@ -1,5 +1,4 @@
 {
-  "navigationBarTitleText": "统计报表",
-  "navigationBarBackgroundColor": "#F6F7F9",
-  "navigationBarTextStyle": "black"
+  "navigationStyle": "custom",
+  "usingComponents": {}
 }

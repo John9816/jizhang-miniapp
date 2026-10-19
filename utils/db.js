@@ -54,7 +54,8 @@ function defaultLedgerExtras() {
     accounts: u.defaultAccounts(),
     budget: { monthlyTotal: 0, categoryBudgets: {} },
     recurring: [],
-    categories: []
+    categories: [],
+    challenges: []
   }
 }
 
@@ -65,6 +66,7 @@ function ensureExtras(l) {
   if (!l.budget.categoryBudgets) l.budget.categoryBudgets = {}
   if (!Array.isArray(l.recurring)) l.recurring = []
   if (!Array.isArray(l.categories)) l.categories = []
+  if (!Array.isArray(l.challenges)) l.challenges = []
   if (!l.cfgAt) l.cfgAt = isoNow()
 }
 
@@ -768,6 +770,7 @@ function exportLedgersForSync() {
       budget: l.budget,
       recurring: l.recurring,
       categories: l.categories,
+      challenges: l.challenges,
       cfgAt: toIso(l.cfgAt)
     }
   })
@@ -836,6 +839,7 @@ function applyRemoteLedger(o) {
     fresh.budget = o.budget && typeof o.budget === 'object' ? o.budget : fx.budget
     fresh.recurring = Array.isArray(o.recurring) ? o.recurring : []
     fresh.categories = Array.isArray(o.categories) ? o.categories : []
+    fresh.challenges = Array.isArray(o.challenges) ? o.challenges : []
     fresh.cfgAt = toIso(o.cfgAt)
     db.ledgers.push(fresh)
     if (!db.currentLedgerId) db.currentLedgerId = String(o.id)
@@ -873,6 +877,7 @@ function applyRemoteLedger(o) {
     if (o.budget && typeof o.budget === 'object') existing.budget = o.budget
     if (Array.isArray(o.recurring)) existing.recurring = o.recurring
     if (Array.isArray(o.categories)) existing.categories = o.categories
+    if (Array.isArray(o.challenges)) existing.challenges = o.challenges
     existing.cfgAt = cfgAt
     changed = true
   }
@@ -928,6 +933,112 @@ function applyRemoteRecord(o) {
   return true
 }
 
+/* ---------------- 存钱挑战 ---------------- */
+
+/** 把存储结构加工成页面直接可用的视图数据 */
+function challengeView(c) {
+  var target = Math.max(0, Math.round(Number(c.target) || 0))
+  var saved = Math.max(0, Math.round(Number(c.saved) || 0))
+  var pct = target > 0 ? Math.min(100, Math.round(saved / target * 1000) / 10) : 0
+  var daysLeft = null
+  if (c.deadline) {
+    var d1 = u.parseDate(c.deadline)
+    var d0 = u.parseDate(u.dateStr(new Date()))
+    if (d1 instanceof Date && d0 instanceof Date && !isNaN(d1) && !isNaN(d0)) {
+      daysLeft = Math.round((d1.getTime() - d0.getTime()) / 86400000)
+    }
+  }
+  return {
+    id: String(c.id),
+    name: String(c.name || '存钱挑战'),
+    target: target,
+    saved: saved,
+    targetText: u.formatCents(target),
+    savedText: u.formatCents(saved),
+    leftText: u.formatCents(Math.max(0, target - saved)),
+    pct: pct,
+    done: target > 0 && saved >= target,
+    deadline: c.deadline || '',
+    daysLeft: daysLeft,
+    daysLeftAbs: daysLeft === null ? 0 : Math.abs(daysLeft),
+    note: c.note || '',
+    createdAt: c.createdAt || ''
+  }
+}
+
+function challengesOf(ledgerId) {
+  ensure()
+  var l = getLedger(ledgerId)
+  if (!l) return []
+  ensureExtras(l)
+  var list = l.challenges.map(challengeView)
+  // 进行中在前，已达成沉底
+  list.sort(function (a, b) {
+    if (a.done !== b.done) return a.done ? 1 : -1
+    return String(a.createdAt) < String(b.createdAt) ? 1 : -1
+  })
+  return list
+}
+
+function addChallenge(ledgerId, fields) {
+  return withLedger(ledgerId, function (l) {
+    var target = Math.round(Number(fields.target) || 0)
+    if (target <= 0) return null
+    var c = {
+      id: u.genId('ch'),
+      name: String(fields.name || '').slice(0, 16) || '存钱挑战',
+      target: target,
+      saved: Math.max(0, Math.round(Number(fields.saved) || 0)),
+      deadline: /^\d{4}-\d{2}-\d{2}$/.test(fields.deadline || '') ? fields.deadline : '',
+      note: String(fields.note || '').slice(0, 30),
+      createdAt: isoNow()
+    }
+    l.challenges.push(c)
+    return challengeView(c)
+  })
+}
+
+function updateChallenge(ledgerId, id, patch) {
+  return withLedger(ledgerId, function (l) {
+    for (var i = 0; i < l.challenges.length; i++) {
+      if (l.challenges[i].id !== id) continue
+      var c = l.challenges[i]
+      if (patch.name != null) c.name = String(patch.name).slice(0, 16) || c.name
+      if (patch.target != null) {
+        var t = Math.round(Number(patch.target) || 0)
+        if (t > 0) c.target = t
+      }
+      if (patch.deadline != null) {
+        c.deadline = /^\d{4}-\d{2}-\d{2}$/.test(patch.deadline) ? patch.deadline : ''
+      }
+      return challengeView(c)
+    }
+    return null
+  })
+}
+
+/** 存入（正数）或取出（负数），amount 单位分 */
+function depositChallenge(ledgerId, id, amount) {
+  return withLedger(ledgerId, function (l) {
+    for (var i = 0; i < l.challenges.length; i++) {
+      if (l.challenges[i].id !== id) continue
+      var c = l.challenges[i]
+      var next = Math.round(Number(c.saved) || 0) + Math.round(Number(amount) || 0)
+      c.saved = Math.max(0, next)
+      return challengeView(c)
+    }
+    return null
+  })
+}
+
+function removeChallenge(ledgerId, id) {
+  return withLedger(ledgerId, function (l) {
+    var before = l.challenges.length
+    l.challenges = l.challenges.filter(function (c) { return c.id !== id })
+    return before !== l.challenges.length
+  })
+}
+
 module.exports = {
   init: init,
   flush: persist,
@@ -959,6 +1070,11 @@ module.exports = {
   runDueRecurring: runDueRecurring,
   categoriesOf: categoriesOf,
   saveCategories: saveCategories,
+  challengesOf: challengesOf,
+  addChallenge: addChallenge,
+  updateChallenge: updateChallenge,
+  depositChallenge: depositChallenge,
+  removeChallenge: removeChallenge,
   searchRecords: searchRecords,
   exportCSV: exportCSV,
   sharePackage: sharePackage,

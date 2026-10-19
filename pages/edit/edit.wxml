@@ -1,89 +1,123 @@
-<view class="page">
-  <!-- 收支类型 / 转账 -->
-  <view class="type-bar">
-    <view class="type-item {{mode === 'normal' && type === 'expense' ? 'type-active' : ''}}" bindtap="setMode" data-mode="normal" data-type="expense">支出</view>
-    <view class="type-item {{mode === 'normal' && type === 'income' ? 'type-active' : ''}}" bindtap="setMode" data-mode="normal" data-type="income">收入</view>
-    <view class="type-item {{mode === 'transfer' ? 'type-active' : ''}}" bindtap="setMode" data-mode="transfer">转账</view>
+<view class="edit-page" style="height:{{pageH}}px">
+  <view style="height:{{statusBar}}px"></view>
+
+  <!-- 顶部：取消 / 收支切换 / 完成 -->
+  <view class="nav">
+    <text class="nav-btn" bindtap="onCancel">取消</text>
+    <view class="seg">
+      <view class="seg-item {{mode === 'normal' && type === 'expense' ? 'seg-on' : ''}}" bindtap="setType" data-type="expense">支出</view>
+      <view class="seg-item {{mode === 'normal' && type === 'income' ? 'seg-on' : ''}}" bindtap="setType" data-type="income">收入</view>
+    </view>
+    <text class="nav-done {{canSave ? '' : 'nav-done-off'}}" bindtap="onSave">完成</text>
   </view>
 
   <!-- 金额 -->
-  <view class="card amount-card">
+  <view class="amount-block">
     <view class="amount-row">
-      <text class="amount-sign">¥</text>
-      <input class="amount-input" type="digit" value="{{amountInput}}" placeholder="0.00" placeholder-class="amount-ph" bindinput="onAmountInput" />
+      <text class="amount-cur">¥</text>
+      <text class="amount-val num {{amountInput ? '' : 'amount-ghost'}}">{{amountInput || '0.00'}}</text>
+    </view>
+
+    <view class="amount-foot">
+      <text class="calc-hint" wx:if="{{calcHint}}">{{calcHint}}</text>
+      <text class="calc-hint" wx:else>{{mode === 'transfer' ? '转账不计入收支' : (type === 'expense' ? '记一笔支出' : '记一笔收入')}}</text>
+      <view class="ledger-line" bindtap="toggleTransfer">
+        <text>{{mode === 'transfer' ? '退出转账' : ledgerName}}</text>
+        <text class="ledger-arrow">{{mode === 'transfer' ? '×' : '›'}}</text>
+      </view>
     </view>
   </view>
 
-  <!-- 转账：账户选择 -->
-  <view class="card" wx:if="{{mode === 'transfer'}}">
-    <view class="section-title">账户</view>
-    <view class="transfer-flow">
-      <view class="transfer-side">
-        <view class="transfer-caption">转出</view>
-        <view class="account-chips">
-          <view class="account-chip {{accountId === item.id ? 'account-active' : ''}} {{item.id === transferTo ? 'account-disabled' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">
-            <text class="account-chip-icon">{{item.icon}}</text>
-            <text>{{item.name}}</text>
+  <!-- 主体：分类 / 转账账户 + 备注日期 -->
+  <view class="mid">
+    <scroll-view scroll-y class="mid-scroll">
+      <block wx:if="{{mode === 'normal'}}">
+        <view class="cat-grid">
+          <view class="cat-item" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
+            <view class="cat-icon {{category === item.key ? 'cat-icon-on' : ''}}" style="background:{{item.tint}}">
+              <text class="cat-emoji">{{item.icon}}</text>
+            </view>
+            <text class="cat-name {{category === item.key ? 'cat-name-on' : ''}}">{{item.name}}</text>
           </view>
         </view>
-      </view>
-      <view class="transfer-arrow">→</view>
-      <view class="transfer-side">
-        <view class="transfer-caption">转入</view>
-        <view class="account-chips">
-          <view class="account-chip {{transferTo === item.id ? 'account-active' : ''}} {{item.id === accountId ? 'account-disabled' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="to">
-            <text class="account-chip-icon">{{item.icon}}</text>
-            <text>{{item.name}}</text>
+      </block>
+
+      <block wx:else>
+        <view class="transfer-block">
+          <view class="tf-group">
+            <text class="tf-label">转出账户</text>
+            <scroll-view scroll-x class="tf-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
+              <view class="tf-chip {{accountId === item.id ? 'tf-chip-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">
+                <text class="tf-chip-icon">{{item.icon}}</text>
+                <text>{{item.name}}</text>
+              </view>
+            </scroll-view>
+          </view>
+          <view class="tf-arrow">↓</view>
+          <view class="tf-group">
+            <text class="tf-label">转入账户</text>
+            <scroll-view scroll-x class="tf-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
+              <view class="tf-chip {{transferTo === item.id ? 'tf-chip-on' : ''}} {{item.id === accountId ? 'tf-chip-off' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="to">
+                <text class="tf-chip-icon">{{item.icon}}</text>
+                <text>{{item.name}}</text>
+              </view>
+            </scroll-view>
           </view>
         </view>
+      </block>
+
+      <!-- 账户（普通模式选填） -->
+      <view class="account-line" wx:if="{{mode === 'normal' && accounts.length > 0}}" bindtap="openAccounts">
+        <text class="account-label">账户</text>
+        <text class="account-value">{{accountName || '不指定'}}</text>
+        <text class="account-arrow">›</text>
       </view>
-    </view>
-    <view class="account-tip" wx:if="{{!accountId || !transferTo}}">选择转出与转入账户（不计入收支统计）</view>
+
+      <!-- 备注 + 日期 -->
+      <view class="meta-row">
+        <input class="note-input" value="{{note}}" placeholder="点击写备注..." placeholder-class="note-ph"
+               maxlength="50" bindinput="onNoteInput" adjust-position="{{false}}" />
+        <picker mode="date" value="{{date}}" start="2020-01-01" end="2035-12-31" bindchange="onDateChange">
+          <view class="date-btn">
+            <text>{{dateLabel}}</text>
+            <text class="date-icon">📅</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="delete-line" wx:if="{{editingId}}" bindtap="onDelete">删除这条记录</view>
+    </scroll-view>
   </view>
 
-  <!-- 分类（转账模式隐藏） -->
-  <view class="card" wx:if="{{mode !== 'transfer'}}">
-    <view class="section-title">分类</view>
-    <view class="cat-grid">
-      <view class="cat-item {{category === item.key ? 'cat-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
-        <view class="cat-icon">{{item.icon}}</view>
-        <text class="cat-name">{{item.name}}</text>
-      </view>
-    </view>
+  <!-- 数字键盘 -->
+  <view class="keypad">
+    <view class="key" bindtap="pressKey" data-k="7">7</view>
+    <view class="key" bindtap="pressKey" data-k="8">8</view>
+    <view class="key" bindtap="pressKey" data-k="9">9</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="del">⌫</view>
+
+    <view class="key" bindtap="pressKey" data-k="4">4</view>
+    <view class="key" bindtap="pressKey" data-k="5">5</view>
+    <view class="key" bindtap="pressKey" data-k="6">6</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="+">＋</view>
+
+    <view class="key" bindtap="pressKey" data-k="1">1</view>
+    <view class="key" bindtap="pressKey" data-k="2">2</view>
+    <view class="key" bindtap="pressKey" data-k="3">3</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="-">−</view>
+
+    <view class="key" bindtap="pressKey" data-k=".">.</view>
+    <view class="key" bindtap="pressKey" data-k="0">0</view>
+    <view class="key key-done {{canSave ? '' : 'key-done-off'}}" bindtap="onSave">完成</view>
   </view>
 
-  <!-- 账户（普通模式） -->
-  <view class="card" wx:if="{{mode !== 'transfer' && accounts.length > 0}}">
-    <view class="section-title">账户（选填）</view>
-    <view class="account-chips">
-      <view class="account-chip {{accountId === '' ? 'account-active' : ''}}" bindtap="setAccount" data-id="" data-field="from">
-        <text>不计</text>
-      </view>
-      <view class="account-chip {{accountId === item.id ? 'account-active' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">
-        <text class="account-chip-icon">{{item.icon}}</text>
-        <text>{{item.name}}</text>
-      </view>
-    </view>
+  <!-- 账户选择弹层 -->
+  <view class="sheet-mask" wx:if="{{showAccounts}}" bindtap="closeAccounts"></view>
+  <view class="sheet" wx:if="{{showAccounts}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-title">选择账户</view>
+    <view class="sheet-item {{accountId === '' ? 'sheet-item-on' : ''}}" bindtap="setAccount" data-id="" data-field="from">不指定账户</view>
+    <view class="sheet-item {{accountId === item.id ? 'sheet-item-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">{{item.icon}} {{item.name}}</view>
+    <view class="sheet-cancel" bindtap="closeAccounts">取消</view>
   </view>
-
-  <!-- 日期与备注 -->
-  <view class="card form-card">
-    <picker mode="date" value="{{date}}" start="2020-01-01" end="2035-12-31" bindchange="onDateChange">
-      <view class="form-row">
-        <text class="form-label">日期</text>
-        <view class="form-value-row">
-          <text class="form-value">{{date}}</text>
-          <text class="form-arrow">›</text>
-        </view>
-      </view>
-    </picker>
-    <view class="form-row">
-      <text class="form-label">备注</text>
-      <input class="form-input" value="{{note}}" placeholder="点击填写备注（选填）" maxlength="50" bindinput="onNoteInput" />
-    </view>
-  </view>
-
-  <!-- 操作 -->
-  <view class="save-btn btn-primary" bindtap="onSave">{{editingId ? '保存修改' : (mode === 'transfer' ? '确认转账' : '记一笔')}}</view>
-  <view class="delete-btn btn-danger" wx:if="{{editingId}}" bindtap="onDelete">删除这条记录</view>
 </view>

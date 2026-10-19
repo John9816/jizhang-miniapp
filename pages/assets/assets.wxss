@@ -2,12 +2,12 @@
   margin: 24rpx;
   padding: 40rpx 32rpx;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  background: linear-gradient(135deg, #F5B417, #E8A317);
   color: #FFFFFF;
 }
 
 .net-positive {
-  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  background: linear-gradient(135deg, #F5B417, #E8A317);
 }
 
 .net-negative {
@@ -55,7 +55,7 @@
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid #F7F1E2;
 }
 
 .acc-row:last-child {
@@ -66,7 +66,7 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 18rpx;
-  background: #F3F4F6;
+  background: #F7F1E2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,13 +83,13 @@
 
 .acc-name {
   font-size: 28rpx;
-  color: #1F2937;
+  color: #2E2A22;
   font-weight: 500;
 }
 
 .acc-type {
   font-size: 20rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
 }
 
 .acc-balance {
@@ -112,14 +112,14 @@
 .modal-label {
   width: 128rpx;
   font-size: 26rpx;
-  color: #6B7280;
+  color: #6B6455;
 }
 
 .modal-input-inline {
   flex: 1;
   font-size: 28rpx;
-  color: #1F2937;
-  border-bottom: 1rpx solid #E5E7EB;
+  color: #2E2A22;
+  border-bottom: 1rpx solid #F0E9D8;
   padding: 8rpx 0;
 }
 
@@ -139,7 +139,7 @@
 
 .initial-sign {
   font-size: 28rpx;
-  color: #1F2937;
+  color: #2E2A22;
 }
 
 .modal-actions-modal {
@@ -160,13 +160,13 @@
 }
 
 .btn-danger-outline {
-  color: #F04646;
-  border: 1rpx solid #F04646;
+  color: #E2543F;
+  border: 1rpx solid #E2543F;
 }
 
 .manage-hint {
   font-size: 20rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   text-align: center;
   padding: 16rpx 0 8rpx;
 }

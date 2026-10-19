@@ -1,0 +1,158 @@
+<view class="page profile-page">
+  <view style="height:{{statusBar}}px"></view>
+
+  <!-- 用户信息 -->
+  <view class="p-head">
+    <view class="p-user" bindtap="openRename">
+      <image class="p-avatar" src="/images/avatar.png" mode="aspectFit" />
+      <view class="p-info">
+        <view class="p-name-line">
+          <text class="p-name">{{me.name || '未命名'}}</text>
+          <text class="p-badge">普通会员</text>
+        </view>
+        <text class="p-id">ID: {{uid}}</text>
+      </view>
+    </view>
+    <view class="p-actions">
+      <view class="p-icon" bindtap="syncNow">🔔</view>
+      <view class="p-icon" bindtap="goLedger">⚙️</view>
+    </view>
+  </view>
+
+  <!-- 会员卡 -->
+  <view class="vip-card" bindtap="openVip">
+    <view class="vip-l">
+      <view class="vip-title-line">
+        <text class="vip-crown">👑</text>
+        <text class="vip-title">存钱罐会员中心</text>
+      </view>
+      <text class="vip-sub">解锁更多存钱皮肤和特权</text>
+    </view>
+    <view class="vip-btn">去升级</view>
+  </view>
+
+  <!-- 我的资产 -->
+  <view class="card asset-card" bindtap="goAssets">
+    <view class="asset-head">
+      <text class="asset-title">我的资产（元）</text>
+      <text class="asset-link">明细 ›</text>
+    </view>
+    <text class="asset-total num">{{netWorthText}}</text>
+
+    <view class="asset-split">
+      <view class="asset-col">
+        <text class="asset-label">资产</text>
+        <text class="asset-val num">{{assetsText}}</text>
+      </view>
+      <view class="asset-divider"></view>
+      <view class="asset-col">
+        <text class="asset-label">负债</text>
+        <text class="asset-val num">{{debtsText}}</text>
+      </view>
+    </view>
+
+    <image class="asset-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
+  </view>
+
+  <!-- 功能列表 -->
+  <view class="card menu">
+    <view class="menu-row" bindtap="goChallenge">
+      <text class="menu-icon">🏆</text>
+      <text class="menu-text">存钱挑战</text>
+      <text class="menu-extra">{{challengeCount > 0 ? '进行中 ' + challengeCount : '未开始'}}</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="goBudget">
+      <text class="menu-icon">🎯</text>
+      <text class="menu-text">预算管理</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="goLedger">
+      <text class="menu-icon">📒</text>
+      <text class="menu-text">账本管理</text>
+      <text class="menu-extra">{{memberCount}} 人</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="goCategories">
+      <text class="menu-icon">🏷️</text>
+      <text class="menu-text">分类管理</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="syncNow">
+      <text class="menu-icon">☁️</text>
+      <text class="menu-text">云同步</text>
+      <text class="menu-extra">{{cloudOn ? syncText : '未开启'}}</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="openHelp">
+      <text class="menu-icon">💬</text>
+      <text class="menu-text">帮助与反馈</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="openAbout">
+      <text class="menu-icon">ℹ️</text>
+      <text class="menu-text">关于我们</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="p-footer">记账本 · 存钱罐主题 v1.1.0</view>
+
+  <!-- 改昵称 -->
+  <view class="modal-mask" wx:if="{{showRename}}">
+    <view class="modal">
+      <view class="modal-title">修改昵称</view>
+      <view class="modal-sub">共享账本时好友会看到这个名字</view>
+      <input class="modal-input" value="{{renameInput}}" placeholder="输入昵称" maxlength="12" bindinput="onRenameInput" />
+      <view class="modal-actions">
+        <view class="btn-plain" bindtap="closeRename">取消</view>
+        <view class="btn-primary" bindtap="confirmRename">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 会员 -->
+  <view class="modal-mask" wx:if="{{showVip}}">
+    <view class="modal">
+      <view class="modal-title">存钱罐会员</view>
+      <view class="modal-sub">这是自部署版本，会员体系尚未开放</view>
+      <view class="modal-sub">存钱挑战、预算、资产等功能已全部免费可用</view>
+      <view class="modal-actions">
+        <view class="btn-primary" bindtap="closeVip">知道了</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 帮助 -->
+  <view class="modal-mask" wx:if="{{showHelp}}">
+    <view class="modal">
+      <view class="modal-title">帮助与反馈</view>
+      <view class="help-list">
+        <view class="help-item">1. 数据默认存在手机本地，开启云同步后才会上传到自己的服务器。</view>
+        <view class="help-item">2. 多人共享：账本页生成邀请码，另一方输入即加入。</view>
+        <view class="help-item">3. 存钱挑战只记录进度，不计入收支统计。</view>
+        <view class="help-item">4. 同步异常时可核对服务器地址：</view>
+      </view>
+      <view class="help-api" bindtap="copyApi">https://jizhang-api.751152.xyz</view>
+      <view class="modal-actions">
+        <view class="btn-primary" bindtap="closeHelp">关闭</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 关于 -->
+  <view class="modal-mask" wx:if="{{showAbout}}">
+    <view class="modal">
+      <view class="modal-title">关于我们</view>
+      <view class="help-list">
+        <view class="help-item">记账本 · 存钱罐主题</view>
+        <view class="help-item">版本 1.1.0</view>
+        <view class="help-item">本地优先的个人记账工具，数据存于你自己的服务器。</view>
+        <view class="help-item">无广告、无支付、无金融业务。</view>
+      </view>
+      <view class="modal-actions">
+        <view class="btn-primary" bindtap="closeAbout">关闭</view>
+      </view>
+    </view>
+  </view>
+</view>

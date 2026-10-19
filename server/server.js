@@ -197,6 +197,7 @@ function migrateSchema(d) {
     ['budget_json', "ALTER TABLE ledgers ADD COLUMN budget_json TEXT NOT NULL DEFAULT '{\"monthlyTotal\":0,\"categoryBudgets\":{}}'"],
     ['recurring_json', "ALTER TABLE ledgers ADD COLUMN recurring_json TEXT NOT NULL DEFAULT '[]'"],
     ['categories_json', "ALTER TABLE ledgers ADD COLUMN categories_json TEXT NOT NULL DEFAULT '[]'"],
+    ['challenges_json', "ALTER TABLE ledgers ADD COLUMN challenges_json TEXT NOT NULL DEFAULT '[]'"],
     ['cfg_at', "ALTER TABLE ledgers ADD COLUMN cfg_at TEXT NOT NULL DEFAULT ''"]
   ]
   ledgerAdd.forEach(function (pair) {
@@ -293,7 +294,7 @@ function snapshot(openid, since) {
   const out = { ledgers: [], members: [], records: [] }
   const ledgers = db.prepare(
     'SELECT l.id, l.name, l.owner_openid, l.invite_code, l.created_at,'
-    + ' l.accounts_json, l.budget_json, l.recurring_json, l.categories_json, l.cfg_at'
+    + ' l.accounts_json, l.budget_json, l.recurring_json, l.categories_json, l.challenges_json, l.cfg_at'
     + ' FROM ledgers l JOIN members m ON m.ledger_id = l.id'
     + ' WHERE m.openid = ? ORDER BY l.created_at'
   ).all(openid)
@@ -335,6 +336,7 @@ function snapshot(openid, since) {
       budget: jsonColumn(l.budget_json, { monthlyTotal: 0, categoryBudgets: {} }),
       recurring: jsonColumn(l.recurring_json, []),
       categories: jsonColumn(l.categories_json, []),
+      challenges: jsonColumn(l.challenges_json, []),
       cfgAt: l.cfg_at || ''
     }
   })
@@ -359,6 +361,7 @@ function applyLedgerPush(openid, l) {
   const budgetJson = toJsonColumn(l.budget, { monthlyTotal: 0, categoryBudgets: {} }, 64 * 1024)
   const recurringJson = toJsonColumn(l.recurring, [], 128 * 1024)
   const categoriesJson = toJsonColumn(l.categories, [], 128 * 1024)
+  const challengesJson = toJsonColumn(l.challenges, [], 128 * 1024)
   const cfgAt = str(l.cfgAt, 40)
   let row = db.prepare('SELECT * FROM ledgers WHERE id = ?').get(id)
   if (row) {
@@ -369,17 +372,17 @@ function applyLedgerPush(openid, l) {
     if (cfgAt && cfgAt > row.cfg_at) {
       db.prepare([
         'UPDATE ledgers SET accounts_json = ?, budget_json = ?, recurring_json = ?,',
-        '  categories_json = ?, cfg_at = ? WHERE id = ?'
-      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, cfgAt, id)
+        '  categories_json = ?, challenges_json = ?, cfg_at = ? WHERE id = ?'
+      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, cfgAt, id)
     }
   } else {
     db.prepare([
       'INSERT INTO ledgers (id, name, owner_openid, invite_code, created_at,',
-      '  accounts_json, budget_json, recurring_json, categories_json, cfg_at)',
-      'VALUES (?,?,?,?,?,?,?,?,?,?)'
+      '  accounts_json, budget_json, recurring_json, categories_json, challenges_json, cfg_at)',
+      'VALUES (?,?,?,?,?,?,?,?,?,?,?)'
     ].join(' '))
       .run(id, name || '共享账本', openid, genInviteCode(), isoOr(l.createdAt),
-        accountsJson, budgetJson, recurringJson, categoriesJson, cfgAt || nowIso())
+        accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, cfgAt || nowIso())
     row = db.prepare('SELECT * FROM ledgers WHERE id = ?').get(id)
   }
   const membersIn = Array.isArray(l.members) ? l.members.slice(0, 200) : []

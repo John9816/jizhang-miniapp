@@ -1,0 +1,23 @@
+<view class="tabbar">
+  <view class="tab" bindtap="onTab" data-path="/pages/index/index">
+    <image class="tab-icon" src="/images/{{selected === 0 ? 'tab-home-on' : 'tab-home'}}.png" mode="aspectFit" />
+    <text class="tab-text {{selected === 0 ? 'tab-text-on' : ''}}">首页</text>
+  </view>
+
+  <view class="tab-add" bindtap="onAdd">
+    <view class="add-btn">
+      <image class="add-icon" src="/images/tab-plus.png" mode="aspectFit" />
+    </view>
+    <text class="add-text">记一笔</text>
+  </view>
+
+  <view class="tab" bindtap="onTab" data-path="/pages/stats/stats">
+    <image class="tab-icon" src="/images/{{selected === 2 ? 'tab-stats-on' : 'tab-stats'}}.png" mode="aspectFit" />
+    <text class="tab-text {{selected === 2 ? 'tab-text-on' : ''}}">统计</text>
+  </view>
+
+  <view class="tab" bindtap="onTab" data-path="/pages/profile/profile">
+    <image class="tab-icon" src="/images/{{selected === 3 ? 'tab-me-on' : 'tab-me'}}.png" mode="aspectFit" />
+    <text class="tab-text {{selected === 3 ? 'tab-text-on' : ''}}">我的</text>
+  </view>
+</view>

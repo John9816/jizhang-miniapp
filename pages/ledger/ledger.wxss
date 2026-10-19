@@ -17,7 +17,7 @@
   width: 88rpx;
   height: 88rpx;
   border-radius: 20rpx;
-  background: #FFF1F0;
+  background: #FDEEEB;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,13 +34,13 @@
   display: block;
   font-size: 34rpx;
   font-weight: 700;
-  color: #1F2937;
+  color: #2E2A22;
 }
 
 .current-sub {
   display: block;
   font-size: 22rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   margin-top: 6rpx;
 }
 
@@ -48,7 +48,7 @@
   display: flex;
   margin-top: 28rpx;
   padding-top: 24rpx;
-  border-top: 1rpx solid #F3F4F6;
+  border-top: 1rpx solid #F7F1E2;
 }
 
 .stat-col {
@@ -59,13 +59,13 @@
 
 .stat-label {
   font-size: 22rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
 }
 
 .stat-value {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1F2937;
+  color: #2E2A22;
   margin-top: 8rpx;
 }
 
@@ -83,7 +83,7 @@
 
 .share-tip {
   margin-top: 24rpx;
-  background: #F6F7F9;
+  background: #FAF5E8;
   border-radius: 12rpx;
   padding: 20rpx 24rpx;
 }
@@ -91,14 +91,14 @@
 .share-tip-line {
   display: block;
   font-size: 22rpx;
-  color: #6B7280;
+  color: #6B6455;
   line-height: 1.9;
 }
 
 .wx-share-btn {
   margin-top: 24rpx;
-  background: #F3F4F6;
-  color: #374151;
+  background: #F7F1E2;
+  color: #6B6455;
   font-size: 26rpx;
   border-radius: 16rpx;
   padding: 18rpx 0;
@@ -119,7 +119,7 @@
 
 .create-link {
   font-size: 26rpx;
-  color: #F04646;
+  color: #E2543F;
   font-weight: 600;
 }
 
@@ -127,7 +127,7 @@
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #F6F7F9;
+  border-bottom: 1rpx solid #FAF5E8;
 }
 
 .ledger-row:last-child {
@@ -138,15 +138,15 @@
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  border: 2rpx solid #D1D5DB;
+  border: 2rpx solid #DDD4BE;
   margin-right: 20rpx;
   box-sizing: border-box;
   flex-shrink: 0;
 }
 
 .radio-on {
-  border-color: #F04646;
-  background: #F04646;
+  border-color: #E2543F;
+  background: #E2543F;
   box-shadow: inset 0 0 0 6rpx #FFFFFF;
 }
 
@@ -159,13 +159,13 @@
   display: block;
   font-size: 28rpx;
   font-weight: 600;
-  color: #1F2937;
+  color: #2E2A22;
 }
 
 .ledger-row-sub {
   display: block;
   font-size: 20rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   margin-top: 4rpx;
 }
 
@@ -176,12 +176,12 @@
 
 .op-link {
   font-size: 24rpx;
-  color: #6B7280;
+  color: #6B6455;
   padding: 8rpx 4rpx;
 }
 
 .op-danger {
-  color: #F04646;
+  color: #E2543F;
 }
 
 /* 本地模式说明 */
@@ -193,7 +193,7 @@
 .notice-title {
   font-size: 26rpx;
   font-weight: 700;
-  color: #B45309;
+  color: #A8811C;
 }
 
 .notice-text {
@@ -206,7 +206,7 @@
 .paste-link {
   text-align: center;
   font-size: 24rpx;
-  color: #F04646;
+  color: #E2543F;
   margin-top: 16rpx;
   padding: 8rpx 0;
 }
@@ -220,7 +220,7 @@
   padding: 24rpx;
   border-radius: 16rpx;
   background: #F9FAFB;
-  border: 1rpx solid #F3F4F6;
+  border: 1rpx solid #F7F1E2;
 }
 
 .export-icon {
@@ -236,16 +236,16 @@
 
 .export-title {
   font-size: 26rpx;
-  color: #1F2937;
+  color: #2E2A22;
   font-weight: 500;
 }
 
 .export-sub {
   font-size: 20rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
 }
 
 .export-arrow {
   font-size: 30rpx;
-  color: #D1D5DB;
+  color: #DDD4BE;
 }

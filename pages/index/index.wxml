@@ -1,95 +1,102 @@
 <view class="page">
-  <!-- 顶部：账本与月份 -->
-  <view class="header">
-    <view class="ledger-bar" bindtap="goLedger">
-      <text class="ledger-name">{{ledger.name}}</text>
-      <text class="ledger-meta" wx:if="{{members.length > 0}}">{{members.length}} 人记账</text>
-      <text class="ledger-arrow">›</text>
+  <view class="nav-holder" style="height:{{statusBar}}px"></view>
+
+  <!-- 顶部：账本名 + 问候 -->
+  <view class="topbar">
+    <view class="topbar-l">
+      <text class="brand">{{ledger.name || '我的账本'}}</text>
+      <text class="brand-sub">{{greeting}}，今天也要存一点哦！</text>
     </view>
-    <text class="sync-status" wx:if="{{cloudOn}}">{{syncText}}</text>
-    <view class="month-bar">
-      <view class="month-btn" bindtap="prevMonth">‹</view>
-      <text class="month-label">{{monthLabel}}</text>
-      <view class="month-btn" bindtap="nextMonth">›</view>
-      <view class="view-toggle" bindtap="toggleView">{{viewMode === 'list' ? '📅' : '📋'}}</view>
+    <view class="topbar-r">
+      <view class="icon-btn" bindtap="toggleMore">⋯</view>
+      <view class="icon-btn" bindtap="goLedger">◎</view>
     </view>
   </view>
 
-  <!-- 汇总卡片 -->
-  <view class="card summary-card" wx:if="{{ledger}}">
-    <view class="sum-col">
-      <text class="sum-label">总收入</text>
-      <text class="sum-value text-income">¥{{summary.incomeText}}</text>
+  <!-- 本月支出主卡 -->
+  <view class="hero" wx:if="{{ledger}}">
+    <view class="hero-head">
+      <text class="hero-label">{{monthShort}}支出（元）</text>
+      <view class="hero-step">
+        <text class="hero-step-btn" bindtap="prevMonth">‹</text>
+        <text class="hero-step-btn {{isCurrentMonth ? 'hero-month-disabled' : ''}}" bindtap="nextMonth">›</text>
+      </view>
     </view>
-    <view class="sum-divider"></view>
-    <view class="sum-col">
-      <text class="sum-label">总支出</text>
-      <text class="sum-value text-expense">¥{{summary.expenseText}}</text>
+
+    <text class="hero-amount num">{{summary.expenseText}}</text>
+
+    <view class="hero-foot">
+      <text class="hero-foot-item">收入 <text class="num">{{summary.incomeText}}</text></text>
+      <text class="hero-sep"></text>
+      <text class="hero-foot-item">结余 <text class="num">{{summary.balanceText}}</text></text>
     </view>
-    <view class="sum-divider"></view>
-    <view class="sum-col">
-      <text class="sum-label">结余</text>
-      <text class="sum-value sum-balance">¥{{summary.balanceText}}</text>
+
+    <image class="hero-mascot" src="/images/mascot.png" mode="aspectFit" />
+    <view class="hero-coin c1"></view>
+    <view class="hero-coin c2"></view>
+  </view>
+
+  <!-- 预算提醒 -->
+  <view class="alert-pill" wx:if="{{budgetAlert}}" bindtap="goBudget">
+    <text class="alert-dot">⚠️</text>
+    <text class="alert-text">{{budgetAlert}}</text>
+    <text class="alert-go">›</text>
+  </view>
+
+  <!-- 存钱挑战 -->
+  <view class="card challenge-card" wx:if="{{ledger && challenge}}" bindtap="goChallenge">
+    <view class="ch-row">
+      <view class="ch-icon-wrap">
+        <text class="ch-emoji">🏆</text>
+      </view>
+      <view class="ch-main">
+        <view class="ch-title-line">
+          <text class="ch-name">{{challenge.name}}</text>
+          <text class="ch-tag">进行中</text>
+        </view>
+        <text class="ch-meta">已存 {{challenge.savedText}} / {{challenge.targetText}}</text>
+      </view>
+      <text class="ch-pct num">{{challenge.pct}}%</text>
+    </view>
+    <view class="progress ch-progress">
+      <view class="progress-bar" style="width:{{challenge.pct}}%"></view>
+    </view>
+    <view class="ch-foot" wx:if="{{challenge.daysLeft !== null}}">
+      <text wx:if="{{challenge.daysLeft >= 0}}">距目标还有 {{challenge.daysLeft}} 天</text>
+      <text wx:else>已超过计划日期 {{challenge.daysLeftAbs}} 天</text>
+      <text class="ch-foot-go" wx:if="{{challengeCount > 1}}">共 {{challengeCount}} 个进行中 ›</text>
     </view>
   </view>
 
-  <!-- 预算提醒横幅 -->
-  <view class="budget-alert" wx:if="{{budgetAlert}}" bindtap="goBudget">
-    <text class="budget-alert-icon">⚠️</text>
-    <text class="budget-alert-text">{{budgetAlert}}</text>
-    <text class="budget-alert-link">查看 ›</text>
+  <view class="card challenge-empty" wx:if="{{ledger && !challenge}}" bindtap="goChallenge">
+    <view class="ch-empty-l">
+      <text class="ch-empty-title">开启第一个存钱挑战</text>
+      <text class="ch-empty-sub">设定目标，每天攒一点</text>
+    </view>
+    <view class="ch-empty-btn btn-primary">去创建</view>
   </view>
 
   <!-- 功能宫格 -->
-  <view class="card feature-grid" wx:if="{{ledger}}">
-    <view class="feature-item" bindtap="goStats">
-      <view class="feature-icon f-purple">📊</view>
-      <text class="feature-text">统计</text>
+  <view class="quick" wx:if="{{ledger}}">
+    <view class="quick-item" bindtap="goEdit">
+      <view class="quick-icon" style="background:#FFF0D2">➕</view>
+      <text class="quick-text">记账</text>
     </view>
-    <view class="feature-item" bindtap="goBudget">
-      <view class="feature-icon f-teal">🎯</view>
-      <text class="feature-text">预算</text>
+    <view class="quick-item" bindtap="goBudget">
+      <view class="quick-icon" style="background:#E9F3FF">🎯</view>
+      <text class="quick-text">预算</text>
     </view>
-    <view class="feature-item" bindtap="goAssets">
-      <view class="feature-icon f-blue">💰</view>
-      <text class="feature-text">资产</text>
+    <view class="quick-item" bindtap="goAssets">
+      <view class="quick-icon" style="background:#EAF6E4">💰</view>
+      <text class="quick-text">资产</text>
     </view>
-    <view class="feature-item" bindtap="goSearch">
-      <view class="feature-icon f-orange">🔍</view>
-      <text class="feature-text">搜索</text>
+    <view class="quick-item" bindtap="goSearch">
+      <view class="quick-icon" style="background:#FCE9F3">🧾</view>
+      <text class="quick-text">账单</text>
     </view>
-    <view class="feature-item" bindtap="goTransfer">
-      <view class="feature-icon f-green">🔀</view>
-      <text class="feature-text">转账</text>
-    </view>
-    <view class="feature-item" bindtap="goRecurring">
-      <view class="feature-icon f-pink">🔁</view>
-      <text class="feature-text">周期记账</text>
-    </view>
-    <view class="feature-item" bindtap="goCategories">
-      <view class="feature-icon f-indigo">🏷️</view>
-      <text class="feature-text">分类管理</text>
-    </view>
-  </view>
-
-  <!-- 日历视图 -->
-  <view class="card calendar-card" wx:if="{{ledger && viewMode === 'calendar'}}">
-    <view class="calendar-weekdays">
-      <text class="calendar-weekday" wx:for="{{calendar.weekdays}}" wx:key="*this">{{item}}</text>
-    </view>
-    <view class="calendar-grid">
-      <view class="calendar-cell {{item.today ? 'calendar-today' : ''}} {{selectedDay === item.date ? 'calendar-selected' : ''}} {{!item.inMonth ? 'calendar-out' : ''}}"
-            wx:for="{{calendar.days}}" wx:key="date" bindtap="selectDay" data-day="{{item.date}}">
-        <text class="calendar-day">{{item.day}}</text>
-        <view class="calendar-marks">
-          <text class="calendar-mark text-income" wx:if="{{item.income > 0}}">·</text>
-          <text class="calendar-mark text-expense" wx:if="{{item.expense > 0}}">·</text>
-        </view>
-      </view>
-    </view>
-    <view class="calendar-legend">
-      <text class="calendar-legend-item text-income">· 当日有收入</text>
-      <text class="calendar-legend-item text-expense">· 当日有支出</text>
+    <view class="quick-item" bindtap="toggleMore">
+      <view class="quick-icon" style="background:#F0EDE3">⋯</view>
+      <text class="quick-text">更多</text>
     </view>
   </view>
 
@@ -99,56 +106,121 @@
     <view wx:for="{{members}}" wx:key="id" class="chip {{memberFilter === item.id ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="{{item.id}}">{{item.name}}</view>
   </scroll-view>
 
-  <!-- 日历模式：当日明细标题 -->
-  <view class="day-title" wx:if="{{ledger && viewMode === 'calendar'}}">
-    <text>{{selectedDay}}</text>
-    <text class="day-title-sub" wx:if="{{dayGroups.length === 0}}">当日无记录</text>
-  </view>
+  <!-- 列表视图 -->
+  <block wx:if="{{viewMode === 'list'}}">
+    <view class="bills-head">
+      <text class="bills-title">最近账单</text>
+      <view class="bills-more" bindtap="goSearch">全部 {{recordCount}} 笔 ›</view>
+    </view>
 
-  <!-- 记录列表 -->
-  <block wx:if="{{groups.length > 0}}">
-    <view class="card group-card" wx:for="{{viewMode === 'calendar' ? dayGroups : groups}}" wx:key="date" wx:for-item="group">
-      <view class="group-head">
-        <text class="group-date">{{group.label}}</text>
-        <view class="group-sub">
-          <text class="text-income" wx:if="{{group.income > 0}}">收 ¥{{group.incomeText}}</text>
-          <text class="text-expense" wx:if="{{group.expense > 0}}">支 ¥{{group.expenseText}}</text>
+    <view class="card bill-card" wx:if="{{groups.length > 0}}">
+      <block wx:for="{{groups}}" wx:for-item="group" wx:key="date">
+        <view class="bill-date">
+          <text>{{group.label}}</text>
+          <text class="bill-date-sum" wx:if="{{group.expense > 0}}">支 {{group.expenseText}}</text>
         </view>
-      </view>
-      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
-        <view class="rec-icon">{{rec.icon}}</view>
-        <view class="rec-main">
-          <view class="rec-title">
-            <text>{{rec.categoryName}}</text>
-            <text class="rec-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
+        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+          <view class="bill-icon" style="background:{{rec.tint}}">
+            <text class="bill-emoji">{{rec.icon}}</text>
           </view>
-          <text class="rec-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+          <view class="bill-main">
+            <view class="bill-title-line">
+              <text class="bill-cate">{{rec.categoryName}}</text>
+              <text class="bill-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
+            </view>
+            <text class="bill-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+          </view>
+          <text class="bill-amount num {{rec.type === 'income' ? 'text-income' : (rec.type === 'transfer' ? 'bill-amount-muted' : '')}}">{{rec.amountText}}</text>
         </view>
-        <view class="rec-amount {{rec.type === 'income' ? 'text-income' : 'text-expense'}}">{{rec.amountText}}</view>
-      </view>
+      </block>
+    </view>
+
+    <view class="empty" wx:elif="{{!loading}}">
+      <text class="empty-icon">🐷</text>
+      <text class="empty-text">{{emptyText}}</text>
+      <view class="btn-primary empty-btn" bindtap="goEdit">记第一笔</view>
     </view>
   </block>
 
-  <!-- 空状态 -->
-  <view class="empty" wx:elif="{{!loading}}">
-    <text class="empty-icon">🧾</text>
-    <text class="empty-text">{{emptyText}}</text>
-    <view class="btn-primary empty-btn" bindtap="goEdit">记一笔</view>
-  </view>
-
-  <!-- 记一笔悬浮按钮 -->
-  <view class="fab" bindtap="goEdit">＋</view>
-
-  <!-- 底部导航 -->
-  <view class="tabbar">
-    <view class="tab-item" bindtap="goLedger">
-      <text class="tab-icon">📒</text>
-      <text class="tab-text">账本</text>
+  <!-- 日历视图 -->
+  <block wx:else>
+    <view class="bills-head">
+      <text class="bills-title">{{monthLabel}}</text>
+      <view class="bills-more" bindtap="toggleCalendar">切回列表 ›</view>
     </view>
-    <view class="tab-item" bindtap="goMembers">
-      <text class="tab-icon">👥</text>
-      <text class="tab-text">成员</text>
+
+    <view class="card cal-card">
+      <view class="cal-weekdays">
+        <text class="cal-weekday" wx:for="{{calendar.weekdays}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="cal-grid">
+        <view class="cal-cell {{item.today ? 'cal-today' : ''}} {{selectedDay === item.date ? 'cal-selected' : ''}} {{!item.inMonth ? 'cal-out' : ''}}"
+              wx:for="{{calendar.days}}" wx:key="date" bindtap="selectDay" data-day="{{item.date}}">
+          <text class="cal-day">{{item.day}}</text>
+          <view class="cal-marks">
+            <view class="cal-dot cal-dot-in" wx:if="{{item.income > 0}}"></view>
+            <view class="cal-dot cal-dot-out" wx:if="{{item.expense > 0}}"></view>
+          </view>
+        </view>
+      </view>
     </view>
+
+    <view class="bills-head">
+      <text class="bills-title">{{selectedDay}}</text>
+      <text class="bills-more" wx:if="{{dayGroups.length === 0}}">当日无记录</text>
+    </view>
+
+    <view class="card bill-card" wx:if="{{dayGroups.length > 0}}">
+      <block wx:for="{{dayGroups}}" wx:for-item="group" wx:key="date">
+        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+          <view class="bill-icon" style="background:{{rec.tint}}">
+            <text class="bill-emoji">{{rec.icon}}</text>
+          </view>
+          <view class="bill-main">
+            <view class="bill-title-line">
+              <text class="bill-cate">{{rec.categoryName}}</text>
+              <text class="bill-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
+            </view>
+            <text class="bill-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+          </view>
+          <text class="bill-amount num {{rec.type === 'income' ? 'text-income' : ''}}">{{rec.amountText}}</text>
+        </view>
+      </block>
+    </view>
+  </block>
+
+  <!-- 更多面板 -->
+  <view class="sheet-mask" wx:if="{{showMore}}" bindtap="toggleMore"></view>
+  <view class="sheet" wx:if="{{showMore}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-title">更多</view>
+    <view class="more-grid">
+      <view class="more-item" bindtap="openSheetItem" data-key="challenge">
+        <text class="more-emoji">🏆</text><text>存钱挑战</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="members">
+        <text class="more-emoji">👥</text><text>成员共享</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="categories">
+        <text class="more-emoji">🏷️</text><text>分类管理</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="recurring">
+        <text class="more-emoji">🔁</text><text>周期记账</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="transfer">
+        <text class="more-emoji">🔄</text><text>账户转账</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="calendar">
+        <text class="more-emoji">📅</text><text>{{viewMode === 'list' ? '日历视图' : '列表视图'}}</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="budget">
+        <text class="more-emoji">🎯</text><text>预算管理</text>
+      </view>
+      <view class="more-item" bindtap="openSheetItem" data-key="ledger">
+        <text class="more-emoji">📒</text><text>账本管理</text>
+      </view>
+    </view>
+    <view class="sheet-cancel" bindtap="toggleMore">取消</view>
   </view>
 
   <!-- 首次进入：设置昵称 -->

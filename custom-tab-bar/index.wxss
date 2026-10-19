@@ -1,0 +1,79 @@
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(112rpx + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  display: flex;
+  align-items: flex-start;
+  border-radius: 32rpx 32rpx 0 0;
+  box-shadow: 0 -6rpx 28rpx rgba(196, 158, 54, 0.10);
+  z-index: 900;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 112rpx;
+  padding-top: 8rpx;
+}
+
+.tab-icon {
+  width: 46rpx;
+  height: 46rpx;
+}
+
+.tab-text {
+  font-size: 20rpx;
+  color: #B9B2A3;
+  margin-top: 6rpx;
+  line-height: 1.2;
+}
+
+.tab-text-on {
+  color: #2E2A22;
+  font-weight: 600;
+}
+
+/* 中间凸起的记一笔 */
+.tab-add {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 112rpx;
+}
+
+.add-btn {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  margin-top: -46rpx;
+  background: linear-gradient(135deg, #FFD64F 0%, #F5B417 100%);
+  box-shadow: 0 10rpx 24rpx rgba(233, 164, 0, 0.38), 0 0 0 8rpx #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-btn:active {
+  transform: scale(0.94);
+}
+
+.add-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.add-text {
+  font-size: 20rpx;
+  color: #B08A20;
+  margin-top: 8rpx;
+  font-weight: 600;
+  line-height: 1.2;
+}

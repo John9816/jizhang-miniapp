@@ -1,0 +1,203 @@
+.profile-page { padding-bottom: calc(190rpx + env(safe-area-inset-bottom)); }
+
+/* ============ 用户信息 ============ */
+.p-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 28rpx 8rpx;
+}
+.p-user {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex: 1;
+  min-width: 0;
+}
+.p-avatar {
+  width: 118rpx;
+  height: 118rpx;
+  border-radius: 50%;
+  background: #FFF3D0;
+  flex-shrink: 0;
+}
+.p-name-line {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.p-name {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #2E2A22;
+  max-width: 300rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.p-badge {
+  font-size: 19rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  background: #FFF0C2;
+  color: #A8811C;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.p-id {
+  display: block;
+  font-size: 22rpx;
+  color: #B9B2A3;
+  margin-top: 10rpx;
+}
+.p-actions { display: flex; gap: 14rpx; }
+.p-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  box-shadow: 0 4rpx 14rpx rgba(196, 158, 54, 0.10);
+}
+
+/* ============ 会员卡 ============ */
+.vip-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 24rpx 26rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(135deg, #3B3529 0%, #2A251C 100%);
+  box-shadow: 0 10rpx 26rpx rgba(46, 42, 34, 0.20);
+}
+.vip-l { flex: 1; min-width: 0; }
+.vip-title-line { display: flex; align-items: center; gap: 10rpx; }
+.vip-crown { font-size: 26rpx; }
+.vip-title {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: #FFE3A0;
+}
+.vip-sub {
+  display: block;
+  font-size: 21rpx;
+  color: rgba(255, 227, 160, 0.62);
+  margin-top: 8rpx;
+}
+.vip-btn {
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #FFE58A, #F5B417);
+  color: #4A3200;
+  font-size: 23rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ============ 资产卡 ============ */
+.asset-card {
+  position: relative;
+  overflow: hidden;
+  padding: 26rpx 28rpx 24rpx;
+}
+.asset-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.asset-title {
+  font-size: 26rpx;
+  color: #6B6455;
+}
+.asset-link { font-size: 22rpx; color: #C0A160; }
+.asset-total {
+  display: block;
+  font-size: 58rpx;
+  font-weight: 800;
+  color: #2E2A22;
+  margin-top: 8rpx;
+  letter-spacing: -1rpx;
+  padding-right: 150rpx;   /* 右侧留给吉祥物 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.asset-split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26rpx;
+  margin-top: 16rpx;
+  padding-right: 150rpx;   /* 右侧留给吉祥物 */
+}
+.asset-col { display: flex; flex-direction: column; }
+.asset-label { font-size: 21rpx; color: #A79E8B; }
+.asset-val {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #2E2A22;
+  margin-top: 4rpx;
+}
+.asset-divider {
+  width: 1rpx;
+  height: 36rpx;
+  background: #F0E9D8;
+}
+.asset-mascot {
+  position: absolute;
+  right: -6rpx;
+  bottom: -14rpx;
+  width: 168rpx;
+  height: 176rpx;
+  opacity: 0.95;
+}
+
+/* ============ 菜单 ============ */
+.menu { padding: 6rpx 28rpx; }
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 26rpx 0;
+  border-bottom: 1rpx solid #F4EEDF;
+}
+.menu-row:last-child { border-bottom: none; }
+.menu-icon { font-size: 30rpx; width: 40rpx; text-align: center; }
+.menu-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #2E2A22;
+}
+.menu-extra {
+  font-size: 22rpx;
+  color: #B9B2A3;
+}
+.menu-arrow { font-size: 28rpx; color: #D5CCB8; }
+
+.p-footer {
+  text-align: center;
+  font-size: 21rpx;
+  color: #C7BEAA;
+  padding: 30rpx 0 10rpx;
+}
+
+/* ============ 帮助列表 ============ */
+.help-list { margin-top: 24rpx; }
+.help-item {
+  font-size: 24rpx;
+  color: #6B6455;
+  line-height: 1.8;
+}
+.help-api {
+  margin: 18rpx 0 4rpx;
+  padding: 18rpx 20rpx;
+  background: #FAF7EC;
+  border-radius: 14rpx;
+  font-size: 22rpx;
+  color: #A8811C;
+  word-break: break-all;
+}

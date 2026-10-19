@@ -1,0 +1,182 @@
+.ch-page {
+  min-height: 100vh;
+  background: #FAF5E8;
+  padding: 20rpx 0 calc(220rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 汇总 ============ */
+.ch-hero {
+  position: relative;
+  margin: 0 24rpx;
+  /* 右侧 190rpx 留给吉祥物 */
+  padding: 30rpx 190rpx 34rpx 30rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(135deg, #FFEDA0 0%, #FFD75E 48%, #FFC93C 100%);
+  box-shadow: 0 14rpx 34rpx rgba(240, 180, 23, 0.26);
+  overflow: hidden;
+}
+.ch-hero-label {
+  font-size: 23rpx;
+  color: #8A6410;
+}
+.ch-hero-amount {
+  display: block;
+  font-size: 66rpx;
+  font-weight: 800;
+  color: #3A2A00;
+  margin-top: 8rpx;
+  letter-spacing: -1rpx;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ch-hero-sub {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(74, 50, 0, 0.62);
+  margin-top: 10rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ch-hero-mascot {
+  position: absolute;
+  right: -14rpx;
+  bottom: -22rpx;
+  width: 200rpx;
+  height: 214rpx;
+}
+
+/* ============ 挑战卡 ============ */
+.ch-card {
+  padding: 26rpx 28rpx 20rpx;
+}
+.ch-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ch-card-title-line {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+.ch-card-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #2E2A22;
+  max-width: 340rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ch-badge {
+  font-size: 18rpx;
+  color: #A8811C;
+  background: #FFF7E0;
+  border: 1rpx solid #F3E2B4;
+  border-radius: 6rpx;
+  padding: 3rpx 10rpx;
+  flex-shrink: 0;
+}
+.ch-badge-done {
+  color: #3F9A6B;
+  background: #EDF8F1;
+  border-color: #CDE9D9;
+}
+.ch-card-pct {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #C08F16;
+}
+.ch-card-progress { margin-top: 18rpx; height: 14rpx; }
+.ch-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.ch-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F5EFDF;
+}
+.ch-deadline {
+  font-size: 21rpx;
+  color: #B9B2A3;
+}
+.ch-actions { display: flex; gap: 12rpx; }
+.ch-btn {
+  padding: 10rpx 26rpx;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+.ch-btn-ghost {
+  background: #FAF6EA;
+  color: #8A8474;
+}
+.ch-btn-primary {
+  background: linear-gradient(135deg, #FFDE6B, #FFC93C);
+  color: #4A3200;
+}
+
+/* ============ 提示 / 新建 ============ */
+.ch-tip {
+  text-align: center;
+  font-size: 21rpx;
+  color: #C0B7A2;
+  padding: 36rpx 0 10rpx;
+}
+.ch-create {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(28rpx + env(safe-area-inset-bottom));
+  padding: 26rpx 0;
+  font-size: 28rpx;
+  z-index: 60;
+}
+
+/* ============ 弹层内元素 ============ */
+.modal-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding: 22rpx 24rpx;
+  background: #FAF7EC;
+  border-radius: 16rpx;
+}
+.modal-picker-label { font-size: 25rpx; color: #8A8474; }
+.modal-picker-value { font-size: 25rpx; color: #2E2A22; }
+.modal-picker-ph { color: #BEB5A1; }
+
+.form-error {
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  color: #E2543F;
+  text-align: center;
+}
+
+.quick-row {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 20rpx;
+}
+.quick-chip {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 14rpx;
+  background: #FAF6EA;
+  font-size: 24rpx;
+  color: #8A6410;
+}

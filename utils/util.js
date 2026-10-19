@@ -5,14 +5,14 @@
 
 var EXPENSE_CATEGORIES = [
   { key: 'food', name: '餐饮', icon: '🍜' },
-  { key: 'transport', name: '交通', icon: '🚌' },
   { key: 'shopping', name: '购物', icon: '🛍️' },
-  { key: 'home', name: '居住', icon: '🏠' },
+  { key: 'transport', name: '交通', icon: '🚌' },
+  { key: 'home', name: '日用', icon: '🧴' },
   { key: 'fun', name: '娱乐', icon: '🎮' },
-  { key: 'medical', name: '医疗', icon: '💊' },
-  { key: 'study', name: '教育', icon: '📚' },
   { key: 'phone', name: '通讯', icon: '📱' },
   { key: 'social', name: '人情', icon: '🧧' },
+  { key: 'study', name: '学习', icon: '📚' },
+  { key: 'medical', name: '医疗', icon: '💊' },
   { key: 'other_out', name: '其他', icon: '✨' }
 ]
 
@@ -24,6 +24,36 @@ var INCOME_CATEGORIES = [
   { key: 'reimburse', name: '报销', icon: '🧾' },
   { key: 'other_in', name: '其他', icon: '✨' }
 ]
+
+/** 分类图标底色：浅色系，与奶油黄主题协调 */
+var CATEGORY_TINTS = {
+  food: '#FFEFD2', shopping: '#FDE6DC', transport: '#E3EEFF', home: '#EAF4E2',
+  fun: '#FBE6F1', phone: '#E7F0FF', social: '#FFE6E2', study: '#EFE9FF',
+  medical: '#FFE8E6', other_out: '#F0EDE3',
+  salary: '#FFEFC8', invest: '#E4F6E9', parttime: '#E8EFFF', redpacket: '#FFE6E2',
+  reimburse: '#E9F0FF', other_in: '#F0EDE3', transfer: '#EDEAE0'
+}
+
+function categoryTint(key) {
+  return CATEGORY_TINTS[key] || '#F3EFE4'
+}
+
+/** 时段问候 */
+function greeting(d) {
+  var h = (d || new Date()).getHours()
+  if (h < 6) return '夜深了'
+  if (h < 11) return '早上好'
+  if (h < 14) return '中午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+}
+
+/** '2026-09-20' → '9月20日' */
+function cnDate(dateStrValue) {
+  var s = String(dateStrValue || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  return parseInt(s.slice(5, 7), 10) + '月' + parseInt(s.slice(8, 10), 10) + '日'
+}
 
 function categoriesFor(type) {
   return type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
@@ -607,6 +637,9 @@ module.exports = {
   categoryOf: categoryOf,
   categoryIcon: categoryIcon,
   categoryName: categoryName,
+  categoryTint: categoryTint,
+  greeting: greeting,
+  cnDate: cnDate,
   yuanToCents: yuanToCents,
   formatCents: formatCents,
   signedText: signedText,

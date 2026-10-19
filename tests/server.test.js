@@ -201,7 +201,7 @@ async function main() {
 
   /* ---------- 账本级新模型同步 ---------- */
 
-  await test('推送账本级配置（账户/预算/周期/分类）→ 快照返回', async function () {
+  await test('推送账本级配置（账户/预算/周期/分类/存钱挑战）→ 快照返回', async function () {
     const cfgNow = iso(5000)
     const up = await api('POST', '/api/sync', {
       since: '',
@@ -216,6 +216,7 @@ async function main() {
         budget: { monthlyTotal: 300000, categoryBudgets: { food: 100000 } },
         recurring: [{ id: 'rr1', name: '房租', amount: 250000, cycle: 'monthly', nextDate: '2026-11-01' }],
         categories: [{ key: 'c1', name: '干饭', icon: '🍚', type: 'expense' }],
+        challenges: [{ id: 'ch1', name: '旅行基金', target: 500000, saved: 165000, deadline: '2027-03-01', createdAt: iso(-100000) }],
         cfgAt: cfgNow
       }]
     }, tokenA)
@@ -225,10 +226,13 @@ async function main() {
     assert(l.budget && l.budget.monthlyTotal === 300000, '预算未同步')
     assert(l.recurring.length === 1 && l.recurring[0].name === '房租', '周期未同步')
     assert(l.categories.length === 1 && l.categories[0].name === '干饭', '分类未同步')
+    assert(l.challenges && l.challenges.length === 1 && l.challenges[0].name === '旅行基金', '存钱挑战未同步')
+    assert(l.challenges[0].saved === 165000, '挑战已存金额错误')
     assert(l.cfgAt === cfgNow, 'cfgAt 未同步')
     const pull = await api('GET', '/api/sync?since=', null, tokenB)
     const lb = pull.data.ledgers.find(function (x) { return x.id === ledgerId })
     assert(lb && lb.accounts[0].initialBalance === 520000, 'B 拉不到账户配置')
+    assert(lb.challenges && lb.challenges[0].target === 500000, 'B 拉不到存钱挑战')
   })
 
   await test('cfgAt LWW：旧配置推送不得覆盖新配置', async function () {
@@ -246,6 +250,7 @@ async function main() {
     const l = up.data.ledgers.find(function (x) { return x.id === ledgerId })
     assert(l.accounts[0].name === '微信钱包', '旧配置覆盖了新配置')
     assert(l.budget.monthlyTotal === 300000, '旧预算覆盖了新预算')
+    assert(l.challenges && l.challenges.length === 1, '旧配置把存钱挑战清空了')
   })
 
   await test('transfer 记录：推送 / 拉取 / 缺字段拒绝', async function () {

@@ -1,0 +1,104 @@
+<view class="ch-page">
+  <!-- 汇总 -->
+  <view class="ch-hero">
+    <view class="ch-hero-l">
+      <text class="ch-hero-label">累计已存（元）</text>
+      <text class="ch-hero-amount num">{{totalSavedText}}</text>
+      <text class="ch-hero-sub">{{running}} 个挑战进行中</text>
+    </view>
+    <image class="ch-hero-mascot" src="/images/mascot.png" mode="aspectFit" />
+  </view>
+
+  <!-- 挑战列表 -->
+  <view wx:if="{{list.length > 0}}">
+    <view class="card ch-card" wx:for="{{list}}" wx:key="id" bindlongpress="onLongPress" data-id="{{item.id}}">
+      <view class="ch-card-head">
+        <view class="ch-card-title-line">
+          <text class="ch-card-name">{{item.name}}</text>
+          <text class="ch-badge {{item.done ? 'ch-badge-done' : ''}}">{{item.done ? '已达成' : '进行中'}}</text>
+        </view>
+        <text class="ch-card-pct num">{{item.pct}}%</text>
+      </view>
+
+      <view class="progress ch-card-progress">
+        <view class="progress-bar {{item.done ? 'progress-bar-plain' : ''}}" style="width:{{item.pct}}%"></view>
+      </view>
+
+      <view class="ch-card-meta">
+        <text class="num">已存 {{item.savedText}}</text>
+        <text class="num">目标 {{item.targetText}}</text>
+      </view>
+
+      <view class="ch-card-foot">
+        <text class="ch-deadline" wx:if="{{item.deadline}}">
+          {{item.deadline}}<text wx:if="{{item.daysLeft >= 0}}"> · 还有 {{item.daysLeft}} 天</text><text wx:else> · 已超期 {{item.daysLeftAbs}} 天</text>
+        </text>
+        <text class="ch-deadline" wx:else>未设置截止日期</text>
+        <view class="ch-actions">
+          <view class="ch-btn ch-btn-ghost" bindtap="openOut" data-id="{{item.id}}">取出</view>
+          <view class="ch-btn ch-btn-primary" bindtap="openIn" data-id="{{item.id}}">存入</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty" wx:elif="{{hasLedger}}">
+    <text class="empty-icon">🏆</text>
+    <text class="empty-text">还没有存钱挑战</text>
+    <text class="empty-text" style="margin-top:8rpx">给想买的东西设个目标吧</text>
+    <view class="btn-primary empty-btn" bindtap="openCreate">创建挑战</view>
+  </view>
+
+  <view class="ch-tip">存钱挑战只记录进度，不计入收支统计</view>
+
+  <!-- 新建按钮 -->
+  <view class="ch-create btn-primary" bindtap="openCreate" wx:if="{{list.length > 0}}">+ 新建挑战</view>
+
+  <!-- 新建弹层 -->
+  <view class="modal-mask" wx:if="{{showCreate}}">
+    <view class="modal">
+      <view class="modal-title">新建存钱挑战</view>
+      <view class="modal-sub">设定目标，每天存一点</view>
+
+      <input class="modal-input" value="{{formName}}" placeholder="挑战名称，如「旅行基金」" maxlength="16" bindinput="onFormName" />
+      <input class="modal-input" type="digit" value="{{formTarget}}" placeholder="目标金额（元）" bindinput="onFormTarget" />
+
+      <picker mode="date" value="{{formDeadline}}" start="2020-01-01" end="2035-12-31" bindchange="onFormDeadline">
+        <view class="modal-picker">
+          <text class="modal-picker-label">截止日期</text>
+          <text class="modal-picker-value {{formDeadline ? '' : 'modal-picker-ph'}}">{{formDeadline || '不设置'}}</text>
+        </view>
+      </picker>
+
+      <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+
+      <view class="modal-actions">
+        <view class="btn-plain" bindtap="closeCreate">取消</view>
+        <view class="btn-primary" bindtap="submitCreate">创建</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 存入 / 取出 -->
+  <view class="modal-mask" wx:if="{{showDeposit}}">
+    <view class="modal">
+      <view class="modal-title">{{depositMode === 'in' ? '存入' : '取出'}}</view>
+      <view class="modal-sub">{{depositName}}</view>
+
+      <input class="modal-input" type="digit" value="{{depositAmount}}" placeholder="输入金额（元）" bindinput="onDepositInput" focus="{{true}}" />
+
+      <view class="quick-row">
+        <view class="quick-chip" bindtap="quickAmount" data-value="50">50</view>
+        <view class="quick-chip" bindtap="quickAmount" data-value="100">100</view>
+        <view class="quick-chip" bindtap="quickAmount" data-value="500">500</view>
+        <view class="quick-chip" bindtap="quickAmount" data-value="1000">1000</view>
+      </view>
+
+      <view class="modal-actions">
+        <view class="btn-plain" bindtap="closeDeposit">取消</view>
+        <view class="btn-primary" bindtap="submitDeposit">确定</view>
+      </view>
+    </view>
+  </view>
+</view>

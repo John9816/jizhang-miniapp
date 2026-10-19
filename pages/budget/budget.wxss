@@ -6,7 +6,7 @@
 
 .cat-add {
   font-size: 24rpx;
-  color: #4F46E5;
+  color: #F5B417;
   padding: 8rpx 16rpx;
 }
 
@@ -19,7 +19,7 @@
 
 .total-sign {
   font-size: 34rpx;
-  color: #111827;
+  color: #2E2A22;
   font-weight: 600;
 }
 
@@ -27,7 +27,7 @@
   flex: 1;
   font-size: 40rpx;
   font-weight: 600;
-  color: #111827;
+  color: #2E2A22;
 }
 
 .total-save {
@@ -43,7 +43,7 @@
 .total-bar,
 .cat-bar {
   height: 16rpx;
-  background: #F3F4F6;
+  background: #F7F1E2;
   border-radius: 999rpx;
   overflow: hidden;
 }
@@ -63,19 +63,19 @@
   display: flex;
   justify-content: space-between;
   font-size: 22rpx;
-  color: #6B7280;
+  color: #6B6455;
   padding-top: 8rpx;
 }
 
 .total-hint {
   font-size: 22rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   padding-top: 12rpx;
 }
 
 .cat-budget {
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid #F7F1E2;
 }
 
 .cat-budget-head {
@@ -86,20 +86,20 @@
 
 .cat-budget-name {
   font-size: 26rpx;
-  color: #374151;
+  color: #6B6455;
 }
 
 .cat-budget-nums {
   flex: 1;
   text-align: right;
   font-size: 24rpx;
-  color: #111827;
+  color: #2E2A22;
   font-weight: 500;
 }
 
 .cat-budget-del {
   font-size: 24rpx;
-  color: #D1D5DB;
+  color: #DDD4BE;
   padding: 0 8rpx;
 }
 
@@ -109,7 +109,7 @@
 
 .cat-budget .cat-bar-inner {
   height: 100%;
-  background: linear-gradient(90deg, #818CF8, #4F46E5);
+  background: linear-gradient(90deg, #818CF8, #F5B417);
   border-radius: 999rpx;
 }
 
@@ -121,12 +121,12 @@
   display: flex;
   justify-content: space-between;
   font-size: 20rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
 }
 
 .cat-empty {
   font-size: 24rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   line-height: 1.6;
   padding: 12rpx 0;
 }

@@ -10,12 +10,12 @@
   padding: 16rpx 0;
   border-radius: 16rpx;
   background: #FFFFFF;
-  color: #6B7280;
+  color: #6B6455;
   font-size: 28rpx;
 }
 
 .type-active {
-  background: #4F46E5;
+  background: #F5B417;
   color: #FFFFFF;
   font-weight: 500;
 }
@@ -25,14 +25,14 @@
   align-items: center;
   gap: 16rpx;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid #F3F4F6;
+  border-bottom: 1rpx solid #F7F1E2;
 }
 
 .cat-icon-big {
   width: 64rpx;
   height: 64rpx;
   border-radius: 18rpx;
-  background: #F3F4F6;
+  background: #F7F1E2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +42,7 @@
 .cat-name-input {
   flex: 1;
   font-size: 28rpx;
-  color: #1F2937;
+  color: #2E2A22;
 }
 
 .cat-ops {
@@ -52,7 +52,7 @@
 
 .cat-op {
   font-size: 26rpx;
-  color: #6B7280;
+  color: #6B6455;
   padding: 8rpx 12rpx;
 }
 
@@ -61,14 +61,14 @@
 }
 
 .cat-op-del {
-  color: #F04646;
+  color: #E2543F;
 }
 
 .cat-add-row {
   text-align: center;
   padding: 24rpx 0 8rpx;
   font-size: 26rpx;
-  color: #4F46E5;
+  color: #F5B417;
 }
 
 .notice-card {
@@ -78,7 +78,7 @@
 .restore-link {
   text-align: center;
   font-size: 24rpx;
-  color: #9CA3AF;
+  color: #A79E8B;
   padding: 24rpx 0 60rpx;
 }
 
@@ -95,7 +95,7 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 16rpx;
-  background: #F3F4F6;
+  background: #F7F1E2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,6 +103,6 @@
 }
 
 .icon-active {
-  background: #EEF2FF;
-  border: 2rpx solid #4F46E5;
+  background: #FFF3D0;
+  border: 2rpx solid #F5B417;
 }

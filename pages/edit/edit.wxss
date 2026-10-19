@@ -1,229 +1,279 @@
-.page {
-  padding: 16rpx 0 60rpx;
-  box-sizing: border-box;
+.edit-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #FAF5E8;
+  overflow: hidden;
 }
 
-/* 类型切换 */
-.type-bar {
+/* ============ 顶部 ============ */
+.nav {
+  height: 88rpx;
+  padding: 0 28rpx;
   display: flex;
-  margin: 16rpx 24rpx 8rpx;
-  background: #E5E7EB;
-  border-radius: 16rpx;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.nav-btn {
+  font-size: 28rpx;
+  color: #8A8474;
+  padding: 12rpx 8rpx;
+}
+.nav-done {
+  font-size: 29rpx;
+  font-weight: 700;
+  color: #C08F16;
+  padding: 12rpx 8rpx;
+}
+.nav-done-off { color: #CFC6B2; font-weight: 500; }
+
+.seg {
+  display: flex;
+  background: #F1E8D2;
+  border-radius: 999rpx;
   padding: 6rpx;
 }
-
-.type-item {
-  flex: 1;
-  text-align: center;
-  padding: 16rpx 0;
-  font-size: 28rpx;
-  color: #6B7280;
-  border-radius: 12rpx;
-  font-weight: 500;
+.seg-item {
+  padding: 10rpx 36rpx;
+  font-size: 26rpx;
+  color: #8A8474;
+  border-radius: 999rpx;
+  line-height: 1.2;
 }
-
-.type-active {
+.seg-on {
   background: #FFFFFF;
-  color: #F04646;
+  color: #2E2A22;
   font-weight: 700;
-  box-shadow: 0 2rpx 8rpx rgba(31, 41, 55, 0.08);
+  box-shadow: 0 2rpx 8rpx rgba(180, 140, 40, 0.14);
 }
 
-/* 金额 */
-.amount-card {
-  padding: 40rpx 32rpx;
+/* ============ 金额 ============ */
+.amount-block {
+  padding: 10rpx 32rpx 18rpx;
+  flex-shrink: 0;
 }
-
 .amount-row {
   display: flex;
   align-items: baseline;
-  border-bottom: 1rpx solid #EEF0F3;
-  padding-bottom: 20rpx;
+  gap: 10rpx;
 }
-
-.amount-sign {
-  font-size: 44rpx;
-  font-weight: 700;
-  color: #1F2937;
-  margin-right: 16rpx;
+.amount-cur {
+  font-size: 40rpx;
+  color: #2E2A22;
+  font-weight: 600;
 }
+.amount-val {
+  font-size: 76rpx;
+  font-weight: 800;
+  color: #2E2A22;
+  letter-spacing: -1rpx;
+  line-height: 1.15;
+}
+.amount-ghost { color: #CFC6B2; }
 
-.amount-input {
+.amount-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10rpx;
+}
+.calc-hint {
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.ledger-line {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 23rpx;
+  color: #8A6410;
+  background: #FFF3D0;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  max-width: 320rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ledger-arrow { font-size: 22rpx; }
+
+/* ============ 主体 ============ */
+.mid {
   flex: 1;
-  font-size: 72rpx;
-  font-weight: 700;
-  color: #1F2937;
-  height: 96rpx;
-  line-height: 96rpx;
+  overflow: hidden;
 }
+.mid-scroll { height: 100%; }
 
-.amount-ph {
-  color: #D1D5DB;
-  font-size: 56rpx;
-  font-weight: 400;
-}
-
-/* 分类 */
 .cat-grid {
   display: flex;
   flex-wrap: wrap;
+  padding: 12rpx 16rpx 6rpx;
 }
-
 .cat-item {
   width: 20%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12rpx 0;
-  box-sizing: border-box;
+  padding: 14rpx 0;
 }
-
 .cat-icon {
   width: 84rpx;
   height: 84rpx;
-  border-radius: 50%;
-  background: #F6F7F9;
+  border-radius: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid transparent;
+}
+.cat-icon-on {
+  border-color: #F5B417;
+  box-shadow: 0 4rpx 12rpx rgba(233, 164, 0, 0.24);
+}
+.cat-emoji { font-size: 38rpx; }
+.cat-name {
+  font-size: 21rpx;
+  color: #8A8474;
+  margin-top: 10rpx;
+}
+.cat-name-on {
+  color: #2E2A22;
+  font-weight: 700;
+}
+
+/* ============ 转账 ============ */
+.transfer-block {
+  margin: 12rpx 24rpx 0;
+  padding: 24rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+}
+.tf-group { display: flex; flex-direction: column; gap: 14rpx; }
+.tf-label {
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.tf-scroll { white-space: nowrap; }
+.tf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  margin-right: 14rpx;
+  border-radius: 999rpx;
+  background: #FAF6EA;
+  font-size: 24rpx;
+  color: #6B6455;
+  border: 2rpx solid transparent;
+}
+.tf-chip-on {
+  background: #FFF3D0;
+  border-color: #F5B417;
+  color: #6B4E06;
+  font-weight: 600;
+}
+.tf-chip-off { opacity: 0.4; }
+.tf-chip-icon { font-size: 26rpx; }
+.tf-arrow {
+  text-align: center;
+  color: #C9BE9F;
+  font-size: 26rpx;
+  padding: 12rpx 0;
+}
+
+/* ============ 账户行 ============ */
+.account-line {
+  display: flex;
+  align-items: center;
+  margin: 16rpx 24rpx 0;
+  padding: 22rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+}
+.account-label {
+  font-size: 25rpx;
+  color: #6B6455;
+}
+.account-value {
+  flex: 1;
+  text-align: right;
+  font-size: 25rpx;
+  color: #2E2A22;
+}
+.account-arrow { color: #CFC5AC; margin-left: 10rpx; font-size: 26rpx; }
+
+/* ============ 备注 / 日期 ============ */
+.meta-row {
+  display: flex;
+  align-items: center;
+  margin: 16rpx 24rpx 0;
+  padding: 0 24rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  height: 92rpx;
+}
+.note-input {
+  flex: 1;
+  font-size: 27rpx;
+  color: #2E2A22;
+  height: 92rpx;
+  line-height: 92rpx;
+}
+.note-ph { color: #BEB5A1; }
+.date-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 25rpx;
+  color: #6B6455;
+  padding-left: 20rpx;
+}
+.date-icon { font-size: 24rpx; }
+
+.delete-line {
+  text-align: center;
+  font-size: 24rpx;
+  color: #C9A9A2;
+  padding: 36rpx 0 28rpx;
+}
+
+/* ============ 键盘 ============ */
+.keypad {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  background: #FFFFFF;
+  border-top: 1rpx solid #F0E9D8;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.key {
+  width: 25%;
+  height: 112rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40rpx;
-  border: 2rpx solid transparent;
-  box-sizing: border-box;
-}
-
-.cat-name {
-  font-size: 22rpx;
-  color: #6B7280;
-  margin-top: 10rpx;
-}
-
-.cat-active .cat-icon {
-  background: #FFF1F0;
-  border-color: #F04646;
-}
-
-.cat-active .cat-name {
-  color: #F04646;
-  font-weight: 600;
-}
-
-/* 表单 */
-.form-card {
-  padding: 8rpx 28rpx;
-}
-
-.form-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 26rpx 0;
-  border-bottom: 1rpx solid #F6F7F9;
-}
-
-.form-row:last-child {
-  border-bottom: none;
-}
-
-.form-label {
-  font-size: 28rpx;
-  color: #374151;
   font-weight: 500;
+  color: #2E2A22;
+  background: #FFFFFF;
+  border-right: 1rpx solid #F4EEDF;
+  border-bottom: 1rpx solid #F4EEDF;
 }
-
-.form-value-row {
-  display: flex;
-  align-items: center;
+.key:active { background: #FBF6E8; }
+.key-fn {
+  background: #FAF6EA;
+  font-size: 32rpx;
+  color: #8A8474;
 }
-
-.form-value {
-  font-size: 28rpx;
-  color: #1F2937;
-}
-
-.form-arrow {
-  color: #9CA3AF;
-  margin-left: 8rpx;
-}
-
-.form-input {
-  flex: 1;
-  text-align: right;
-  font-size: 28rpx;
-  color: #1F2937;
-  margin-left: 40rpx;
-}
-
-/* 操作按钮 */
-.save-btn {
-  margin: 32rpx 24rpx 0;
-  padding: 24rpx 0;
+.key-done {
+  width: 50%;
+  background: linear-gradient(135deg, #FFDE6B 0%, #FFC93C 100%);
+  color: #4A3200;
   font-size: 30rpx;
+  font-weight: 700;
+  border-right: none;
 }
+.key-done-off { opacity: 0.45; }
 
-.delete-btn {
-  margin: 20rpx 24rpx 0;
-  padding: 22rpx 0;
-  font-size: 28rpx;
-}
-
-/* 账户 chips */
-.account-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.account-chip {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 12rpx 24rpx;
-  border-radius: 999rpx;
-  background: #F3F4F6;
-  color: #4B5563;
-  font-size: 26rpx;
-}
-
-.account-chip-icon {
-  font-size: 28rpx;
-}
-
-.account-active {
-  background: #EEF2FF;
-  color: #4F46E5;
-  font-weight: 500;
-}
-
-.account-disabled {
-  opacity: 0.35;
-}
-
-.account-tip {
-  margin-top: 16rpx;
-  font-size: 22rpx;
-  color: #9CA3AF;
-}
-
-/* 转账流程 */
-.transfer-flow {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.transfer-side {
-  flex: 1;
-  min-width: 0;
-}
-
-.transfer-caption {
-  font-size: 24rpx;
-  color: #6B7280;
-  margin-bottom: 12rpx;
-}
-
-.transfer-arrow {
-  font-size: 36rpx;
-  color: #4F46E5;
-  padding-top: 32rpx;
-}
+/* 账户弹层选中态 */
+.sheet-item-on { color: #B8860B; font-weight: 700; }
