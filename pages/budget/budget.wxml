@@ -1,0 +1,60 @@
+<view class="page">
+  <!-- 当月总预算 -->
+  <view class="card">
+    <view class="section-title">{{monthLabel}}总预算</view>
+    <view class="total-row">
+      <text class="total-sign">¥</text>
+      <input class="total-input" type="digit" value="{{monthlyInput}}" placeholder="0.00，0 表示不限定" bindinput="onTotalInput" />
+      <view class="total-save btn-primary" bindtap="saveTotal">保存</view>
+    </view>
+    <view class="total-status" wx:if="{{totalPct > 0}}">
+      <view class="total-bar">
+        <view class="total-bar-inner {{totalOver ? 'bar-over' : ''}}" style="width: {{totalPct > 100 ? 100 : totalPct}}%"></view>
+      </view>
+      <view class="total-meta">
+        <text>已用 ¥{{usedText}} / ¥{{limitText}}</text>
+        <text class="{{totalOver ? 'text-expense' : ''}}">{{totalOver ? '已超支 ' + (totalPct - 100) + '%' : totalPct + '%'}}</text>
+      </view>
+    </view>
+    <view class="total-hint" wx:else>设置后，支出达到 80% 首页会提醒你</view>
+  </view>
+
+  <!-- 分类预算 -->
+  <view class="card">
+    <view class="card-head">
+      <view class="section-title">分类预算</view>
+      <view class="cat-add" bindtap="openCatPicker">＋ 设置</view>
+    </view>
+    <block wx:if="{{categoryBudgets.length > 0}}">
+      <view class="cat-budget" wx:for="{{categoryBudgets}}" wx:key="key">
+        <view class="cat-budget-head">
+          <text class="cat-budget-name">{{item.icon}} {{item.name}}</text>
+          <text class="cat-budget-nums">¥{{item.usedText}} / ¥{{item.limitText}}</text>
+          <text class="cat-budget-del" catchtap="removeCatLimit" data-key="{{item.key}}">✕</text>
+        </view>
+        <view class="cat-bar">
+          <view class="cat-bar-inner {{item.over ? 'bar-over' : ''}}" style="width: {{item.pct > 100 ? 100 : item.pct}}%"></view>
+        </view>
+        <view class="cat-budget-meta">
+          <text>{{item.pct}}%</text>
+          <text class="{{item.over ? 'text-expense' : ''}}">{{item.over ? '已超支' : '剩余 ' + item.remainText + ' 元'}}</text>
+        </view>
+      </view>
+    </block>
+    <view class="cat-empty" wx:else>还没有设置分类预算。点右上角「＋ 设置」为某个分类设额度，比如餐饮每月 1000。</view>
+  </view>
+
+  <!-- 分类预算设置弹层 -->
+  <view class="modal-mask" wx:if="{{showCatPicker}}">
+    <view class="modal">
+      <view class="modal-title">设置分类预算</view>
+      <view class="modal-sub" wx:if="{{expCategories.length === 0}}">本月还没有支出记录，先从下面分类里选一个</view>
+      <view class="modal-sub" wx:else>{{pickedCatName}} 的每月额度</view>
+      <input class="modal-input" type="digit" value="{{editLimit}}" placeholder="每月额度，如 1000" bindinput="onCatLimitInput" />
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closePicker">取消</view>
+        <view class="btn-primary" bindtap="saveCatLimit">保存</view>
+      </view>
+    </view>
+  </view>
+</view>

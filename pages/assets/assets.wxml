@@ -1,0 +1,94 @@
+<view class="page">
+  <!-- 净资产 -->
+  <view class="net-card {{netWorthPositive ? 'net-positive' : 'net-negative'}}">
+    <text class="net-label">净资产（全部账户合计）</text>
+    <view class="net-value-row">
+      <text class="net-sign">{{netWorthPositive ? '¥' : '-¥'}}</text>
+      <text class="net-value">{{netWorthPositive ? netWorthText : netWorthAbs}}</text>
+    </view>
+    <view class="net-actions">
+      <view class="net-btn" bindtap="goTransfer">🔀 记一笔转账</view>
+      <view class="net-btn" bindtap="openManage">⚙️ 管理账户</view>
+    </view>
+  </view>
+
+  <!-- 账户列表 -->
+  <view class="card">
+    <view class="section-title">账户余额</view>
+    <view class="acc-row" wx:for="{{accounts}}" wx:key="id">
+      <view class="acc-icon">{{item.icon}}</view>
+      <view class="acc-main">
+        <text class="acc-name">{{item.name}}</text>
+        <text class="acc-type">{{item.type}}</text>
+      </view>
+      <text class="acc-balance {{item.balance < 0 ? 'text-expense' : 'text-income'}}">{{item.balance < 0 ? '-¥' : '¥'}}{{item.balanceText}}</text>
+    </view>
+  </view>
+
+  <!-- 账户流水 -->
+  <block wx:if="{{groups.length > 0}}">
+    <view class="card group-card" wx:for="{{groups}}" wx:key="date" wx:for-item="group">
+      <view class="group-head">
+        <text class="group-date">{{group.label}}</text>
+        <view class="group-sub">
+          <text class="text-income" wx:if="{{group.income > 0}}">收 ¥{{group.incomeText}}</text>
+          <text class="text-expense" wx:if="{{group.expense > 0}}">支 ¥{{group.expenseText}}</text>
+        </view>
+      </view>
+      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+        <view class="rec-icon">{{rec.icon}}</view>
+        <view class="rec-main">
+          <view class="rec-title">
+            <text>{{rec.categoryName}}</text>
+            <text class="rec-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
+          </view>
+          <text class="rec-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+        </view>
+        <view class="rec-amount {{rec.type === 'income' ? 'text-income' : 'text-expense'}}">{{rec.amountText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty" wx:elif="{{accounts.length > 0}}">
+    <text class="empty-icon">💰</text>
+    <text class="empty-text">还没有关联账户的记录。记账时选择账户，这里就能看到每笔流水</text>
+    <view class="btn-primary empty-btn" bindtap="goEdit">去记一笔</view>
+  </view>
+
+  <!-- 账户管理弹层 -->
+  <view class="modal-mask" wx:if="{{showManage}}">
+    <view class="modal">
+      <scroll-view scroll-y class="modal-scroll">
+        <view class="modal-title">{{editingId ? '编辑账户' : '新增账户'}}</view>
+        <view class="modal-row">
+          <text class="modal-label">名称</text>
+          <input class="modal-input-inline" value="{{editName}}" placeholder="如：招行工资卡" maxlength="12" bindinput="onEditName" />
+        </view>
+        <view class="modal-row">
+          <text class="modal-label">类型</text>
+          <view class="type-chips">
+            <view class="account-chip {{editType === item.key ? 'account-active' : ''}}" wx:for="{{accountTypes}}" wx:key="key" bindtap="setEditType" data-type="{{item.key}}">
+              <text>{{item.icon}} {{item.name}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="modal-row">
+          <text class="modal-label">初始余额</text>
+          <view class="initial-row">
+            <text class="initial-sign">¥</text>
+            <input class="modal-input-inline" type="digit" value="{{editInitial}}" placeholder="0.00" bindinput="onEditInitial" />
+          </view>
+        </view>
+        <view class="modal-actions-modal">
+          <view class="btn-primary" bindtap="saveAccount">保存</view>
+          <view class="btn-danger-outline" wx:if="{{editingId}}" bindtap="removeAccount" data-id="{{editingId}}">删除此账户</view>
+          <view class="btn-ghost" bindtap="closeManage">取消</view>
+        </view>
+        <view class="manage-hint">信用卡等负债账户可填负数初始余额，如 -3000</view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 悬浮按钮 -->
+  <view class="fab" bindtap="goEdit">＋</view>
+</view>

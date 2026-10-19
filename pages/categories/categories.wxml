@@ -1,0 +1,41 @@
+<view class="page">
+  <!-- 类型切换 -->
+  <view class="type-bar">
+    <view class="type-item {{type === 'expense' ? 'type-active' : ''}}" bindtap="setType" data-type="expense">支出分类</view>
+    <view class="type-item {{type === 'income' ? 'type-active' : ''}}" bindtap="setType" data-type="income">收入分类</view>
+  </view>
+
+  <!-- 分类列表 -->
+  <view class="card">
+    <view class="cat-row" wx:for="{{categories}}" wx:key="key">
+      <view class="cat-icon-big">{{item.icon}}</view>
+      <input class="cat-name-input" value="{{item.name}}" maxlength="8" data-key="{{item.key}}" bindfocus="onEditFocus" bindblur="onEditBlur" />
+      <view class="cat-ops">
+        <text class="cat-op {{index === 0 ? 'cat-op-disabled' : ''}}" catchtap="moveUp" data-key="{{item.key}}" wx:if="{{index > 0}}">↑</text>
+        <text class="cat-op cat-op-del" catchtap="removeCat" data-key="{{item.key}}" data-name="{{item.name}}">停用</text>
+      </view>
+    </view>
+    <view class="cat-add-row" bindtap="openAdd">＋ 添加分类</view>
+  </view>
+
+  <view class="card notice-card">
+    <view class="notice-text">自定义分类仅对本账本生效，共享账本的好友也会同步使用；停用的分类不再出现在记账选择器，已记的历史记录不受影响。</view>
+  </view>
+
+  <view class="restore-link" bindtap="restoreDefaults">恢复内置分类</view>
+
+  <!-- 添加弹层 -->
+  <view class="modal-mask" wx:if="{{showAdd}}">
+    <view class="modal">
+      <view class="modal-title">添加分类</view>
+      <input class="modal-input" value="{{newName}}" placeholder="分类名称，最多 8 字" maxlength="8" bindinput="onNewName" />
+      <view class="icon-pool">
+        <view class="icon-cell {{newIcon === item ? 'icon-active' : ''}}" wx:for="{{iconPool}}" wx:key="*this" bindtap="pickIcon" data-icon="{{item}}">{{item}}</view>
+      </view>
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closeAdd">取消</view>
+        <view class="btn-primary" bindtap="saveNew">添加</view>
+      </view>
+    </view>
+  </view>
+</view>

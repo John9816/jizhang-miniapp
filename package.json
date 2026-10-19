@@ -1,0 +1,13 @@
+{
+  "name": "jizhang-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "日常收支记账微信小程序（本地模式 + 自部署云端同步）",
+  "scripts": {
+    "test": "node tests/util.test.js && node tests/cloud.test.js && node tests/server.test.js",
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

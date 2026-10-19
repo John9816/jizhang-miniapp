@@ -1,0 +1,123 @@
+<view class="page">
+  <!-- 周期切换 -->
+  <view class="period-bar">
+    <view class="period-item {{period === 'week' ? 'period-active' : ''}}" bindtap="setPeriod" data-period="week">周</view>
+    <view class="period-item {{period === 'month' ? 'period-active' : ''}}" bindtap="setPeriod" data-period="month">月</view>
+    <view class="period-item {{period === 'year' ? 'period-active' : ''}}" bindtap="setPeriod" data-period="year">年</view>
+    <view class="period-item {{period === 'custom' ? 'period-active' : ''}}" bindtap="setPeriod" data-period="custom">自定义</view>
+    <view class="period-nav" wx:if="{{period !== 'custom'}}">
+      <text class="period-nav-btn" bindtap="prevPeriod">‹</text>
+      <text class="period-nav-btn" bindtap="nextPeriod">›</text>
+    </view>
+  </view>
+  <view class="period-label">{{periodLabel}}</view>
+
+  <!-- 自定义日期 -->
+  <view class="card custom-card" wx:if="{{showCustom}}">
+    <picker mode="date" value="{{customStart}}" start="2020-01-01" end="2035-12-31" onchange="onCustomStart">
+      <view class="form-row">
+        <text class="form-label">开始</text>
+        <text class="form-value">{{customStart || '选择日期'}}</text>
+      </view>
+    </picker>
+    <picker mode="date" value="{{customEnd}}" start="2020-01-01" end="2035-12-31" onchange="onCustomEnd">
+      <view class="form-row">
+        <text class="form-label">结束</text>
+        <text class="form-value">{{customEnd || '选择日期'}}</text>
+      </view>
+    </picker>
+    <view class="btn-primary custom-apply" bindtap="applyCustom">查看区间统计</view>
+  </view>
+
+  <!-- 汇总 -->
+  <view class="card summary-card">
+    <view class="sum-col">
+      <text class="sum-label">收入</text>
+      <text class="sum-value text-income">¥{{summary.incomeText}}</text>
+      <text class="sum-mom" wx:if="{{mom.incomePct !== 0}}">环比 {{mom.incomePct > 0 ? '+' : ''}}{{mom.incomePct}}%</text>
+    </view>
+    <view class="sum-divider"></view>
+    <view class="sum-col">
+      <text class="sum-label">支出</text>
+      <text class="sum-value text-expense">¥{{summary.expenseText}}</text>
+      <text class="sum-mom" wx:if="{{mom.expensePct !== 0}}">环比 {{mom.expensePct > 0 ? '+' : ''}}{{mom.expensePct}}%</text>
+    </view>
+    <view class="sum-divider"></view>
+    <view class="sum-col">
+      <text class="sum-label">结余</text>
+      <text class="sum-value sum-balance">¥{{summary.balanceText}}</text>
+      <text class="sum-mom"> </text>
+    </view>
+  </view>
+
+  <!-- 饼图：分类占比 -->
+  <view class="card" wx:if="{{hasData}}">
+    <view class="card-head">
+      <text class="section-title">分类占比</text>
+      <view class="pie-switch">
+        <text class="pie-switch-item {{pieType === 'expense' ? 'pie-active' : ''}}" bindtap="setPieType" data-type="expense">支出</text>
+        <text class="pie-switch-item {{pieType === 'income' ? 'pie-active' : ''}}" bindtap="setPieType" data-type="income">收入</text>
+      </view>
+    </view>
+    <view class="pie-wrap">
+      <canvas type="2d" id="pieCanvas" class="pie-canvas"></canvas>
+      <view class="pie-center">
+        <text class="pie-center-label">{{pieType === 'expense' ? '总支出' : '总收入'}}</text>
+        <text class="pie-center-value">¥{{pieTotalText}}</text>
+      </view>
+    </view>
+    <view class="pie-legend">
+      <view class="legend-row" wx:for="{{pieItems}}" wx:key="key">
+        <view class="legend-dot" style="background: {{item.color}}"></view>
+        <text class="legend-name">{{item.icon}} {{item.name}}</text>
+        <text class="legend-pct">{{item.pct}}%</text>
+        <text class="legend-amount" wx:if="{{item.amountText}}">¥{{item.amountText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类排行 -->
+  <view class="card" wx:if="{{hasData && catRank.length > 0}}">
+    <view class="section-title">分类排行（{{pieType === 'expense' ? '支出' : '收入'}}）</view>
+    <view class="rank-row" wx:for="{{catRank}}" wx:key="key">
+      <text class="rank-index {{index < 3 ? 'rank-top' : ''}}">{{index + 1}}</text>
+      <text class="rank-name">{{item.icon}} {{item.name}}</text>
+      <view class="rank-bar">
+        <view class="rank-bar-inner" style="width: {{item.pct}}%"></view>
+      </view>
+      <view class="rank-right">
+        <text class="rank-amount">¥{{item.amountText}}</text>
+        <text class="rank-count">{{item.count}} 笔 · {{item.pct}}%</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 趋势折线图 -->
+  <view class="card" wx:if="{{hasData}}">
+    <view class="section-title">收支趋势</view>
+    <view class="trend-legend">
+      <text class="trend-legend-item"><text class="trend-line trend-expense"></text>支出</text>
+      <text class="trend-legend-item"><text class="trend-line trend-income"></text>收入</text>
+    </view>
+    <canvas type="2d" id="lineCanvas" class="chart-canvas"></canvas>
+  </view>
+
+  <!-- 月度对比柱状图 -->
+  <view class="card" wx:if="{{hasData}}">
+    <view class="section-title">近 12 个月支出</view>
+    <canvas type="2d" id="barCanvas" class="chart-canvas"></canvas>
+  </view>
+
+  <!-- 年度海报 -->
+  <view class="card" wx:if="{{hasData}}">
+    <view class="section-title">年度账单</view>
+    <view class="poster-tip">生成今年年度海报，可保存到相册或微信分享</view>
+    <view class="btn-primary poster-btn" bindtap="makePoster">生成年度海报</view>
+    <canvas type="2d" id="posterCanvas" class="poster-canvas" wx:if="{{posterShow}}"></canvas>
+  </view>
+
+  <view class="empty" wx:if="{{!hasData}}">
+    <text class="empty-icon">📊</text>
+    <text class="empty-text">本周期暂无数据，换个周期或先记几笔</text>
+  </view>
+</view>

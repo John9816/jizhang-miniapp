@@ -1,0 +1,128 @@
+<view class="page">
+  <!-- 当前账本 -->
+  <view class="card current-card" wx:if="{{ledger}}">
+    <view class="current-head">
+      <view class="current-icon">📒</view>
+      <view class="current-info">
+        <text class="current-name">{{ledger.name}}</text>
+        <text class="current-sub">{{memberCount}} 位成员 · {{stats.count}} 条记录</text>
+      </view>
+    </view>
+    <view class="current-stats">
+      <view class="stat-col">
+        <text class="stat-label">累计收入</text>
+        <text class="stat-value text-income">¥{{stats.incomeText}}</text>
+      </view>
+      <view class="stat-col">
+        <text class="stat-label">累计支出</text>
+        <text class="stat-value text-expense">¥{{stats.expenseText}}</text>
+      </view>
+      <view class="stat-col">
+        <text class="stat-label">结余</text>
+        <text class="stat-value">¥{{stats.balanceText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 共享账本 -->
+  <view class="card">
+    <view class="section-title">共享账本</view>
+    <block wx:if="{{cloud}}">
+      <view class="share-actions">
+        <view class="share-btn btn-primary" bindtap="copyInvite">复制邀请码</view>
+        <view class="share-btn btn-ghost" bindtap="openImport">输入邀请码</view>
+      </view>
+      <view class="share-tip">
+        <text class="share-tip-line">1. 点「复制邀请码」，通过微信发给好友；</text>
+        <text class="share-tip-line">2. 好友打开本小程序 → 账本 → 输入邀请码即可加入；</text>
+        <text class="share-tip-line">3. 加入后双方记录实时同步，账目自动合并；</text>
+        <text class="share-tip-line">4. 当前邀请码：{{inviteCode || '首次同步后生成'}}</text>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="share-actions">
+        <view class="share-btn btn-primary" bindtap="copySharePackage">复制分享包</view>
+        <view class="share-btn btn-ghost" bindtap="openImport">加入账本</view>
+      </view>
+      <view class="share-tip">
+        <text class="share-tip-line">1. 点「复制分享包」，通过微信等发送给好友；</text>
+        <text class="share-tip-line">2. 好友打开本小程序 → 账本 → 加入账本 → 粘贴分享包；</text>
+        <text class="share-tip-line">3. 双方即可看到同一份账本，记录会标注是谁记的；</text>
+        <text class="share-tip-line">4. 各自记录的条目先保存在自己手机上，下次复制分享包即可互相同步。</text>
+      </view>
+    </block>
+    <button class="wx-share-btn" open-type="share">把小程序分享给微信好友</button>
+    <view class="export-row" bindtap="exportCSV">
+      <text class="export-icon">📤</text>
+      <view class="export-main">
+        <text class="export-title">导出账本 CSV</text>
+        <text class="export-sub">复制全部记录，可粘贴到 Excel / 手机表格</text>
+      </view>
+      <text class="export-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 我的账本 -->
+  <view class="card">
+    <view class="list-head">
+      <text class="section-title" style="margin-bottom: 0;">我的账本</text>
+      <view class="create-link" bindtap="openCreate">＋ 新建</view>
+    </view>
+    <view class="ledger-row" wx:for="{{ledgers}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
+      <view class="ledger-radio {{item.isCurrent ? 'radio-on' : ''}}"></view>
+      <view class="ledger-row-info">
+        <text class="ledger-row-name">{{item.name}}</text>
+        <text class="ledger-row-sub">{{item.memberCount}} 位成员</text>
+      </view>
+      <view class="ledger-row-ops">
+        <text class="op-link" catchtap="openRename" data-id="{{item.id}}" data-name="{{item.name}}">重命名</text>
+        <text class="op-link op-danger" catchtap="deleteLedger" data-id="{{item.id}}" data-name="{{item.name}}">删除</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 模式说明 -->
+  <view class="card notice-card">
+    <view class="notice-title">{{cloud ? '☁️ 云端账本已开启' : '📱 当前为本地存储模式'}}</view>
+    <view class="notice-text">{{cloud ? '记录实时同步到你自己的服务器，更换设备后重新进入小程序即可恢复全部账目。' : '数据保存在本机，卸载小程序或更换设备前请先复制分享包备份。需要多人实时同步时，可以在后续升级为云端账本。'}}</view>
+  </view>
+
+  <!-- 新建账本弹层 -->
+  <view class="modal-mask" wx:if="{{showCreate}}">
+    <view class="modal">
+      <view class="modal-title">新建账本</view>
+      <input class="modal-input" value="{{newName}}" placeholder="例如：家庭账本、旅行基金" maxlength="20" bindinput="onNewNameInput" />
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closeCreate">取消</view>
+        <view class="btn-primary" bindtap="confirmCreate">创建</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加入账本弹层 -->
+  <view class="modal-mask" wx:if="{{showImport}}">
+    <view class="modal">
+      <view class="modal-title">加入账本</view>
+      <view class="modal-sub" wx:if="{{cloud}}">输入好友的邀请码，实时共享同一份账本</view>
+      <view class="modal-sub" wx:else>粘贴好友发送的分享包，合并他账本里的全部记录</view>
+      <textarea class="modal-textarea" value="{{importText}}" placeholder="{{cloud ? '输入 8 位邀请码' : '在此粘贴分享包（JZ1. 开头的一长串字符）'}}" bindinput="onImportInput" />
+      <view class="paste-link" wx:if="{{!cloud}}" bindtap="pasteImport">从剪贴板粘贴</view>
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closeImport">取消</view>
+        <view class="btn-primary" bindtap="confirmImport">{{cloud ? '加入' : '导入'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 重命名弹层 -->
+  <view class="modal-mask" wx:if="{{showRename}}">
+    <view class="modal">
+      <view class="modal-title">重命名账本</view>
+      <input class="modal-input" value="{{renameText}}" placeholder="账本名称" maxlength="20" bindinput="onRenameInput" />
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closeRename">取消</view>
+        <view class="btn-primary" bindtap="confirmRename">保存</view>
+      </view>
+    </view>
+  </view>
+</view>

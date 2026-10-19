@@ -1,0 +1,172 @@
+.net-card {
+  margin: 24rpx;
+  padding: 40rpx 32rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  color: #FFFFFF;
+}
+
+.net-positive {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+}
+
+.net-negative {
+  background: linear-gradient(135deg, #B91C1C, #DC2626);
+}
+
+.net-label {
+  font-size: 24rpx;
+  opacity: 0.85;
+}
+
+.net-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  padding: 12rpx 0 24rpx;
+}
+
+.net-sign {
+  font-size: 32rpx;
+  opacity: 0.9;
+}
+
+.net-value {
+  font-size: 56rpx;
+  font-weight: 700;
+}
+
+.net-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.net-btn {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 26rpx;
+}
+
+/* 账户列表 */
+.acc-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+}
+
+.acc-row:last-child {
+  border-bottom: none;
+}
+
+.acc-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  background: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: 20rpx;
+}
+
+.acc-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.acc-name {
+  font-size: 28rpx;
+  color: #1F2937;
+  font-weight: 500;
+}
+
+.acc-type {
+  font-size: 20rpx;
+  color: #9CA3AF;
+}
+
+.acc-balance {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+/* 管理弹层 */
+.modal-scroll {
+  max-height: 70vh;
+}
+
+.modal-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 0;
+}
+
+.modal-label {
+  width: 128rpx;
+  font-size: 26rpx;
+  color: #6B7280;
+}
+
+.modal-input-inline {
+  flex: 1;
+  font-size: 28rpx;
+  color: #1F2937;
+  border-bottom: 1rpx solid #E5E7EB;
+  padding: 8rpx 0;
+}
+
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  flex: 1;
+}
+
+.initial-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.initial-sign {
+  font-size: 28rpx;
+  color: #1F2937;
+}
+
+.modal-actions-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-top: 24rpx;
+}
+
+.modal-actions-modal .btn-primary,
+.modal-actions-modal .btn-danger-outline,
+.modal-actions-modal .btn-ghost {
+  margin: 0;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: 16rpx;
+}
+
+.btn-danger-outline {
+  color: #F04646;
+  border: 1rpx solid #F04646;
+}
+
+.manage-hint {
+  font-size: 20rpx;
+  color: #9CA3AF;
+  text-align: center;
+  padding: 16rpx 0 8rpx;
+}

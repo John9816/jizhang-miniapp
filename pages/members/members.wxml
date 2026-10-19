@@ -1,0 +1,55 @@
+<view class="page">
+  <!-- 我的身份 -->
+  <view class="card me-card">
+    <view class="me-row">
+      <view class="avatar avatar-me">{{me.avatarChar}}</view>
+      <view class="me-info">
+        <text class="me-name">{{me.name || '我'}}</text>
+        <text class="me-sub">我记的账会带上这个昵称</text>
+      </view>
+      <view class="edit-link" bindtap="openNickname">修改</view>
+    </view>
+  </view>
+
+  <!-- 成员列表（累计） -->
+  <view class="card">
+    <view class="section-title">成员记账情况（累计）</view>
+    <view class="member-row" wx:for="{{members}}" wx:key="id">
+      <view class="avatar">{{item.avatarChar}}</view>
+      <view class="member-info">
+        <view class="member-name">
+          <text>{{item.name}}</text>
+          <text class="me-tag" wx:if="{{item.id === me.id}}">我</text>
+          <text class="owner-tag" wx:if="{{ledger.ownerId === item.id}}">创建者</text>
+        </view>
+        <text class="member-sub">{{item.count}} 条记录</text>
+      </view>
+      <view class="member-amounts">
+        <text class="text-income" wx:if="{{item.income > 0}}">+{{item.incomeText}}</text>
+        <text class="text-expense" wx:if="{{item.expense > 0}}">-{{item.expenseText}}</text>
+      </view>
+    </view>
+    <view class="empty-members" wx:if="{{members.length === 0}}">
+      <text class="muted">暂无成员</text>
+    </view>
+  </view>
+
+  <!-- 退出账本 -->
+  <view class="card">
+    <view class="leave-btn btn-danger" bindtap="leaveLedger">退出当前账本</view>
+    <view class="leave-tip">退出仅删除本机副本，不影响其他成员</view>
+  </view>
+
+  <!-- 修改昵称弹层 -->
+  <view class="modal-mask" wx:if="{{showNickname}}">
+    <view class="modal">
+      <view class="modal-title">修改昵称</view>
+      <view class="modal-sub">共享账本里的记录来源会同步更新</view>
+      <input class="modal-input" value="{{nicknameInput}}" placeholder="你的昵称" maxlength="12" bindinput="onNicknameInput" />
+      <view class="modal-actions">
+        <view class="btn-ghost" bindtap="closeNickname">取消</view>
+        <view class="btn-primary" bindtap="confirmNickname">保存</view>
+      </view>
+    </view>
+  </view>
+</view>

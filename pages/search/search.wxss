@@ -1,0 +1,112 @@
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+}
+
+.search-input {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 999rpx;
+  padding: 18rpx 32rpx;
+  font-size: 26rpx;
+}
+
+.search-btn {
+  padding: 16rpx 36rpx;
+  border-radius: 999rpx;
+  background: #4F46E5;
+  color: #FFFFFF;
+  font-size: 26rpx;
+}
+
+.filter-card {
+  margin: 0 24rpx;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+}
+
+.filter-row:last-child {
+  border-bottom: none;
+}
+
+.filter-label {
+  width: 64rpx;
+  font-size: 24rpx;
+  color: #6B7280;
+  flex-shrink: 0;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 12rpx;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.fchip {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: #F3F4F6;
+  color: #4B5563;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
+.fchip-active {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+
+.fchip-input {
+  width: 140rpx;
+  text-align: center;
+  background: #F3F4F6;
+}
+
+.filter-sep {
+  font-size: 24rpx;
+  color: #9CA3AF;
+}
+
+.filter-reset {
+  margin-left: auto;
+  font-size: 24rpx;
+  color: #9CA3AF;
+}
+
+.result-summary {
+  display: flex;
+  margin: 16rpx 24rpx 0;
+  padding: 24rpx;
+}
+
+.result-summary .sum-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.result-summary .sum-label {
+  font-size: 22rpx;
+  color: #6B7280;
+}
+
+.result-summary .sum-value {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.result-summary .sum-divider {
+  width: 1rpx;
+  background: #E5E7EB;
+}

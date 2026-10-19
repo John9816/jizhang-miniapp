@@ -1,0 +1,19 @@
+[Unit]
+Description=jizhang-api (记账本小程序后端)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jizhang
+Group=jizhang
+WorkingDirectory=/opt/jizhang-api
+EnvironmentFile=/opt/jizhang-api/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+StandardOutput=append:/opt/jizhang-api/data/server.log
+StandardError=append:/opt/jizhang-api/data/server.log
+
+[Install]
+WantedBy=multi-user.target

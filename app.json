@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/edit/edit",
+    "pages/ledger/ledger",
+    "pages/members/members",
+    "pages/stats/stats",
+    "pages/budget/budget",
+    "pages/search/search",
+    "pages/assets/assets",
+    "pages/categories/categories",
+    "pages/recurring/recurring"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#F6F7F9",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "记账本",
+    "backgroundColor": "#F6F7F9",
+    "backgroundTextStyle": "dark"
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

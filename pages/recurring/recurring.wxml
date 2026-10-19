@@ -1,0 +1,84 @@
+<view class="page">
+  <!-- 规则列表 -->
+  <block wx:if="{{rules.length > 0}}">
+    <view class="card rule-card" wx:for="{{rules}}" wx:key="id">
+      <view class="rule-head">
+        <view class="rule-icon {{item.type === 'income' ? 'rule-income' : 'rule-expense'}}">{{item.categoryIcon}}</view>
+        <view class="rule-main">
+          <text class="rule-name">{{item.name || item.categoryName}}</text>
+          <text class="rule-meta">{{item.cycleName}} · {{item.categoryName}} · 下次 {{item.nextDate}}</text>
+        </view>
+        <view class="rule-amount">
+          <text class="{{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.type === 'income' ? '+' : '-'}}¥{{item.amountText}}</text>
+        </view>
+      </view>
+      <view class="rule-ops">
+        <view class="rule-op {{item.paused ? 'rule-op-paused' : ''}}" catchtap="toggleRule" data-id="{{item.id}}">{{item.paused ? '已暂停' : '进行中'}}</view>
+        <view class="rule-op" catchtap="runNow" data-id="{{item.id}}">立即记一笔</view>
+        <view class="rule-op rule-op-del" catchtap="removeRule" data-id="{{item.id}}" data-name="{{item.name}}">删除</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty" wx:else>
+    <text class="empty-icon">🔁</text>
+    <text class="empty-text">还没有周期记账规则。工资、房租、会员续费这类固定收支，设置一次就会自动入账</text>
+    <view class="btn-primary empty-btn" bindtap="openAdd">添加规则</view>
+  </view>
+
+  <view class="add-btn" bindtap="openAdd" wx:if="{{rules.length > 0}}">＋ 添加周期规则</view>
+
+  <view class="card notice-card">
+    <view class="notice-text">到期后，在账本首页打开时会自动记账（每台设备各自执行也不会重复，记录按规则 ID 去重）。暂停后不再自动记账。</view>
+  </view>
+
+  <!-- 添加弹层 -->
+  <view class="modal-mask" wx:if="{{showAdd}}">
+    <view class="modal">
+      <scroll-view scroll-y class="modal-scroll">
+        <view class="modal-title">添加周期记账</view>
+        <view class="form-label">类型</view>
+        <view class="form-types">
+          <view class="form-type {{formType === 'expense' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="expense">支出</view>
+          <view class="form-type {{formType === 'income' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="income">收入</view>
+        </view>
+        <view class="form-label">名称</view>
+        <input class="modal-input" value="{{formName}}" placeholder="如：房租 / 工资 / 视频会员" maxlength="20" bindinput="onFormName" />
+        <view class="form-label">金额</view>
+        <view class="amount-row-modal">
+          <text class="amount-sign">¥</text>
+          <input class="modal-input-inline" type="digit" value="{{formAmount}}" placeholder="0.00" bindinput="onFormAmount" />
+        </view>
+        <view class="form-label">分类</view>
+        <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+          <view class="cat-chip {{formCategory === item.key ? 'cat-chip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setFormCategory" data-key="{{item.key}}">
+            <text>{{item.icon}} {{item.name}}</text>
+          </view>
+        </scroll-view>
+        <view class="form-label">账户（选填）</view>
+        <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+          <view class="cat-chip {{formAccount === '' ? 'cat-chip-active' : ''}}" bindtap="setFormAccount" data-id="">
+            <text>不计</text>
+          </view>
+          <view class="cat-chip {{formAccount === item.id ? 'cat-chip-active' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setFormAccount" data-id="{{item.id}}">
+            <text>{{item.icon || '💳'}} {{item.name}}</text>
+          </view>
+        </scroll-view>
+        <view class="form-label">周期</view>
+        <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+          <view class="cat-chip {{formCycle === item.key ? 'cat-chip-active' : ''}}" wx:for="{{cycles}}" wx:key="key" bindtap="setFormCycle" data-key="{{item.key}}">
+            <text>{{item.name}}</text>
+          </view>
+        </scroll-view>
+        <view class="form-label">下次执行日</view>
+        <picker mode="date" value="{{formDate}}" start="2020-01-01" end="2035-12-31" onchange="onFormDate">
+          <view class="form-value">{{formDate}}</view>
+        </picker>
+        <view class="modal-actions-modal">
+          <view class="btn-primary" bindtap="saveRule">保存规则</view>
+          <view class="btn-ghost" bindtap="closeAdd">取消</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

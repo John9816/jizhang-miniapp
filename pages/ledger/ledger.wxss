@@ -1,0 +1,251 @@
+.page {
+  padding: 16rpx 0 60rpx;
+  box-sizing: border-box;
+}
+
+/* 当前账本 */
+.current-card {
+  padding: 32rpx 28rpx;
+}
+
+.current-head {
+  display: flex;
+  align-items: center;
+}
+
+.current-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 20rpx;
+  background: #FFF1F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  margin-right: 20rpx;
+}
+
+.current-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.current-name {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.current-sub {
+  display: block;
+  font-size: 22rpx;
+  color: #9CA3AF;
+  margin-top: 6rpx;
+}
+
+.current-stats {
+  display: flex;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #F3F4F6;
+}
+
+.stat-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: #9CA3AF;
+}
+
+.stat-value {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1F2937;
+  margin-top: 8rpx;
+}
+
+/* 共享 */
+.share-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.share-btn {
+  flex: 1;
+  padding: 22rpx 0;
+  font-size: 28rpx;
+}
+
+.share-tip {
+  margin-top: 24rpx;
+  background: #F6F7F9;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+}
+
+.share-tip-line {
+  display: block;
+  font-size: 22rpx;
+  color: #6B7280;
+  line-height: 1.9;
+}
+
+.wx-share-btn {
+  margin-top: 24rpx;
+  background: #F3F4F6;
+  color: #374151;
+  font-size: 26rpx;
+  border-radius: 16rpx;
+  padding: 18rpx 0;
+  line-height: 1.6;
+}
+
+.wx-share-btn::after {
+  border: none;
+}
+
+/* 账本列表 */
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.create-link {
+  font-size: 26rpx;
+  color: #F04646;
+  font-weight: 600;
+}
+
+.ledger-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #F6F7F9;
+}
+
+.ledger-row:last-child {
+  border-bottom: none;
+}
+
+.ledger-radio {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid #D1D5DB;
+  margin-right: 20rpx;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.radio-on {
+  border-color: #F04646;
+  background: #F04646;
+  box-shadow: inset 0 0 0 6rpx #FFFFFF;
+}
+
+.ledger-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ledger-row-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.ledger-row-sub {
+  display: block;
+  font-size: 20rpx;
+  color: #9CA3AF;
+  margin-top: 4rpx;
+}
+
+.ledger-row-ops {
+  display: flex;
+  gap: 24rpx;
+}
+
+.op-link {
+  font-size: 24rpx;
+  color: #6B7280;
+  padding: 8rpx 4rpx;
+}
+
+.op-danger {
+  color: #F04646;
+}
+
+/* 本地模式说明 */
+.notice-card {
+  background: #FFFBEB;
+  box-shadow: none;
+}
+
+.notice-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #B45309;
+}
+
+.notice-text {
+  font-size: 22rpx;
+  color: #92400E;
+  line-height: 1.7;
+  margin-top: 10rpx;
+}
+
+.paste-link {
+  text-align: center;
+  font-size: 24rpx;
+  color: #F04646;
+  margin-top: 16rpx;
+  padding: 8rpx 0;
+}
+
+/* CSV 导出入口 */
+.export-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  background: #F9FAFB;
+  border: 1rpx solid #F3F4F6;
+}
+
+.export-icon {
+  font-size: 36rpx;
+}
+
+.export-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.export-title {
+  font-size: 26rpx;
+  color: #1F2937;
+  font-weight: 500;
+}
+
+.export-sub {
+  font-size: 20rpx;
+  color: #9CA3AF;
+}
+
+.export-arrow {
+  font-size: 30rpx;
+  color: #D1D5DB;
+}

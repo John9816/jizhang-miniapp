@@ -1,0 +1,37 @@
+# ---- 密钥与本地配置 ----
+.env
+.env.*
+!.env.example
+config.local.js
+*.local.js
+
+# ---- 数据文件（含线上数据库备份，绝不入库） ----
+server/data/
+data/
+jizhang-data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# ---- 依赖与构建产物 ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+miniprogram_npm/
+
+# ---- 测试产生的临时文件 ----
+tmp/
+*.tmp
+
+# ---- 系统与编辑器 ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- 日志 ----
+*.log
+logs/

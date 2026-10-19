@@ -1,0 +1,100 @@
+<view class="page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" value="{{q}}" placeholder="搜索备注 / 分类 / 记录人" confirm-type="search" bindinput="onQInput" bindconfirm="doSearch" />
+    <view class="search-btn" bindtap="doSearch">搜索</view>
+  </view>
+
+  <!-- 筛选条件 -->
+  <view class="card filter-card">
+    <view class="filter-row">
+      <text class="filter-label">类型</text>
+      <view class="filter-chips">
+        <view class="fchip {{type === 'expense' ? 'fchip-active' : ''}}" bindtap="setType" data-type="expense">支出</view>
+        <view class="fchip {{type === 'income' ? 'fchip-active' : ''}}" bindtap="setType" data-type="income">收入</view>
+        <view class="fchip {{type === 'transfer' ? 'fchip-active' : ''}}" bindtap="setType" data-type="transfer">转账</view>
+      </view>
+    </view>
+    <view class="filter-row" wx:if="{{members.length > 1}}">
+      <text class="filter-label">成员</text>
+      <scroll-view scroll-x class="filter-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="fchip {{memberId === item.id ? 'fchip-active' : ''}}" wx:for="{{members}}" wx:key="id" bindtap="setMember" data-id="{{item.id}}">{{item.name}}</view>
+      </scroll-view>
+    </view>
+    <view class="filter-row">
+      <text class="filter-label">分类</text>
+      <scroll-view scroll-x class="filter-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="fchip {{category === item.key ? 'fchip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">{{item.icon}}{{item.name}}</view>
+      </scroll-view>
+    </view>
+    <view class="filter-row">
+      <text class="filter-label">日期</text>
+      <picker mode="date" value="{{start}}" start="2020-01-01" end="2035-12-31" onchange="onStartChange">
+        <view class="fchip">{{start || '开始'}}</view>
+      </picker>
+      <text class="filter-sep">至</text>
+      <picker mode="date" value="{{end}}" start="2020-01-01" end="2035-12-31" onchange="onEndChange">
+        <view class="fchip">{{end || '结束'}}</view>
+      </picker>
+    </view>
+    <view class="filter-row">
+      <text class="filter-label">金额</text>
+      <input class="fchip fchip-input" type="digit" value="{{minAmount}}" placeholder="最低" bindinput="onMinInput" />
+      <text class="filter-sep">-</text>
+      <input class="fchip fchip-input" type="digit" value="{{maxAmount}}" placeholder="最高" bindinput="onMaxInput" />
+      <view class="filter-reset" bindtap="resetFilters">重置</view>
+    </view>
+  </view>
+
+  <!-- 结果汇总 -->
+  <view class="card result-summary" wx:if="{{searched}}">
+    <view class="sum-col">
+      <text class="sum-label">找到</text>
+      <text class="sum-value">{{summary.count}} 笔</text>
+    </view>
+    <view class="sum-divider"></view>
+    <view class="sum-col">
+      <text class="sum-label">收入</text>
+      <text class="sum-value text-income">¥{{summary.incomeText}}</text>
+    </view>
+    <view class="sum-divider"></view>
+    <view class="sum-col">
+      <text class="sum-label">支出</text>
+      <text class="sum-value text-expense">¥{{summary.expenseText}}</text>
+    </view>
+  </view>
+
+  <!-- 结果列表 -->
+  <block wx:if="{{groups.length > 0}}">
+    <view class="card group-card" wx:for="{{groups}}" wx:key="date" wx:for-item="group">
+      <view class="group-head">
+        <text class="group-date">{{group.label}}</text>
+        <view class="group-sub">
+          <text class="text-income" wx:if="{{group.income > 0}}">收 ¥{{group.incomeText}}</text>
+          <text class="text-expense" wx:if="{{group.expense > 0}}">支 ¥{{group.expenseText}}</text>
+        </view>
+      </view>
+      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+        <view class="rec-icon">{{rec.icon}}</view>
+        <view class="rec-main">
+          <view class="rec-title">
+            <text>{{rec.categoryName}}</text>
+            <text class="rec-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
+          </view>
+          <text class="rec-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+        </view>
+        <view class="rec-amount {{rec.type === 'income' ? 'text-income' : 'text-expense'}}">{{rec.amountText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty" wx:elif="{{searched}}">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-text">没有匹配的记录，试试放宽条件</text>
+  </view>
+
+  <view class="empty" wx:elif="{{!searched}}">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-text">输入关键词或选择条件后点搜索</text>
+  </view>
+</view>

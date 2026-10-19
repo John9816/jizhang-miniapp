@@ -1,0 +1,183 @@
+.rule-card {
+  margin: 20rpx 24rpx 0;
+}
+
+.rule-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.rule-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  background: #F3F4F6;
+}
+
+.rule-expense { background: #FEF2F2; }
+.rule-income { background: #ECFDF5; }
+
+.rule-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 0;
+}
+
+.rule-name {
+  font-size: 28rpx;
+  color: #1F2937;
+  font-weight: 500;
+}
+
+.rule-meta {
+  font-size: 20rpx;
+  color: #9CA3AF;
+}
+
+.rule-amount {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.rule-ops {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F3F4F6;
+}
+
+.rule-op {
+  flex: 1;
+  text-align: center;
+  font-size: 24rpx;
+  color: #4F46E5;
+  padding: 12rpx 0;
+  border-radius: 12rpx;
+  background: #EEF2FF;
+}
+
+.rule-op-paused {
+  color: #9CA3AF;
+  background: #F3F4F6;
+}
+
+.rule-op-del {
+  color: #F04646;
+  background: #FEF2F2;
+}
+
+.add-btn {
+  margin: 24rpx;
+  padding: 22rpx 0;
+  text-align: center;
+  border-radius: 16rpx;
+  background: #4F46E5;
+  color: #FFFFFF;
+  font-size: 28rpx;
+}
+
+.notice-card {
+  margin: 24rpx 24rpx 60rpx;
+}
+
+.modal-scroll {
+  max-height: 78vh;
+}
+
+.form-label {
+  font-size: 24rpx;
+  color: #6B7280;
+  padding: 16rpx 0 8rpx;
+}
+
+.form-types {
+  display: flex;
+  gap: 16rpx;
+}
+
+.form-type {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 12rpx;
+  background: #F3F4F6;
+  color: #4B5563;
+  font-size: 26rpx;
+}
+
+.form-type-active {
+  background: #EEF2FF;
+  color: #4F46E5;
+  font-weight: 500;
+}
+
+.amount-row-modal {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.amount-sign {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-input-inline {
+  flex: 1;
+  font-size: 32rpx;
+  color: #111827;
+  border-bottom: 1rpx solid #E5E7EB;
+  padding: 8rpx 0;
+}
+
+.cat-chips {
+  display: flex;
+  gap: 12rpx;
+  white-space: nowrap;
+}
+
+.cat-chip {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: #F3F4F6;
+  color: #4B5563;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
+.cat-chip-active {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+
+.form-value {
+  font-size: 28rpx;
+  color: #1F2937;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #E5E7EB;
+}
+
+.modal-actions-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding-top: 24rpx;
+}
+
+.modal-actions-modal .btn-primary,
+.modal-actions-modal .btn-ghost {
+  margin: 0;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: 16rpx;
+}
