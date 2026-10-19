@@ -28,7 +28,12 @@ Page({
   onLoad(options) {
     var ledger = db.currentLedger()
     var ledgerId = ledger ? ledger.id : ''
-    this.setData({ ledgerId: ledgerId, accounts: this.normalizeAccounts(db.accountsOf(ledgerId)) })
+    // 新增时必须给日期一个初值，否则 picker 显示空白、保存前用户看不到记的是哪天
+    this.setData({
+      ledgerId: ledgerId,
+      accounts: this.normalizeAccounts(db.accountsOf(ledgerId)),
+      date: u.dateStr(new Date())
+    })
     if (options.id) {
       var rec = db.getRecord(options.id)
       if (rec) {

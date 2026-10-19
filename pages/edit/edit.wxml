@@ -2,7 +2,7 @@
   <!-- 收支类型 / 转账 -->
   <view class="type-bar">
     <view class="type-item {{mode === 'normal' && type === 'expense' ? 'type-active' : ''}}" bindtap="setMode" data-mode="normal" data-type="expense">支出</view>
-    <view class="type-item {{mode === 'normal' && type === 'income' ? 'type-active' : ''}}" bindtap="setType" data-type="income">收入</view>
+    <view class="type-item {{mode === 'normal' && type === 'income' ? 'type-active' : ''}}" bindtap="setMode" data-mode="normal" data-type="income">收入</view>
     <view class="type-item {{mode === 'transfer' ? 'type-active' : ''}}" bindtap="setMode" data-mode="transfer">转账</view>
   </view>
 
