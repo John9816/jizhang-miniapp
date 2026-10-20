@@ -1,0 +1,143 @@
+<view class="page rec-page">
+  <!-- 输入账单 -->
+  <view class="card">
+    <view class="card-head">
+      <text class="card-head-title">选择要对账的账单</text>
+      <text class="card-head-more" bindtap="explain">怎么对账？</text>
+    </view>
+
+    <view class="mode-tabs">
+      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode">选择文件</view>
+      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode">粘贴文本</view>
+    </view>
+
+    <view wx:if="{{mode === 'file'}}">
+      <view class="drop" bindtap="chooseFile">
+        <text class="drop-icon">🧾</text>
+        <text class="drop-title">点击选择账单文件</text>
+        <text class="drop-sub">{{sourceLabel || '微信支付 / 支付宝 CSV 均可'}}</text>
+      </view>
+    </view>
+    <view wx:else>
+      <textarea
+        class="raw"
+        value="{{rawText}}"
+        placeholder="粘贴账单 CSV 全文…"
+        maxlength="200000"
+        bindinput="onRawInput"
+      />
+      <view class="btn-primary parse-btn" bindtap="parsePasted">开始对账</view>
+    </view>
+  </view>
+
+  <!-- 空引导 -->
+  <view class="card" wx:if="{{!rec}}">
+    <view class="empty">
+      <text class="empty-icon">🧮</text>
+      <text class="empty-text">
+        当前账本共 {{localCount}} 笔收支记录。\n
+        选一份同一时间段的微信 / 支付宝账单，会自动比对出：\n
+        · 两边一致的流水（已匹配）\n
+        · 账单有、账本漏记的流水（可一键补记）\n
+        · 账本多出来、账单里没有的记录
+      </text>
+    </view>
+  </view>
+
+  <!-- 对账结果 -->
+  <block wx:if="{{rec}}">
+    <view class="card">
+      <view class="card-head">
+        <text class="card-head-title">对账结果</text>
+        <text class="badge badge-dark">{{sourceLabel}}</text>
+      </view>
+      <view class="sum-row">
+        <view class="sum-col">
+          <text class="sum-label">已匹配</text>
+          <text class="sum-value num rec-ok">{{rec.matched}}</text>
+        </view>
+        <view class="sum-divider"></view>
+        <view class="sum-col">
+          <text class="sum-label">账单有·账本无</text>
+          <text class="sum-value num rec-miss">{{rec.missing}}</text>
+        </view>
+        <view class="sum-divider"></view>
+        <view class="sum-col">
+          <text class="sum-label">账本多出</text>
+          <text class="sum-value num rec-extra">{{rec.extraCount}}</text>
+        </view>
+      </view>
+
+      <view class="rec-actions" wx:if="{{rec.missing > 0}}">
+        <view class="btn-primary act" bindtap="importMissing">一键补记 {{rec.missing}} 笔</view>
+      </view>
+      <view class="import-note" wx:if="{{importNote}}">{{importNote}}</view>
+    </view>
+
+    <!-- 缺失明细 -->
+    <view class="card" wx:if="{{rec.missingRows.length > 0}}">
+      <view class="card-head">
+        <text class="card-head-title rec-miss">账单有，账本没记（{{rec.missing}}）</text>
+      </view>
+      <view class="row" wx:for="{{rec.missingRows}}" wx:key="key">
+        <text class="row-date num">{{item.dateText}}</text>
+        <view class="row-main">
+          <view class="row-title-line">
+            <text class="row-tag rec-tag-miss">缺</text>
+            <text class="row-title">{{item.title}}</text>
+          </view>
+          <text class="row-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
+        </view>
+        <text class="row-amount num {{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.amountText}}</text>
+      </view>
+    </view>
+
+    <!-- 账本多出 -->
+    <view class="card" wx:if="{{rec.extraRows.length > 0}}">
+      <view class="card-head">
+        <text class="card-head-title rec-extra">账本多出的记录（{{rec.extraCount}}）</text>
+      </view>
+      <view class="row" wx:for="{{rec.extraRows}}" wx:key="id">
+        <text class="row-date num">{{item.dateText}}</text>
+        <view class="row-main">
+          <view class="row-title-line">
+            <text class="row-tag rec-tag-extra">多</text>
+            <text class="row-title">{{item.title}}</text>
+          </view>
+          <text class="row-sub">{{item.sub}}</text>
+        </view>
+        <text class="row-amount num {{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.amountText}}</text>
+      </view>
+    </view>
+
+    <!-- 已匹配 -->
+    <view class="card" wx:if="{{rec.matchedRows.length > 0}}">
+      <view class="card-head">
+        <text class="card-head-title rec-ok">两边一致（{{rec.matched}}）</text>
+        <text class="card-head-more" bindtap="exportCSV">导出对账 CSV</text>
+      </view>
+      <view class="row" wx:for="{{rec.matchedRows}}" wx:key="key">
+        <text class="row-date num">{{item.dateText}}</text>
+        <view class="row-main">
+          <view class="row-title-line">
+            <text class="row-tag rec-tag-ok">✓</text>
+            <text class="row-title">{{item.title}}</text>
+          </view>
+          <text class="row-sub" wx:if="{{item.localNote}}">账本备注：{{item.localNote}}</text>
+        </view>
+        <text class="row-amount num {{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.amountText}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 底部导出 -->
+  <view class="card" wx:if="{{localCount > 0}}">
+    <view class="set-row">
+      <view class="row-main">
+        <view class="row-title-line"><text class="set-label">导出对账 CSV</text></view>
+        <text class="row-sub">日期,摘要,收/支,金额,来源 —— 可直接发给表格软件</text>
+      </view>
+      <view class="btn-ghost act" bindtap="exportCSV">导出</view>
+    </view>
+  </view>
+</view>

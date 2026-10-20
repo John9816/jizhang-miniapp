@@ -41,10 +41,11 @@ function saveHidden() {
 
 function defaultDb() {
   return {
-    me: { id: u.genId('u'), name: '' },
+    me: { id: u.genId('u'), name: '', profile: { avatar: '', phone: '' } },
     ledgers: [],
     records: [],
-    currentLedgerId: ''
+    currentLedgerId: '',
+    imported: {}
   }
 }
 
@@ -102,7 +103,9 @@ function init() {
       for (var i = 0; i < arr.length; i++) hiddenIds[String(arr[i])] = true
     }
   } catch (e) {}
-  if (!db.me || !db.me.id) db.me = { id: u.genId('u'), name: '' }
+  if (!db.me || !db.me.id) db.me = { id: u.genId('u'), name: '', profile: { avatar: '', phone: '' } }
+  if (!db.me.profile || typeof db.me.profile !== 'object') db.me.profile = { avatar: (db.me.avatar || ''), phone: '' }
+  if (!db.imported || typeof db.imported !== 'object') db.imported = {}
   if (!Array.isArray(db.ledgers)) db.ledgers = []
   if (!Array.isArray(db.records)) db.records = []
   var li
@@ -117,6 +120,50 @@ function init() {
 function getMe() {
   ensure()
   return db.me
+}
+
+/** 本机资料（头像 / 手机号），随账本同步只在云端侧保留，本地为展示兜底 */
+function getProfile() {
+  ensure()
+  var p = db.me.profile || {}
+  return {
+    id: db.me.id,
+    name: db.me.name || '',
+    avatar: p.avatar || '',
+    phone: p.phone || ''
+  }
+}
+
+/**
+ * 合并云端下发的身份（login / sync 快照里的 me）。
+ * 昵称走 setMyName 的那套联动（成员名 + 记录人名快照），头像/手机号只更新本机。
+ */
+function applyCloudMe(me) {
+  ensure()
+  if (!me || typeof me !== 'object') return getProfile()
+  if (me.id && me.id !== db.me.id) replaceMyId(me.id)
+  if (me.name != null && String(me.name).trim()) setMyName(String(me.name))
+  db.me.profile = db.me.profile || { avatar: '', phone: '' }
+  if (me.avatar != null) {
+    var av = String(me.avatar || '')
+    db.me.profile.avatar = av.slice(0, 512)
+  }
+  if (me.phone != null) {
+    var ph = String(me.phone || '')
+    db.me.profile.phone = ph.slice(0, 20)
+  }
+  persist()
+  return getProfile()
+}
+
+/** 本地更新资料（授权头像昵称成功后立即写，云端推送由 cloud 层负责） */
+function setProfile(patch) {
+  ensure()
+  patch = patch || {}
+  if (patch.avatar !== undefined) db.me.profile.avatar = String(patch.avatar || '').slice(0, 512)
+  if (patch.phone !== undefined) db.me.profile.phone = String(patch.phone || '').slice(0, 20)
+  persist()
+  return getProfile()
 }
 
 /** 设置我的昵称：同步更新各账本成员表和我名下的记录快照 */
@@ -254,6 +301,14 @@ function addRecord(fields) {
     createdAt: now,
     updatedAt: now,
     dirty: true
+  }
+  // 外部账单导入来源（微信/支付宝流水），仅存本机，用于对账与去重
+  if (fields.external && fields.external.src) {
+    rec.external = {
+      src: String(fields.external.src).slice(0, 16),
+      txn: String(fields.external.txn || '').slice(0, 64),
+      party: String(fields.external.party || '').slice(0, 40)
+    }
   }
   if (type === 'transfer') {
     rec.accountId = String(fields.accountId || '')
@@ -596,7 +651,147 @@ function searchRecords(ledgerId, query) {
   return out
 }
 
+/* ---------------- 外部账单导入 / 对账 ---------------- */
+
+/** 生成一条外部流水的稳定键：有交易单号用单号，否则退化为 日期+金额+序号 */
+function txnKey(row) {
+  var src = String(row.src || '').slice(0, 16)
+  var txn = String(row.txn || '').trim()
+  if (txn) return src + '#' + txn
+  return src + '#' + String(row.date || '') + '#' + (Number(row.amount) || 0) + '#' + String(row.party || '').slice(0, 20)
+}
+
+/** 本机已入账的外部键集合（从记录快照反推，兼容换设备后首次对账） */
+function importedKeySet() {
+  ensure()
+  var keys = {}
+  var i
+  for (i = 0; i < db.records.length; i++) {
+    var r = db.records[i]
+    if (!r.deleted && r.external && r.external.src) keys[txnKey(r.external)] = true
+  }
+  // db.imported 是旧版冗余表，保留兼容
+  var saved = db.imported || {}
+  for (i = 0; i < Object.keys(saved).length; i++) {
+    var k = Object.keys(saved)[i]
+    keys[k] = true
+  }
+  return keys
+}
+
+/**
+ * 批量入账外部流水（按 txn 键去重）。
+ * opts: { category, accountId, note } —— 默认分类/账户/备注
+ * 返回 { added: [recordIds], skipped: Number, dupes: Number }
+ */
+function importRows(ledgerId, rows, opts) {
+  ensure()
+  if (!getLedger(ledgerId)) return { added: [], skipped: 0, dupes: 0 }
+  opts = opts || {}
+  var seen = importedKeySet()
+  var added = []
+  var dupes = 0
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i]
+    if (row.type !== 'expense' && row.type !== 'income') continue
+    var amount = Math.round(Number(row.amount))
+    if (!isFinite(amount) || amount <= 0) continue
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) continue
+    var key = txnKey(row)
+    if (seen[key]) { dupes++; continue }
+    var rec = addRecord({
+      ledgerId: ledgerId,
+      type: row.type,
+      amount: amount,
+      date: row.date,
+      category: opts.category || row.category || (row.type === 'income' ? 'salary' : 'food'),
+      accountId: opts.accountId || '',
+      note: row.note || (row.party || ''),
+      external: { src: row.src, txn: row.txn, party: row.party }
+    })
+    if (!rec) continue
+    seen[key] = true
+    added.push(rec.id)
+  }
+  return { added: added, skipped: rows.length - added.length, dupes: dupes }
+}
+
+/**
+ * 对账：把一段外部流水和本机记录比对。
+ * 返回 { rows: [...], matched, missing, extra } —— missing=流水里有但本机没有，extra=本机多出的。
+ */
+function reconcile(ledgerId, rows) {
+  ensure()
+  var recs = recordsOf(ledgerId).filter(function (r) {
+    return r.type === 'expense' || r.type === 'income'
+  })
+  // 本机按「日期+金额+方向」建索引，用于外部流水回查
+  var localIndex = {}
+  recs.forEach(function (r) {
+    var k = r.date + '|' + r.amount + '|' + r.type
+    if (!localIndex[k]) localIndex[k] = []
+    localIndex[k].push(r)
+  })
+  var usedIds = {}
+  var out = []
+  var matched = 0
+  var missing = 0
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i]
+    var amount = Math.round(Number(row.amount))
+    var key = (row.date || '') + '|' + amount + '|' + row.type
+    var cand = localIndex[key] || []
+    var hit = null
+    for (var j = 0; j < cand.length; j++) {
+      if (!usedIds[cand[j].id]) { hit = cand[j]; break }
+    }
+    var status = 'missing'
+    if (hit) { usedIds[hit.id] = true; status = 'matched'; matched++ }
+    else { missing++ }
+    out.push({
+      idx: i,
+      row: row,
+      amountText: (row.type === 'income' ? '+' : '-') + u.formatCents(amount),
+      status: status,
+      recordId: hit ? hit.id : '',
+      localNote: hit ? (hit.note || '') : '',
+      key: txnKey(row)
+    })
+  }
+  var extra = recs.filter(function (r) { return !usedIds[r.id] })
+  return { rows: out, matched: matched, missing: missing, extra: extra }
+}
+
 /* ---- 导出 ---- */
+
+/**
+ * 导出为「通用对账格式」：日期,摘要,收/支,金额,来源
+ * 与微信/支付宝导出的字段风格对齐，可直接在两边的账单管理里导入核对，
+ * 也能被本小程序的导入页反向解析。
+ */
+function exportReconcileCSV(ledgerId) {
+  ensure()
+  var l = getLedger(ledgerId)
+  if (!l) return ''
+  var recs = db.records
+    .filter(function (r) { return r.ledgerId === ledgerId && !r.deleted })
+    .filter(function (r) { return r.type === 'expense' || r.type === 'income' })
+  recs.sort(function (a, b) { return a.date < b.date ? 1 : -1 })
+  var lines = ['\ufeff交易时间,摘要,收/支,金额(元),来源']
+  for (var i = 0; i < recs.length; i++) {
+    var r = recs[i]
+    var src = r.external && r.external.src === 'alipay' ? '支付宝'
+      : (r.external && r.external.src === 'wechat' ? '微信账单' : '记账本')
+    lines.push([
+      r.date,
+      r.note || '',
+      r.type === 'income' ? '收入' : '支出',
+      (Math.abs(r.amount) / 100).toFixed(2),
+      src
+    ].map(u.csvCell).join(','))
+  }
+  return lines.join('\n')
+}
 
 function exportCSV(ledgerId) {
   ensure()
@@ -1043,6 +1238,9 @@ module.exports = {
   init: init,
   flush: persist,
   getMe: getMe,
+  getProfile: getProfile,
+  setProfile: setProfile,
+  applyCloudMe: applyCloudMe,
   setMyName: setMyName,
   createLedger: createLedger,
   getLedger: getLedger,
@@ -1077,6 +1275,11 @@ module.exports = {
   removeChallenge: removeChallenge,
   searchRecords: searchRecords,
   exportCSV: exportCSV,
+  exportReconcileCSV: exportReconcileCSV,
+  txnKey: txnKey,
+  importedKeySet: importedKeySet,
+  importRows: importRows,
+  reconcile: reconcile,
   sharePackage: sharePackage,
   importSharePackage: importSharePackage,
   onChange: onChange,

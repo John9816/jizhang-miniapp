@@ -29,7 +29,9 @@ Page({
     renameInput: '',
     showAbout: false,
     showHelp: false,
-    showVip: false
+    showVip: false,
+    showPhone: false,
+    phoneInput: ''
   },
 
   onLoad() {
@@ -52,7 +54,7 @@ Page({
   },
 
   refresh() {
-    var me = db.getMe()
+    var me = db.getProfile()
     var ledger = db.currentLedger()
     var patch = {
       me: me,
@@ -102,6 +104,14 @@ Page({
     wx.navigateTo({ url: '/pages/categories/categories' })
   },
 
+  goImport() {
+    wx.navigateTo({ url: '/pages/import/import' })
+  },
+
+  goReconcile() {
+    wx.navigateTo({ url: '/pages/reconcile/reconcile' })
+  },
+
   goAssets() {
     wx.navigateTo({ url: '/pages/assets/assets' })
   },
@@ -131,9 +141,110 @@ Page({
       return
     }
     db.setMyName(name)
+    cloud.updateProfile({ nickname: name })
     this.setData({ showRename: false })
     this.refresh()
     wx.showToast({ title: '已更新', icon: 'success' })
+  },
+
+  /* ---------------- 微信头像 / 昵称授权 ---------------- */
+
+  onChooseAvatar(e) {
+    var url = e.detail && e.detail.avatarUrl
+    if (!url) return
+    db.setProfile({ avatar: url })
+    // 云端地址只存微信 CDN 临时链接，下次冷启动前重新授权即可刷新
+    cloud.updateProfile({ avatar: url })
+    this.refresh()
+    wx.showToast({ title: '头像已更新', icon: 'success' })
+  },
+
+  onAvatarError() {
+    // 微信 CDN 临时链接过期：清掉失效头像，提示重新授权
+    if (this.data.me && this.data.me.avatar) {
+      db.setProfile({ avatar: '' })
+      this.refresh()
+      wx.showToast({ title: '头像已过期，请重新选择', icon: 'none' })
+    }
+  },
+
+  onNicknameBlur(e) {
+    var v = String((e.detail && e.detail.value) || '').trim()
+    if (!v || v === this.data.me.name) return
+    db.setMyName(v)
+    cloud.updateProfile({ nickname: v })
+    this.refresh()
+  },
+
+  /** 昵称输入框长按 → 手动改名（微信昵称授权失败时的兜底） */
+  onNicknameLongPress() {
+    this.openRename()
+  },
+
+  /* ---------------- 手机号绑定 ---------------- */
+
+  openPhone() {
+    this.setData({ showPhone: true, phoneInput: this.data.me.phone || '' })
+  },
+
+  closePhone() {
+    this.setData({ showPhone: false })
+  },
+
+  onPhoneInput(e) {
+    this.setData({ phoneInput: e.detail.value })
+  },
+
+  onGetPhoneNumber(e) {
+    var detail = e.detail || {}
+    var self = this
+    if (!detail.code) {
+      // 用户拒绝或基础库不支持 → 弹层里手动填写
+      wx.showToast({ title: '请改用下方手动填写', icon: 'none' })
+      return
+    }
+    if (!cloud.enabled()) {
+      wx.showToast({ title: '未开启云同步，请手动填写', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '绑定中' })
+    cloud.bindPhone(detail.code).then(function (res) {
+      wx.hideLoading()
+      if (res.ok) {
+        self.setData({ showPhone: false })
+        self.refresh()
+        wx.showToast({ title: '手机号已绑定', icon: 'success' })
+      } else {
+        // 个人主体无 getPhoneNumber 权限服务端会回 needManual
+        wx.showToast({ title: res.needManual ? '请在下方手动填写' : (res.error || '绑定失败'), icon: 'none' })
+      }
+    })
+  },
+
+  confirmPhone() {
+    var phone = this.data.phoneInput.trim()
+    if (!/^1\d{10}$/.test(phone)) {
+      wx.showToast({ title: '请填写 11 位手机号', icon: 'none' })
+      return
+    }
+    var self = this
+    if (!cloud.enabled()) {
+      // 未接入云同步：号码只落本机
+      db.setProfile({ phone: phone })
+      this.setData({ showPhone: false })
+      this.refresh()
+      wx.showToast({ title: '已保存到本机', icon: 'success' })
+      return
+    }
+    cloud.bindPhone('', phone).then(function (res) {
+      if (res.ok) {
+        self.setData({ showPhone: false })
+        self.refresh()
+        wx.showToast({ title: '手机号已绑定', icon: 'success' })
+      } else {
+        wx.showToast({ title: res.error || '保存失败', icon: 'none' })
+      }
+    })
   },
 
   toast(e) {

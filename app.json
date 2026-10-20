@@ -11,7 +11,9 @@
     "pages/assets/assets",
     "pages/categories/categories",
     "pages/recurring/recurring",
-    "pages/challenge/challenge"
+    "pages/challenge/challenge",
+    "pages/import/import",
+    "pages/reconcile/reconcile"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FAF5E8",

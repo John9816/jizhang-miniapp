@@ -49,7 +49,11 @@ function request(path, options) {
         if (res.statusCode >= 200 && res.statusCode < 300 && res.data && res.data.ok !== false) {
           resolve(res.data)
         } else {
-          reject(new Error((res.data && res.data.error) || ('HTTP ' + res.statusCode)))
+          // 把响应体挂到错误上，调用方才能拿到 needManual / errcode 等结构化信息
+          var err = new Error((res.data && res.data.error) || ('HTTP ' + res.statusCode))
+          err.data = res.data || {}
+          err.status = res.statusCode
+          reject(err)
         }
       },
       fail: function (err) {
@@ -80,7 +84,8 @@ function login() {
     }).then(function (res) {
       state.token = res.token
       state.since = ''
-      if (res.me && res.me.id) db.replaceMyId(res.me.id)
+      if (res.me) db.applyCloudMe(res.me)
+      else if (res.me === undefined && db.getMe().id) db.replaceMyId(db.getMe().id)
       return res
     }).catch(function (e) {
       state.token = ''
@@ -120,6 +125,11 @@ function mergeSnapshot(res) {
   var records = res.records || []
   for (i = 0; i < records.length; i++) {
     if (db.applyRemoteRecord(records[i])) changed = true
+  }
+  // 云端下发的身份（头像/手机号/昵称）
+  if (res.me) {
+    db.applyCloudMe(res.me)
+    changed = true
   }
   if (changed) db.flush()
 }
@@ -189,6 +199,65 @@ function onAppShow() {
   }
 }
 
+/* ---------------- 尝试 ---------------- */
+
+/** 更新我的资料（昵称 / 头像），同时写本机与云端 */
+function updateProfile(patch) {
+  patch = patch || {}
+  // 先固定本次要写入的值：login 会把服务端旧 me 合进来，不能让它覆盖掉待发送的内容
+  var nextName = patch.nickname ? String(patch.nickname).trim().slice(0, 12) : ''
+  var nextAvatar = patch.avatar !== undefined ? String(patch.avatar || '').slice(0, 512) : null
+  var prevAvatar = db.getProfile().avatar || ''
+  if (nextName) db.setMyName(nextName)
+  if (nextAvatar !== null) db.setProfile({ avatar: nextAvatar })
+  if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
+  var chain = state.token ? Promise.resolve() : login()
+  return chain.then(function () {
+    return request('/api/user/profile', {
+      method: 'POST',
+      data: {
+        nickname: nextName || db.getMe().name || '',
+        avatar: nextAvatar !== null ? nextAvatar : (db.getProfile().avatar || '')
+      }
+    })
+  }).then(function (res) {
+    if (res.me) db.applyCloudMe(res.me)
+    state.lastOkAt = Date.now()
+    return { ok: true }
+  }).catch(function (e) {
+    // 失败时回写本地值：login 合并可能已用服务端旧值覆盖了本次修改（以及未修改的头像）
+    if (nextName) db.setMyName(nextName)
+    if (nextAvatar !== null) db.setProfile({ avatar: nextAvatar })
+    else db.setProfile({ avatar: prevAvatar })
+    return { ok: false, error: (e && e.message) || '保存失败' }
+  })
+}
+
+/**
+ * 绑定手机号。优先用微信 getPhoneNumber 的 code；
+ * 个人主体通常没有该权限（后端返回 needManual），此时自动降级为手动填写。
+ */
+function bindPhone(code, manualPhone) {
+  if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
+  var chain = state.token ? Promise.resolve() : login()
+  return chain.then(function () {
+    return request('/api/user/phone', {
+      method: 'POST',
+      data: code ? { code: String(code) } : { phone: String(manualPhone || '') }
+    })
+  }).then(function (res) {
+    db.setProfile({ phone: res.phone || '' })
+    state.lastOkAt = Date.now()
+    return { ok: true, phone: res.phone || '' }
+  }).catch(function (e) {
+    // 个人主体无手机号权限：服务端 400 + needManual，让前端切手动填写
+    if (e && e.data && e.data.needManual) {
+      return { ok: false, needManual: true, error: e.data.error || '请手动填写手机号' }
+    }
+    return { ok: false, error: (e && e.message) || '绑定失败' }
+  })
+}
+
 /* ---------------- 邀请 / 加入 ---------------- */
 
 function currentInviteCode() {
@@ -238,6 +307,8 @@ module.exports = {
   kick: kick,
   sync: sync,
   joinLedger: joinLedger,
+  updateProfile: updateProfile,
+  bindPhone: bindPhone,
   currentInviteCode: currentInviteCode,
   statusText: statusText
 }

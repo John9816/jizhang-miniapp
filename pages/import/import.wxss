@@ -1,0 +1,158 @@
+.imp-page {
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+}
+
+/* ---- 输入方式切换 ---- */
+.mode-tabs {
+  display: flex;
+  gap: 12rpx;
+  background: #FAF7EC;
+  border-radius: 999rpx;
+  padding: 8rpx;
+  margin-bottom: 24rpx;
+}
+.mode-tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.mode-tab-active {
+  background: #FFFFFF;
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 4rpx 12rpx rgba(196, 158, 54, 0.12);
+}
+
+/* ---- 文件选择 ---- */
+.drop {
+  border: 2rpx dashed #E4D6AE;
+  border-radius: 24rpx;
+  background: #FFFDF6;
+  padding: 56rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+.drop:active { background: var(--gold-soft); border-color: var(--gold); }
+.drop-icon { font-size: 64rpx; }
+.drop-title { font-size: 30rpx; font-weight: 700; color: var(--ink); margin-top: 8rpx; }
+.drop-sub { font-size: 24rpx; color: var(--ink-3); }
+
+.tip-list {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  background: #FAF7EC;
+  border-radius: 16rpx;
+}
+.tip {
+  font-size: 23rpx;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+/* ---- 粘贴 ---- */
+.raw {
+  width: 100%;
+  height: 360rpx;
+  background: #FAF7EC;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+.parse-btn {
+  margin-top: 20rpx;
+  padding: 22rpx 0;
+  font-size: 28rpx;
+}
+
+/* ---- 汇总 ---- */
+.sum-row {
+  display: flex;
+  align-items: center;
+}
+.sum-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.sum-label { font-size: 23rpx; color: var(--ink-3); }
+.sum-value { font-size: 30rpx; font-weight: 700; color: var(--ink); }
+.sum-divider { width: 1rpx; height: 48rpx; background: var(--line); }
+
+.range-line { margin-top: 20rpx; }
+.range { font-size: 24rpx; color: var(--ink-2); }
+.skip-note {
+  font-size: 23rpx;
+  color: var(--ink-3);
+  margin-top: 10rpx;
+  line-height: 1.6;
+}
+
+/* ---- 明细预览 ---- */
+.preview-list {
+  max-height: 620rpx;
+}
+.row-date {
+  width: 92rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.row-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+.row-icon { font-size: 26rpx; }
+.row-title {
+  font-size: 27rpx;
+  color: var(--ink);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360rpx;
+}
+.row-sub {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 420rpx;
+}
+.row-amount {
+  font-size: 29rpx;
+  font-weight: 700;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+/* ---- 导入设置 ---- */
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+.set-label { font-size: 27rpx; color: var(--ink); }
+.set-value { font-size: 25rpx; color: var(--ink-2); max-width: 420rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.import-btn { margin-top: 26rpx; padding: 22rpx 0; font-size: 28rpx; }
+
+.import-ok {
+  margin-top: 24rpx;
+  background: #F2FAF3;
+  border: 1rpx solid #D6EBD9;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+.import-ok-title { font-size: 27rpx; font-weight: 700; color: #1E7A38; }
+.import-ok-sub { font-size: 24rpx; color: #3F6B4B; margin-top: 8rpx; }
+.import-ok-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.act { flex: 1; padding: 16rpx 0; font-size: 26rpx; }

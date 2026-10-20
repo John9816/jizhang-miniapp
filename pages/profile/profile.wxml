@@ -3,14 +3,25 @@
 
   <!-- 用户信息 -->
   <view class="p-head">
-    <view class="p-user" bindtap="openRename">
-      <image class="p-avatar" src="/images/avatar.png" mode="aspectFit" />
+    <view class="p-user">
+      <view class="avatar-box">
+        <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFit" binderror="onAvatarError" />
+        <button class="avatar-cam" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">📷</button>
+      </view>
       <view class="p-info">
-        <view class="p-name-line">
-          <text class="p-name">{{me.name || '未命名'}}</text>
-          <text class="p-badge">普通会员</text>
-        </view>
+        <input
+          class="p-name-input"
+          type="nickname"
+          placeholder="点击设置微信昵称"
+          value="{{me.name}}"
+          maxlength="12"
+          bindblur="onNicknameBlur"
+          bindlongpress="onNicknameLongPress"
+        />
         <text class="p-id">ID: {{uid}}</text>
+        <view class="p-phone" bindtap="openPhone">
+          <text class="{{me.phone ? 'p-phone-num' : 'p-phone-todo'}}">{{me.phone ? '📱 ' + me.phone : '绑定手机号 ›'}}</text>
+        </view>
       </view>
     </view>
     <view class="p-actions">
@@ -78,6 +89,17 @@
       <text class="menu-text">分类管理</text>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-row" bindtap="goImport">
+      <text class="menu-icon">📥</text>
+      <text class="menu-text">账单导入</text>
+      <text class="menu-extra">微信 / 支付宝</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="goReconcile">
+      <text class="menu-icon">🧮</text>
+      <text class="menu-text">对账与导出</text>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-row" bindtap="syncNow">
       <text class="menu-icon">☁️</text>
       <text class="menu-text">云同步</text>
@@ -96,9 +118,9 @@
     </view>
   </view>
 
-  <view class="p-footer">记账本 · 存钱罐主题 v1.1.0</view>
+  <view class="p-footer">记账本 · 存钱罐主题 v1.2.0</view>
 
-  <!-- 改昵称 -->
+  <!-- 改昵称（昵称授权失败时的手动兜底） -->
   <view class="modal-mask" wx:if="{{showRename}}">
     <view class="modal">
       <view class="modal-title">修改昵称</view>
@@ -108,6 +130,22 @@
         <view class="btn-plain" bindtap="closeRename">取消</view>
         <view class="btn-primary" bindtap="confirmRename">保存</view>
       </view>
+    </view>
+  </view>
+
+  <!-- 绑定手机号 -->
+  <view class="modal-mask" wx:if="{{showPhone}}">
+    <view class="modal">
+      <view class="modal-title">绑定手机号</view>
+      <view class="modal-sub">用于云同步身份识别，不展示给账本成员</view>
+      <button class="btn-primary phone-wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">使用微信手机号</button>
+      <view class="phone-or">或手动填写</view>
+      <input class="modal-input" type="number" maxlength="11" value="{{phoneInput}}" placeholder="输入 11 位手机号" bindinput="onPhoneInput" />
+      <view class="modal-actions">
+        <view class="btn-plain" bindtap="closePhone">取消</view>
+        <view class="btn-primary" bindtap="confirmPhone">保存</view>
+      </view>
+      <view class="phone-tip">未开启云同步时，号码只保存在本机</view>
     </view>
   </view>
 
@@ -131,7 +169,9 @@
         <view class="help-item">1. 数据默认存在手机本地，开启云同步后才会上传到自己的服务器。</view>
         <view class="help-item">2. 多人共享：账本页生成邀请码，另一方输入即加入。</view>
         <view class="help-item">3. 存钱挑战只记录进度，不计入收支统计。</view>
-        <view class="help-item">4. 同步异常时可核对服务器地址：</view>
+        <view class="help-item">4. 微信 / 支付宝账单可在「我的 → 账单导入」粘贴或从聊天文件导入，对账页逐笔核对、可导出对账 CSV。</view>
+        <view class="help-item">5. 头像、昵称、手机号授权都在本页完成；个人主体拿不到微信手机号时可手动填写。</view>
+        <view class="help-item">6. 同步异常时可核对服务器地址：</view>
       </view>
       <view class="help-api" bindtap="copyApi">https://jizhang-api.751152.xyz</view>
       <view class="modal-actions">

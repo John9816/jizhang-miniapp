@@ -1,0 +1,132 @@
+<view class="page imp-page">
+  <!-- 第一步：输入账单 -->
+  <view class="card">
+    <view class="card-head">
+      <text class="card-head-title">导入账单</text>
+      <text class="card-head-more">自动识别 GBK 编码</text>
+    </view>
+
+    <view class="mode-tabs">
+      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode">选择文件</view>
+      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode">粘贴文本</view>
+    </view>
+
+    <block wx:if="{{mode === 'file'}}">
+      <view class="drop" bindtap="chooseFile">
+        <text class="drop-icon">📄</text>
+        <text class="drop-title">点击选择账单文件</text>
+        <text class="drop-sub">支持微信支付 / 支付宝导出的 CSV</text>
+      </view>
+      <view class="tip-list">
+        <view class="tip">微信：我 → 服务 → 钱包 → 账单 → 常见问题 → 下载账单</view>
+        <view class="tip">支付宝：我的 → 账单 → 右上角 → 开具交易流水证明</view>
+        <view class="tip">先把文件发到任意微信聊天，点上方按钮从聊天记录选择</view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <textarea
+        class="raw"
+        value="{{rawText}}"
+        placeholder="粘贴账单 CSV 全文（含表头那一行）…"
+        maxlength="200000"
+        bindinput="onRawInput"
+      />
+      <view class="btn-primary parse-btn" bindtap="parsePasted">解析账单</view>
+    </block>
+  </view>
+
+  <!-- 无法识别 -->
+  <view class="card" wx:if="{{result && !result.src}}">
+    <view class="empty">
+      <text class="empty-icon">🤔</text>
+      <text class="empty-text">
+        没有识别到微信 / 支付宝的表头。\n
+        请确认粘贴的是完整 CSV（需含「交易时间」「收/支」开头的数据行）。\n
+        账单明细通常要翻到文件中部，前面几行是说明信息。
+      </text>
+      <view class="empty-btn btn-ghost" bindtap="reInput">重新输入</view>
+    </view>
+  </view>
+
+  <!-- 第二步：识别结果 -->
+  <block wx:if="{{result && result.src}}">
+    <view class="card">
+      <view class="card-head">
+        <text class="card-head-title">识别结果</text>
+        <text class="badge badge-dark">{{sourceLabel}}</text>
+      </view>
+      <view class="sum-row">
+        <view class="sum-col">
+          <text class="sum-label">待导入</text>
+          <text class="sum-value num">{{summary.count}} 笔</text>
+        </view>
+        <view class="sum-divider"></view>
+        <view class="sum-col">
+          <text class="sum-label">收入</text>
+          <text class="sum-value num text-income">¥{{summary.incomeText}}</text>
+        </view>
+        <view class="sum-divider"></view>
+        <view class="sum-col">
+          <text class="sum-label">支出</text>
+          <text class="sum-value num text-expense">¥{{summary.expenseText}}</text>
+        </view>
+      </view>
+      <view class="range-line">
+        <text class="range">时间范围：{{summary.range}}</text>
+      </view>
+      <view class="skip-note">已自动跳过：{{skipNote}}</view>
+      <view class="skip-note muted" wx:if="{{extraNote}}">{{extraNote}}</view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-head-title">明细预览</text>
+        <text class="card-head-more" bindtap="reInput">重新选择</text>
+      </view>
+      <scroll-view scroll-y class="preview-list" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="row" wx:for="{{viewRows}}" wx:key="line">
+          <text class="row-date num">{{item.dateText}}</text>
+          <view class="row-main">
+            <view class="row-title-line">
+              <text class="row-icon">{{item.catIcon}}</text>
+              <text class="row-title">{{item.title}}</text>
+            </view>
+            <text class="row-sub" wx:if="{{item.sub || item.channel}}">{{item.sub || item.channel}}{{item.sub && item.channel ? ' · ' + item.channel : ''}}</text>
+          </view>
+          <text class="row-amount num {{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.amountText}}</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 第三步：导入设置 -->
+    <view class="card">
+      <view class="card-head">
+        <text class="card-head-title">导入到账本</text>
+        <text class="card-head-more">{{ledger ? ledger.name : ''}}</text>
+      </view>
+      <picker range="{{categoryOptions}}" range-key="name" value="{{categoryIndex}}" onchange="onCategoryChange">
+        <view class="set-row">
+          <text class="set-label">统一分类</text>
+          <text class="set-value">{{categoryOptions[categoryIndex].name}} ›</text>
+        </view>
+      </picker>
+      <picker range="{{accountOptions}}" range-key="name" value="{{accountIndex}}" onchange="onAccountChange">
+        <view class="set-row">
+          <text class="set-label">记账账户</text>
+          <text class="set-value">{{accountOptions[accountIndex].name}} ›</text>
+        </view>
+      </picker>
+      <view class="btn-primary import-btn" bindtap="doImport">导入 {{summary.count}} 笔</view>
+
+      <view class="import-ok" wx:if="{{importResult}}">
+        <view class="import-ok-title">✅ 导入完成</view>
+        <view class="import-ok-sub">新增 {{importResult.added}} 笔 · 判重跳过 {{importResult.dupes}} 笔 · 无效跳过 {{importResult.skipped}} 笔</view>
+        <view class="import-ok-actions">
+          <view class="btn-ghost act" bindtap="goReconcile">去对账</view>
+          <view class="btn-plain act" bindtap="reInput">再导一份</view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>
