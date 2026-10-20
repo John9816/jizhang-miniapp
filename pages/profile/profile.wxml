@@ -30,7 +30,15 @@
     </view>
   </view>
 
-  <!-- 会员卡 -->
+  <!-- 账号状态：一眼看清注册/登录有没有成功，失败可直接重试 -->
+  <view class="acct-bar {{account.tone}}">
+    <text class="acct-dot"></text>
+    <text class="acct-text">{{account.tip}}</text>
+    <text class="acct-sub" wx:if="{{account.logged}}">{{syncText}}</text>
+    <view class="acct-btn" wx:if="{{account.phase === 'failed'}}" bindtap="retryAccount">重试</view>
+    <view class="acct-btn" wx:elif="{{account.phase === 'off'}}">本地</view>
+  </view>
+
   <view class="vip-card" bindtap="openVip">
     <view class="vip-l">
       <view class="vip-title-line">

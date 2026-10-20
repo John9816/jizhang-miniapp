@@ -103,6 +103,52 @@
   margin-top: 20rpx;
 }
 
+/* ============ 账号状态条 ============ */
+.acct-bar {
+  display: flex;
+  align-items: center;
+  margin: 16rpx 24rpx 0;
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
+  background: #FFFDF5;
+  border: 2rpx solid #F0E6CC;
+}
+.acct-bar.ok { background: #F4FCF0; border-color: #CFE9BE; }
+.acct-bar.busy { background: #FFF8E8; border-color: #F5DFA6; }
+.acct-bar.bad { background: #FFF1F0; border-color: #F6CFCA; }
+.acct-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-right: 14rpx;
+  flex-shrink: 0;
+  background: #B9B2A3;
+}
+.acct-bar.ok .acct-dot { background: #3FA34D; }
+.acct-bar.busy .acct-dot { background: #E9A825; }
+.acct-bar.bad .acct-dot { background: #D9534F; }
+.acct-text {
+  font-size: 25rpx;
+  color: #6F6757;
+  font-weight: 600;
+}
+.acct-bar.bad .acct-text { color: #B23A32; }
+.acct-sub {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.acct-btn {
+  margin-left: auto;
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  background: #FFD75E;
+  color: #6B4E00;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+.acct-btn:active { opacity: 0.75; }
+
 /* ============ 会员卡 ============ */
 .vip-card {
   display: flex;

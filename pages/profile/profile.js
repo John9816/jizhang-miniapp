@@ -1,6 +1,7 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
+const avatar = require('../../utils/avatar.js')
 
 /** 由本地用户 id 生成一个稳定的展示编号 */
 function shortId(id) {
@@ -25,6 +26,7 @@ Page({
     memberCount: 1,
     syncText: '',
     cloudOn: false,
+    account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
     showRename: false,
     renameInput: '',
     showAbout: false,
@@ -40,10 +42,13 @@ Page({
     this.refresh()
     var self = this
     this._offChange = db.onChange(function () { self.refresh() })
+    this._offCloud = cloud.onChange(function (st) { self.setData({ account: st }) })
+    this.setData({ account: cloud.accountState() })
   },
 
   onUnload() {
     if (this._offChange) this._offChange()
+    if (this._offCloud) this._offCloud()
   },
 
   onShow() {
@@ -60,7 +65,8 @@ Page({
       me: me,
       uid: shortId(me.id),
       cloudOn: cloud.enabled(),
-      syncText: cloud.statusText()
+      syncText: cloud.statusText(),
+      account: cloud.accountState()
     }
     if (ledger) {
       var sum = db.assetSummary(ledger.id)
@@ -152,16 +158,26 @@ Page({
   onChooseAvatar(e) {
     var url = e.detail && e.detail.avatarUrl
     if (!url) return
-    db.setProfile({ avatar: url })
-    // 云端地址只存微信 CDN 临时链接，下次冷启动前重新授权即可刷新
-    cloud.updateProfile({ avatar: url })
-    this.refresh()
-    wx.showToast({ title: '头像已更新', icon: 'success' })
+    var self = this
+    wx.showLoading({ title: '保存头像', mask: true })
+    // 微信给的是临时路径，必须压成 base64 才能长期保留（否则冷启动即失效）
+    avatar.persist(url, function (err, dataUrl) {
+      wx.hideLoading()
+      if (err) {
+        wx.showToast({ title: err.message || '头像保存失败', icon: 'none' })
+        return
+      }
+      db.setProfile({ avatar: dataUrl })
+      cloud.updateProfile({ avatar: dataUrl })
+      self.refresh()
+      wx.showToast({ title: '头像已更新', icon: 'success' })
+    })
   },
 
   onAvatarError() {
-    // 微信 CDN 临时链接过期：清掉失效头像，提示重新授权
-    if (this.data.me && this.data.me.avatar) {
+    // dataURL 不会过期；走到这里说明存的是失效地址，清掉让用户重选
+    var av = this.data.me && this.data.me.avatar
+    if (av && /^https?:\/\//.test(av)) {
       db.setProfile({ avatar: '' })
       this.refresh()
       wx.showToast({ title: '头像已过期，请重新选择', icon: 'none' })
@@ -262,12 +278,51 @@ Page({
     wx.setClipboardData({ data: 'https://jizhang-api.751152.xyz' })
   },
 
+  /** 账号未就绪时点「重试」：重新走一遍注册/登录 */
+  retryAccount() {
+    var self = this
+    if (!cloud.enabled()) {
+      wx.showToast({ title: '云同步未开启', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '连接中', mask: true })
+    cloud.retry().then(function (res) {
+      wx.hideLoading()
+      if (res.ok) {
+        wx.showToast({ title: '账号已就绪', icon: 'success' })
+      } else {
+        wx.showModal({
+          title: '连接服务器失败',
+          content: (res.error || '请检查网络') + '\n\n若小程序后台未把服务器域名加入 request 合法域名，体验版/正式版会直接拦掉请求。',
+          confirmText: '再试一次',
+          cancelText: '知道了',
+          success: function (r) { if (r.confirm) self.retryAccount() }
+        })
+      }
+      self.refresh()
+    })
+  },
+
   syncNow() {
+    var self = this
     if (!this.data.cloudOn) {
       wx.showToast({ title: '云同步未开启', icon: 'none' })
       return
     }
-    if (cloud.kick) cloud.kick()
-    wx.showToast({ title: '已发起同步', icon: 'none' })
-  }
+    if (this._syncing) {
+      wx.showToast({ title: '正在同步', icon: 'none' })
+      return
+    }
+    this._syncing = true
+    wx.showLoading({ title: '同步中', mask: true })
+    this.setData({ account: cloud.accountState() })
+    cloud.sync().then(function () {
+      wx.hideLoading()
+      self._syncing = false
+      var st = cloud.accountState()
+      self.setData({ account: st })
+      if (st.error) wx.showToast({ title: st.error.slice(0, 18), icon: 'none' })
+      else wx.showToast({ title: '同步完成', icon: 'success' })
+    })
+  },
 })

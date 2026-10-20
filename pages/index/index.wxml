@@ -223,14 +223,82 @@
     <view class="sheet-cancel" bindtap="toggleMore">取消</view>
   </view>
 
-  <!-- 首次进入：设置昵称 -->
-  <view class="modal-mask" wx:if="{{showNickname}}">
-    <view class="modal">
-      <view class="modal-title">先给自己起个昵称</view>
-      <view class="modal-sub">共享账本时，好友能看到每条记录是谁记的</view>
-      <input class="modal-input" value="{{nicknameInput}}" placeholder="例如：小明" maxlength="12" bindinput="onNicknameInput" />
-      <view class="modal-actions">
-        <view class="btn-primary" bindtap="confirmNickname">开始记账</view>
+  <!-- 首次进入：自动注册 + 一键补齐微信头像/昵称/手机号 -->
+  <view class="modal-mask guide-mask" wx:if="{{showGuide}}">
+    <view class="guide-card">
+      <image class="guide-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
+      <view class="guide-title">{{guideTitle}}</view>
+      <view class="guide-sub">{{guideSub}}</view>
+
+      <view class="guide-status {{account.tone}}" wx:if="{{cloudOn}}">
+        <text class="guide-status-dot"></text>
+        <text class="guide-status-text">{{account.tip}}</text>
+        <view class="guide-status-btn" wx:if="{{account.phase === 'failed'}}" bindtap="retryGuide">重试</view>
+      </view>
+
+      <!-- 1 头像：微信授权组件，必须由用户点击触发（平台规则，无法自动弹出） -->
+      <view class="guide-step {{guideSteps.avatar ? 'done' : ''}}">
+        <button class="guide-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onGuideAvatar">
+          <image class="guide-avatar" src="{{guideAvatarSrc}}" mode="aspectFill" />
+          <view class="guide-avatar-cam">📷</view>
+        </button>
+        <view class="guide-step-main">
+          <text class="guide-step-title">微信头像{{guideSteps.avatar ? '（已同步）' : ''}}</text>
+          <text class="guide-step-desc">点左侧图标，从微信头像里选一张</text>
+        </view>
+        <text class="guide-step-tick" wx:if="{{guideSteps.avatar}}">✓</text>
+      </view>
+
+      <!-- 2 昵称：type=nickname 输入框，聚焦后可直接回填微信昵称 -->
+      <view class="guide-step {{guideSteps.name ? 'done' : ''}}">
+        <text class="guide-step-idx">Aa</text>
+        <view class="guide-step-main">
+          <input
+            class="guide-input"
+            type="nickname"
+            value="{{guideName}}"
+            placeholder="点这里填入微信昵称"
+            maxlength="12"
+            bindblur="onGuideNameBlur"
+            bindinput="onGuideNameInput"
+          />
+          <text class="guide-step-desc">聚焦后可一键填入你的微信昵称</text>
+        </view>
+        <text class="guide-step-tick" wx:if="{{guideSteps.name}}">✓</text>
+      </view>
+
+      <!-- 3 手机号：getPhoneNumber 组件；个人主体无权限时自动切手动输入 -->
+      <view class="guide-step {{guideSteps.phone ? 'done' : ''}}">
+        <text class="guide-step-idx">📱</text>
+        <view class="guide-step-main">
+          <button
+            wx:if="{{!guideManualPhone && !guideSteps.phone}}"
+            class="guide-wx-btn"
+            open-type="getPhoneNumber"
+            bindgetphonenumber="onGuidePhone"
+          >使用微信手机号</button>
+          <input
+            wx:else
+            class="guide-input"
+            type="number"
+            value="{{guidePhone}}"
+            maxlength="11"
+            placeholder="{{guideSteps.phone ? '' : '输入手机号'}}"
+            bindinput="onGuidePhoneInput"
+            bindblur="onGuidePhoneBlur"
+          />
+          <text class="guide-step-desc" wx:if="{{guideSteps.phone}}">{{guidePhone}}</text>
+          <text class="guide-step-desc" wx:elif="{{guideManualPhone}}">当前账号不支持自动读取，手动填写即可</text>
+          <text class="guide-step-desc" wx:else>用于登录与多设备识别，随时可改</text>
+        </view>
+        <text class="guide-step-tick" wx:if="{{guideSteps.phone}}">✓</text>
+      </view>
+
+      <view class="guide-actions">
+        <view class="guide-skip" bindtap="skipGuide">跳过，先去记账</view>
+        <view class="guide-done {{guideSteps.avatar || guideSteps.name || guideSteps.phone ? '' : 'plain'}}" bindtap="finishGuide">
+          {{guideSteps.avatar || guideSteps.name || guideSteps.phone ? '完成，开始记账' : '先跳过资料'}}
+        </view>
       </view>
     </view>
   </view>

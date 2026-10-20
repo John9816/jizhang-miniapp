@@ -58,6 +58,18 @@ function str(v, max) {
   return String(v == null ? '' : v).trim().slice(0, max || 64)
 }
 
+/** 头像上限：压缩后的 dataURL 约几 KB~几十 KB，给足冗余但拒绝超大串 */
+const AVATAR_MAX = 200000
+
+/** 头像白名单校验：只放行 http(s) 地址或图片类 dataURL，越界一律丢弃避免脏数据入库 */
+function sanitizeAvatar(v) {
+  const s = String(v == null ? '' : v).trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s.slice(0, 512)
+  if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(s)) return s.slice(0, AVATAR_MAX)
+  return ''
+}
+
 function isoOr(v) {
   if (typeof v === 'number' && isFinite(v)) return new Date(v).toISOString()
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return v
@@ -618,7 +630,9 @@ async function handleProfileUpdate(req, res) {
   if (!openid) return
   const body = await readBody(req)
   const nickname = str(body.nickname, 12)
-  const avatar = str(body.avatar, 512)
+  // 头像允许两种形态：http(s) 地址，或前端压缩后的 dataURL（微信头像是临时路径，必须持久化后才能长期用）
+  const rawAvatar = str(body.avatar, AVATAR_MAX)
+  const avatar = sanitizeAvatar(rawAvatar)
   // 保证用户行存在（首次云端登录时可能还没写）
   db.prepare("INSERT OR IGNORE INTO users (openid, nickname, avatar, created_at) VALUES (?,?,?,?)")
     .run(openid, nickname, avatar, nowIso())

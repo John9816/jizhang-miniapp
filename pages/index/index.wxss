@@ -416,3 +416,185 @@
   color: #6B6455;
 }
 .more-emoji { font-size: 40rpx; }
+
+/* ============ 首次进入：注册引导卡 ============ */
+.guide-mask { z-index: 200; }
+.guide-card {
+  width: 620rpx;
+  background: #FFFDF5;
+  border-radius: 36rpx;
+  padding: 44rpx 36rpx 30rpx;
+  box-shadow: 0 24rpx 60rpx rgba(46, 42, 34, 0.28);
+  position: relative;
+}
+.guide-mascot {
+  position: absolute;
+  right: -10rpx;
+  top: -46rpx;
+  width: 150rpx;
+  height: 165rpx;
+  opacity: 0.98;
+  pointer-events: none;
+}
+.guide-title {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #2E2A22;
+  letter-spacing: 1rpx;
+}
+.guide-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #8B8271;
+  line-height: 1.5;
+  max-width: 430rpx;
+}
+.guide-status {
+  display: flex;
+  align-items: center;
+  margin-top: 24rpx;
+  padding: 12rpx 18rpx;
+  border-radius: 14rpx;
+  background: #F6F1E2;
+}
+.guide-status.ok { background: #F0F8EC; }
+.guide-status.busy { background: #FFF6DF; }
+.guide-status.bad { background: #FDEEEC; }
+.guide-status-dot {
+  width: 14rpx; height: 14rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  background: #B9B2A3;
+}
+.guide-status.ok .guide-status-dot { background: #3FA34D; }
+.guide-status.busy .guide-status-dot { background: #E9A825; }
+.guide-status.bad .guide-status-dot { background: #D9534F; }
+.guide-status-text { font-size: 23rpx; color: #6F6757; font-weight: 600; }
+.guide-status-btn {
+  margin-left: auto;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  background: #FFD75E;
+  color: #6B4E00;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+.guide-status-btn:active { opacity: 0.7; }
+
+.guide-step {
+  display: flex;
+  align-items: center;
+  margin-top: 22rpx;
+  padding: 18rpx;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #F2EBD9;
+}
+.guide-step.done { border-color: #CDE7BC; background: #FAFCF7; }
+.guide-avatar-btn {
+  width: 96rpx;
+  height: 96rpx;
+  padding: 0;
+  margin: 0 18rpx 0 0;
+  border-radius: 50%;
+  background: #FFF3D0;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.guide-avatar-btn::after { border: none; }
+.guide-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+}
+.guide-avatar-cam {
+  position: absolute;
+  right: -4rpx;
+  bottom: -2rpx;
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  font-size: 20rpx;
+  border-radius: 50%;
+  background: #FFD75E;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.14);
+}
+.guide-step-idx {
+  width: 96rpx;
+  text-align: center;
+  font-size: 34rpx;
+  color: #A8811C;
+  margin-right: 18rpx;
+  flex-shrink: 0;
+}
+.guide-step-main { flex: 1; min-width: 0; }
+.guide-step-title {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: #3A352B;
+  display: block;
+  margin-bottom: 4rpx;
+}
+.guide-step-desc {
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.guide-input {
+  width: 100%;
+  font-size: 28rpx;
+  color: #3A352B;
+  padding: 6rpx 0;
+}
+.guide-step-tick {
+  margin-left: 14rpx;
+  font-size: 32rpx;
+  color: #3FA34D;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.guide-wx-btn {
+  margin: 0;
+  padding: 0 24rpx;
+  height: 62rpx;
+  line-height: 62rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #07C160, #06AD56);
+  color: #fff;
+}
+.guide-wx-btn::after { border: none; }
+.guide-wx-btn:active { opacity: 0.82; }
+
+.guide-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 30rpx;
+}
+.guide-skip {
+  font-size: 25rpx;
+  color: #A79E8B;
+  padding: 14rpx 8rpx;
+}
+.guide-skip:active { opacity: 0.6; }
+.guide-done {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #FFDE72, #FFC93C);
+  color: #5A4300;
+  font-size: 29rpx;
+  font-weight: 800;
+  box-shadow: 0 8rpx 20rpx rgba(240, 180, 23, 0.3);
+}
+.guide-done.plain {
+  background: #F2EBD9;
+  color: #8B8271;
+  box-shadow: none;
+}
+.guide-done:active { opacity: 0.85; }

@@ -238,6 +238,22 @@ Page({
       ok = !!this.data.accountId && !!this.data.transferTo && this.data.accountId !== this.data.transferTo
     }
     this.setData({ canSave: ok })
+    // 已经有输入内容时，给返回按钮加二次确认，避免手滑丢掉刚敲的金额
+    this.guardUnsaved(this.data.editingId ? false : cents > 0)
+  },
+
+  /** 未保存内容提醒：必须在用户交互之后调用才生效 */
+  guardUnsaved(on) {
+    if (!wx.enableAlertBeforeUnload) return
+    if (on && !this._guarding) {
+      try {
+        wx.enableAlertBeforeUnload({ message: '这条还没保存，确定离开吗？' })
+        this._guarding = true
+      } catch (e) {}
+    } else if (!on && this._guarding) {
+      try { wx.disableAlertBeforeUnload() } catch (e) {}
+      this._guarding = false
+    }
   },
 
   /* ---------------- 其它输入 ---------------- */
@@ -248,9 +264,12 @@ Page({
 
   onNoteInput(e) {
     this.setData({ note: e.detail.value })
+    if (!this.data.editingId) this.guardUnsaved(this.evalAmount() > 0 || !!e.detail.value)
   },
 
   onCancel() {
+    // 点了取消就等于主动放弃，撤掉系统级拦截
+    this.guardUnsaved(false)
     var pages = getCurrentPages()
     if (pages.length > 1) wx.navigateBack()
     else wx.switchTab({ url: '/pages/index/index' })
@@ -301,6 +320,7 @@ Page({
       return
     }
     wx.showToast({ title: this.data.editingId ? '已保存' : '已记下', icon: 'success' })
+    this.guardUnsaved(false)
     setTimeout(function () {
       var pages = getCurrentPages()
       if (pages.length > 1) wx.navigateBack()

@@ -21,7 +21,34 @@ var state = {
   lastError: '',
   debounceTimer: null,
   pollTimer: null,
-  started: false
+  started: false,
+  // 账号阶段：idle 未开始 / logging 注册或登录中 / ready 已登录 / failed 失败（需重试）
+  phase: 'idle',
+  loginError: '',
+  registered: false
+}
+
+/** 状态订阅者（phase / 同步状态变化时通知页面刷新） */
+var listeners = []
+
+function emit() {
+  for (var i = 0; i < listeners.length; i++) {
+    try { listeners[i](accountState()) } catch (e) {}
+  }
+}
+
+function onChange(fn) {
+  listeners.push(fn)
+  return function () {
+    var idx = listeners.indexOf(fn)
+    if (idx >= 0) listeners.splice(idx, 1)
+  }
+}
+
+function setPhase(phase, err) {
+  state.phase = phase
+  if (err !== undefined) state.loginError = err || ''
+  emit()
 }
 
 function enabled() {
@@ -76,6 +103,7 @@ function wxLogin() {
 
 function login() {
   if (!state.loginPending) {
+    setPhase('logging', '')
     state.loginPending = wxLogin().then(function (code) {
       return request('/api/login', {
         method: 'POST',
@@ -84,11 +112,15 @@ function login() {
     }).then(function (res) {
       state.token = res.token
       state.since = ''
+      // 服务端首次见这个 openid 会自动开户，因此只要拿到 token 就等于完成注册/登录
+      state.registered = true
       if (res.me) db.applyCloudMe(res.me)
       else if (res.me === undefined && db.getMe().id) db.replaceMyId(db.getMe().id)
+      setPhase('ready', '')
       return res
     }).catch(function (e) {
       state.token = ''
+      setPhase('failed', (e && e.message) || '网络开小差了')
       throw e
     })
     state.loginPending = state.loginPending.then(function (r) {
@@ -155,10 +187,29 @@ function sync() {
     if (/未登录|过期|登录/.test(state.lastError)) {
       state.token = ''
       state.since = ''
+      setPhase('failed', state.lastError)
     }
   }).then(function () {
     state.syncing = false
+    emit()
     return null
+  })
+}
+
+/** 重新注册/登录并立刻同步一次（网络恢复、域名配好后点「重试」用） */
+function retry() {
+  if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
+  state.token = ''
+  state.since = ''
+  state.loginPending = null
+  state.lastError = ''
+  setPhase('logging', '')
+  return login().then(function () {
+    return sync()
+  }).then(function () {
+    return { ok: true, error: state.lastError || '' }
+  }).catch(function (e) {
+    return { ok: false, error: (e && e.message) || state.lastError || '登录失败' }
   })
 }
 
@@ -206,7 +257,7 @@ function updateProfile(patch) {
   patch = patch || {}
   // 先固定本次要写入的值：login 会把服务端旧 me 合进来，不能让它覆盖掉待发送的内容
   var nextName = patch.nickname ? String(patch.nickname).trim().slice(0, 12) : ''
-  var nextAvatar = patch.avatar !== undefined ? String(patch.avatar || '').slice(0, 512) : null
+  var nextAvatar = patch.avatar !== undefined ? String(patch.avatar || '').slice(0, 200000) : null
   var prevAvatar = db.getProfile().avatar || ''
   if (nextName) db.setMyName(nextName)
   if (nextAvatar !== null) db.setProfile({ avatar: nextAvatar })
@@ -300,12 +351,42 @@ function statusText() {
   return '云同步待连接'
 }
 
+/** 给页面用的账号/同步状态快照 */
+function accountState() {
+  var phase = enabled() ? state.phase : 'off'
+  var tone = 'idle'
+  if (phase === 'logging') tone = 'busy'
+  else if (phase === 'ready') tone = 'ok'
+  else if (phase === 'failed') tone = 'bad'
+  return {
+    enabled: enabled(),
+    phase: phase,
+    tone: tone,
+    logged: !!state.token,
+    registered: state.registered,
+    error: state.loginError || state.lastError || '',
+    text: statusText(),
+    tip: accountTip(phase)
+  }
+}
+
+function accountTip(phase) {
+  if (phase === 'off') return '本地模式'
+  if (phase === 'logging') return '正在创建/登录你的账号…'
+  if (phase === 'ready') return '账号已就绪'
+  if (phase === 'failed') return '连接服务器失败'
+  return '等待连接服务器'
+}
+
 module.exports = {
   enabled: enabled,
   init: init,
   onAppShow: onAppShow,
+  onChange: onChange,
   kick: kick,
   sync: sync,
+  retry: retry,
+  accountState: accountState,
   joinLedger: joinLedger,
   updateProfile: updateProfile,
   bindPhone: bindPhone,

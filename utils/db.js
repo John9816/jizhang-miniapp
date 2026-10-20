@@ -130,7 +130,10 @@ function getProfile() {
     id: db.me.id,
     name: db.me.name || '',
     avatar: p.avatar || '',
-    phone: p.phone || ''
+    phone: p.phone || '',
+    // 首次进入的引导状态：guideDone=true 表示已跳过或已完成；registeredAt 首次注册成功时间
+    guideDone: !!p.guideDone,
+    registeredAt: p.registeredAt || ''
   }
 }
 
@@ -146,12 +149,15 @@ function applyCloudMe(me) {
   db.me.profile = db.me.profile || { avatar: '', phone: '' }
   if (me.avatar != null) {
     var av = String(me.avatar || '')
-    db.me.profile.avatar = av.slice(0, 512)
+    // 头像支持 http(s) 地址与压缩后的 dataURL（本地持久化的微信头像）
+    db.me.profile.avatar = av.slice(0, 200000)
   }
   if (me.phone != null) {
     var ph = String(me.phone || '')
     db.me.profile.phone = ph.slice(0, 20)
   }
+  if (me.guideDone != null) db.me.profile.guideDone = !!me.guideDone
+  if (me.registeredAt != null) db.me.profile.registeredAt = String(me.registeredAt || '').slice(0, 40)
   persist()
   return getProfile()
 }
@@ -160,9 +166,21 @@ function applyCloudMe(me) {
 function setProfile(patch) {
   ensure()
   patch = patch || {}
-  if (patch.avatar !== undefined) db.me.profile.avatar = String(patch.avatar || '').slice(0, 512)
+  if (patch.avatar !== undefined) db.me.profile.avatar = String(patch.avatar || '').slice(0, 200000)
   if (patch.phone !== undefined) db.me.profile.phone = String(patch.phone || '').slice(0, 20)
+  if (patch.guideDone !== undefined) db.me.profile.guideDone = !!patch.guideDone
+  if (patch.registeredAt !== undefined) db.me.profile.registeredAt = String(patch.registeredAt || '').slice(0, 40)
   persist()
+  return getProfile()
+}
+
+/** 账号首次注册成功时打标记（幂等） */
+function markRegistered() {
+  ensure()
+  if (!db.me.profile.registeredAt) {
+    db.me.profile.registeredAt = new Date().toISOString()
+    persist()
+  }
   return getProfile()
 }
 
@@ -1240,6 +1258,7 @@ module.exports = {
   getMe: getMe,
   getProfile: getProfile,
   setProfile: setProfile,
+  markRegistered: markRegistered,
   applyCloudMe: applyCloudMe,
   setMyName: setMyName,
   createLedger: createLedger,
