@@ -31,7 +31,6 @@ Page({
     renameInput: '',
     showAbout: false,
     showHelp: false,
-    showVip: false,
     showPhone: false,
     phoneInput: ''
   },
@@ -63,6 +62,7 @@ Page({
     var ledger = db.currentLedger()
     var patch = {
       me: me,
+      vip: db.isVip(),
       uid: shortId(me.id),
       cloudOn: cloud.enabled(),
       syncText: cloud.statusText(),
@@ -245,8 +245,7 @@ Page({
   closeHelp() { this.setData({ showHelp: false }) },
   openAbout() { this.setData({ showAbout: true }) },
   closeAbout() { this.setData({ showAbout: false }) },
-  openVip() { this.setData({ showVip: true }) },
-  closeVip() { this.setData({ showVip: false }) },
+  goVip() { wx.navigateTo({ url: '/pages/vip/vip' }) },
 
   copyApi() {
     wx.setClipboardData({ data: 'https://jizhang-api.751152.xyz' })

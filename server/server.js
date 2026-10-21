@@ -133,6 +133,198 @@ function readBody(req) {
   })
 }
 
+function readText(req) {
+  return new Promise(function (resolve, reject) {
+    const chunks = []
+    let size = 0
+    req.on('data', function (c) {
+      size += c.length
+      if (size > 1024 * 1024) { reject(new Error('请求体过大')); req.destroy(); return }
+      chunks.push(c)
+    })
+    req.on('end', function () { resolve(Buffer.concat(chunks).toString('utf8')) })
+    req.on('error', reject)
+  })
+}
+
+/* ---------------- 个人虚拟支付（道具直购） ---------------- */
+
+/**
+ * 商品白名单：productId → 价格(分) + 是否发放 VIP。
+ * 默认走 env（VPAY_PRODUCT_VIP / VPAY_PRODUCT_VIP_PRICE）；未配置时给开发/测试兜底值，
+ * 生产环境务必在 .env 填真实道具信息（价格须与 MP 后台道具一致）。
+ */
+function vpayProduct(productId) {
+  const vipPid = process.env.VPAY_PRODUCT_VIP || 'vip_perm'
+  const vipPrice = parseInt(process.env.VPAY_PRODUCT_VIP_PRICE || '3000', 10)
+  if (productId && productId === vipPid) return { productId: vipPid, price: isFinite(vipPrice) ? vipPrice : 3000, grantVip: true }
+  return null
+}
+
+/** 支付签名 paySig：HMAC-SHA256(AppKey, "requestVirtualPayment&" + signData) */
+function calcPaySig(signData) {
+  return crypto.createHmac('sha256', process.env.VPAY_APP_KEY || '').update('requestVirtualPayment&' + signData).digest('hex')
+}
+
+/** 用户态签名 signature：HMAC-SHA256(sessionKey, signData) */
+function calcUserSig(signData, sessionKey) {
+  return crypto.createHmac('sha256', sessionKey || '').update(signData).digest('hex')
+}
+
+/** 业务单号：T + 时间戳(base36) + 随机，8~32 位且不以 _ 开头，保证唯一 */
+function genOutTradeNo() {
+  return ('T' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex')).slice(0, 32)
+}
+
+/** 微信侧订单是否已支付（字段名随版本可能变化，宽松判定） */
+function wxOrderIsPaid(data) {
+  if (!data || data.errcode) return false
+  return data.state === 2 || data.payed === 1 || data.pay_result === 1 ||
+    (data.order_info && (data.order_info.state === 2 || data.order_info.payed === 1))
+}
+
+/** 调用微信 query_order（B 端签名：uri 为实际路径） */
+async function queryWxOrder(openid, outTradeNo) {
+  const body = JSON.stringify({ openid: openid, env: 0, order_id: outTradeNo })
+  const paySig = crypto.createHmac('sha256', process.env.VPAY_APP_KEY || '').update('/xpay/query_order&' + body).digest('hex')
+  const ctrl = new AbortController()
+  const timer = setTimeout(function () { ctrl.abort() }, 8000)
+  try {
+    const resp = await fetch('https://api.weixin.qq.com/xpay/query_order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'pay_sig': paySig },
+      body: body,
+      signal: ctrl.signal
+    })
+    return await resp.json()
+  } catch (e) {
+    return { errcode: -1, errmsg: 'query_order 网络异常' }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** 发货（永久 VIP）：以 wx_order_id 幂等；订单行缺失时按 openid+product 补建 */
+function deliverVip(openid, productId, outTradeNo, wxOrderId) {
+  const p = vpayProduct(productId)
+  if (!p || !p.grantVip) return false
+  const now = nowIso()
+  const exist = db.prepare('SELECT 1 FROM orders WHERE wx_order_id = ? AND deliver_at != \'\'').get(wxOrderId || '')
+  if (exist) return true
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    let o = db.prepare('SELECT out_trade_no FROM orders WHERE out_trade_no = ?').get(outTradeNo)
+    if (!o) {
+      db.prepare('INSERT INTO orders (out_trade_no, openid, product_id, amount, status, attach, created_at) VALUES (?,?,?,?,?,?,?)')
+        .run(outTradeNo, openid, productId, p.price, 0, openid, now)
+    }
+    db.prepare('UPDATE orders SET wx_order_id = ?, status = 1, paid_at = ?, deliver_at = ? WHERE out_trade_no = ? AND deliver_at = \'\'')
+      .run(wxOrderId || outTradeNo, now, now, outTradeNo)
+    db.prepare('UPDATE users SET vip = 1, vip_at = ? WHERE openid = ?').run(now, openid)
+    db.exec('COMMIT')
+    return true
+  } catch (e) {
+    db.exec('ROLLBACK')
+    console.error('[jizhang-api] 发货失败:', e && e.message)
+    return false
+  }
+}
+
+/** 下单签名：返回前端拉起支付所需的 payData 字段 */
+async function handlePayOrder(req, res) {
+  const openid = requireAuth(req, res)
+  if (!openid) return
+  const body = await readBody(req)
+  const productId = str(body.productId, 64)
+  const p = vpayProduct(productId)
+  if (!p) return sendJson(res, 400, { error: '未知的商品' })
+  const sessionKey = getSessionKey(openid)
+  if (!sessionKey) return sendJson(res, 400, { error: '登录态已失效，请重启小程序后重试' })
+  const outTradeNo = genOutTradeNo()
+  const signDataObj = {
+    offerId: process.env.VPAY_OFFER_ID || '',
+    buyQuantity: 1,
+    env: 0,
+    currencyType: 'CNY',
+    productId: p.productId,
+    goodsPrice: p.price,
+    outTradeNo: outTradeNo,
+    attach: openid
+  }
+  const signData = JSON.stringify(signDataObj)
+  db.prepare('INSERT INTO orders (out_trade_no, openid, product_id, amount, status, attach, created_at) VALUES (?,?,?,?,?,?,?)')
+    .run(outTradeNo, openid, p.productId, p.price, 0, openid, nowIso())
+  sendJson(res, 200, {
+    ok: true,
+    signData: signData,
+    mode: 'short_series_goods',
+    paySig: calcPaySig(signData),
+    signature: calcUserSig(signData, sessionKey)
+  })
+}
+
+/** 兜底查单：前端轮询 / 后端主动确认 */
+async function handlePayQuery(req, res) {
+  const openid = requireAuth(req, res)
+  if (!openid) return
+  const body = await readBody(req)
+  const outTradeNo = str(body.outTradeNo || body.order_id, 64)
+  if (!outTradeNo) return sendJson(res, 400, { error: '缺少订单号' })
+  if (process.env.MOCK_WX === '1') {
+    const o = db.prepare('SELECT status FROM orders WHERE out_trade_no = ?').get(outTradeNo)
+    return sendJson(res, 200, { ok: true, mock: true, state: o ? o.status : 0 })
+  }
+  const data = await queryWxOrder(openid, outTradeNo)
+  sendJson(res, 200, data)
+}
+
+/** VIP 状态：已购直接返回；未购但有未发货订单则主动 query_order 兜底发货 */
+async function handleVipStatus(req, res) {
+  const openid = requireAuth(req, res)
+  if (!openid) return
+  const cur = db.prepare('SELECT vip FROM users WHERE openid = ?').get(openid)
+  if (cur && cur.vip) return sendJson(res, 200, { ok: true, vip: true, paid: true })
+  const pend = db.prepare('SELECT out_trade_no, product_id FROM orders WHERE openid = ? AND status = 0 ORDER BY created_at DESC LIMIT 1').get(openid)
+  if (pend && process.env.MOCK_WX !== '1') {
+    const data = await queryWxOrder(openid, pend.out_trade_no)
+    if (wxOrderIsPaid(data)) deliverVip(openid, pend.product_id, pend.out_trade_no, data.wx_order_id || data.order_id || '')
+  }
+  const after = db.prepare('SELECT vip FROM users WHERE openid = ?').get(openid)
+  const vip = !!(after && after.vip)
+  sendJson(res, 200, { ok: true, vip: vip, paid: vip })
+}
+
+/** 微信发货推送（XML）。GET 回显 MP 消息推送验证；POST 解析并幂等发货 */
+async function handlePayNotify(req, res, url) {
+  if (req.method === 'GET') {
+    const echostr = url ? (url.searchParams.get('echostr') || '') : ''
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end(echostr)
+    return
+  }
+  let xml = ''
+  try { xml = await readText(req) } catch (e) { xml = '' }
+  const field = function (tag) {
+    let m = xml.match(new RegExp('<' + tag + '\\s*>\\s*<!\\[CDATA\\[(.*?)\\]\\]>\\s*<\\/' + tag + '>', 'i'))
+    if (m) return m[1]
+    m = xml.match(new RegExp('<' + tag + '\\s*>(.*?)<\\/' + tag + '>', 'i'))
+    return m ? m[1].trim() : ''
+  }
+  const event = field('Event')
+  if (event && event !== 'xpay_goods_deliver_notify') {
+    res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' })
+    res.end('<xml><ErrCode>0</ErrCode><ErrMsg><![CDATA[ignored]]></ErrMsg></xml>')
+    return
+  }
+  const openid = field('OpenId')
+  const outTradeNo = field('OutTradeNo')
+  const wxOrderId = field('MchOrderNo')
+  const productId = field('ProductId')
+  if (openid && outTradeNo) deliverVip(openid, productId, outTradeNo, wxOrderId)
+  res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' })
+  res.end('<xml><ErrCode>0</ErrCode><ErrMsg><![CDATA[success]]></ErrMsg></xml>')
+}
+
 /* ---------------- 数据库 ---------------- */
 
 function initSchema(d) {
@@ -228,11 +420,34 @@ function migrateSchema(d) {
   var userCols = columns('users')
   var userAdd = [
     ['avatar', "ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''"],
-    ['phone', "ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''"]
+    ['phone', "ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''"],
+    ['vip', "ALTER TABLE users ADD COLUMN vip INTEGER NOT NULL DEFAULT 0"],
+    ['vip_at', "ALTER TABLE users ADD COLUMN vip_at TEXT NOT NULL DEFAULT ''"]
   ]
   userAdd.forEach(function (pair) {
     if (userCols.indexOf(pair[0]) < 0) d.exec(pair[1])
   })
+  // 会话表：补 session_key 列，用于个人虚拟支付的用户态签名（signature）
+  var sessionCols = columns('sessions')
+  if (sessionCols.indexOf('session_key') < 0) {
+    d.exec("ALTER TABLE sessions ADD COLUMN session_key TEXT NOT NULL DEFAULT ''")
+  }
+  // 订单表（个人虚拟支付：道具直购，一次性买断）：wx_order_id 为平台单号，幂等去重键
+  d.exec([
+    'CREATE TABLE IF NOT EXISTS orders (',
+    '  out_trade_no TEXT PRIMARY KEY,',
+    '  openid TEXT NOT NULL,',
+    '  product_id TEXT NOT NULL,',
+    '  wx_order_id TEXT NOT NULL DEFAULT \'\',',
+    '  amount INTEGER NOT NULL,',
+    '  status INTEGER NOT NULL DEFAULT 0,',
+    '  attach TEXT NOT NULL DEFAULT \'\',',
+    '  created_at TEXT NOT NULL,',
+    '  paid_at TEXT NOT NULL DEFAULT \'\',',
+    '  deliver_at TEXT NOT NULL DEFAULT \'\'',
+    ')'
+  ].join('\n'))
+  d.exec('CREATE INDEX IF NOT EXISTS idx_orders_wx ON orders(wx_order_id)')
 }
 
 /* ---------------- 微信登录 ---------------- */
@@ -321,7 +536,8 @@ async function wxCode2Session(code) {
     const data = await resp.json()
     if (data.errcode) return { error: '微信登录失败(' + data.errcode + ')' }
     if (!data.openid) return { error: '微信登录失败：未返回 openid' }
-    return { openid: data.openid }
+    // session_key 用于个人虚拟支付的用户态签名（signature），必须持久化
+    return { openid: data.openid, session_key: data.session_key || '' }
   } catch (e) {
     return { error: '微信服务网络异常，请稍后重试' }
   }
@@ -341,15 +557,23 @@ function userNickname(openid) {
   return row ? row.nickname : ''
 }
 
-/** 完整用户资料（昵称/头像/手机号），无记录时返回空态 */
+/** 完整用户资料（昵称/头像/手机号/会员），无记录时返回空态 */
 function userProfile(openid) {
-  const row = db.prepare('SELECT openid, nickname, avatar, phone FROM users WHERE openid = ?').get(openid)
+  const row = db.prepare('SELECT openid, nickname, avatar, phone, vip, vip_at FROM users WHERE openid = ?').get(openid)
   return {
     id: openid,
     name: row ? (row.nickname || '') : '',
     avatar: row ? (row.avatar || '') : '',
-    phone: row ? (row.phone || '') : ''
+    phone: row ? (row.phone || '') : '',
+    vip: !!(row && row.vip),
+    vipAt: row ? (row.vip_at || '') : ''
   }
+}
+
+/** 取用户最近一次登录的 session_key（个人虚拟支付用户态签名用）；缺失返回空串 */
+function getSessionKey(openid) {
+  const row = db.prepare('SELECT session_key FROM sessions WHERE openid = ? ORDER BY created_at DESC LIMIT 1').get(openid)
+  return row && row.session_key ? row.session_key : ''
 }
 
 function requireAuth(req, res) {
@@ -548,12 +772,15 @@ async function handleLogin(req, res) {
   const code = str(body.code, 64)
   if (code.length < 4) return sendJson(res, 400, { error: 'code 无效' })
   let openid
+  let sessionKey = ''
   if (process.env.MOCK_WX === '1') {
     openid = 'mock_' + code.slice(0, 40)
+    sessionKey = 'mock_session_' + code.slice(0, 24)
   } else {
     const r = await wxCode2Session(code)
     if (r.error) return sendJson(res, 401, { error: r.error })
     openid = r.openid
+    sessionKey = r.session_key || ''
   }
   const nickname = str(body.nickname, 12)
   db.prepare([
@@ -561,7 +788,7 @@ async function handleLogin(req, res) {
     'ON CONFLICT(openid) DO UPDATE SET nickname = CASE WHEN excluded.nickname != \'\' THEN excluded.nickname ELSE users.nickname END'
   ].join('\n')).run(openid, nickname, nowIso())
   const token = crypto.randomBytes(24).toString('hex')
-  db.prepare('INSERT INTO sessions (token, openid, created_at) VALUES (?,?,?)').run(token, openid, nowIso())
+  db.prepare('INSERT INTO sessions (token, openid, session_key, created_at) VALUES (?,?,?,?)').run(token, openid, sessionKey, nowIso())
   sendJson(res, 200, Object.assign({
     ok: true,
     token: token,
@@ -678,6 +905,11 @@ const ROUTES = [
   ['POST', /^\/api\/ledgers\/invite$/, handleInviteRegen],
   ['POST', /^\/api\/user\/profile$/, handleProfileUpdate],
   ['POST', /^\/api\/user\/phone$/, handlePhoneBind],
+  ['POST', /^\/api\/pay\/order$/, handlePayOrder],
+  ['POST', /^\/api\/pay\/query$/, handlePayQuery],
+  ['GET', /^\/api\/pay\/notify$/, handlePayNotify],
+  ['POST', /^\/api\/pay\/notify$/, handlePayNotify],
+  ['GET', /^\/api\/vip\/status$/, handleVipStatus],
   ['GET', /^\/healthz$/, function (req, res) { sendJson(res, 200, { ok: true, ts: nowIso() }) }]
 ]
 

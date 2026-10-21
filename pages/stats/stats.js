@@ -547,6 +547,16 @@ Page({
   makePoster() {
     var ledger = db.currentLedger()
     if (!ledger) return
+    if (!db.isVip()) {
+      wx.showModal({
+        title: '海报为会员功能',
+        content: '升级会员后可解锁高级统计图表与年度海报，分享更美观的收支报告。',
+        confirmText: '去开通',
+        cancelText: '知道了',
+        success: function (r) { if (r.confirm) wx.navigateTo({ url: '/pages/vip/vip' }) }
+      })
+      return
+    }
     var year = (this.data.refKey || u.dateStr(new Date())).slice(0, 4)
     var p = u.periodOf('year', year + '-06-01')
     var recs = db.recordsOf(ledger.id).filter(function (r) {

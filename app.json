@@ -13,7 +13,8 @@
     "pages/recurring/recurring",
     "pages/challenge/challenge",
     "pages/import/import",
-    "pages/reconcile/reconcile"
+    "pages/reconcile/reconcile",
+    "pages/vip/vip"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FAF5E8",

@@ -76,6 +76,16 @@ Page({
 
   confirmCreate() {
     var name = this.data.newName.trim()
+    if (!db.isVip() && db.listLedgers().length >= 2) {
+      wx.showModal({
+        title: '账本数量已达上限',
+        content: '免费版最多创建 2 个账本，升级会员后可无限创建并解除成员上限。',
+        confirmText: '去开通',
+        cancelText: '知道了',
+        success: function (r) { if (r.confirm) wx.navigateTo({ url: '/pages/vip/vip' }) }
+      })
+      return
+    }
     db.createLedger(name || '新账本')
     this.setData({ showCreate: false })
     this.refresh()
@@ -213,6 +223,16 @@ Page({
 
   exportCSV() {
     if (!this.data.ledger) return
+    if (!db.isVip()) {
+      wx.showModal({
+        title: '导出为会员功能',
+        content: '升级会员后可解锁 Excel / PDF 数据导出，方便备份与报税。',
+        confirmText: '去开通',
+        cancelText: '知道了',
+        success: function (r) { if (r.confirm) wx.navigateTo({ url: '/pages/vip/vip' }) }
+      })
+      return
+    }
     var csv = db.exportCSV(this.data.ledger.id)
     if (!csv) {
       wx.showToast({ title: '没有可导出的记录', icon: 'none' })

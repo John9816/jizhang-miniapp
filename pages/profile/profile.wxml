@@ -40,15 +40,15 @@
     <view class="acct-btn" wx:elif="{{account.phase === 'off'}}">本地</view>
   </view>
 
-  <view class="vip-card" bindtap="openVip">
+  <view class="vip-card {{vip ? 'vip-card-on' : ''}}" bindtap="goVip">
     <view class="vip-l">
       <view class="vip-title-line">
         <text class="vip-crown">👑</text>
-        <text class="vip-title">存钱罐会员中心</text>
+        <text class="vip-title">{{vip ? '记账本会员' : '记账本会员中心'}}</text>
       </view>
-      <text class="vip-sub">解锁更多存钱皮肤和特权</text>
+      <text class="vip-sub">{{vip ? '已开通 · 全部权益已解锁' : '一次买断，解锁去广告 / 多账本 / 导出'}}</text>
     </view>
-    <view class="vip-btn">去升级</view>
+    <view class="vip-btn">{{vip ? '查看' : '去开通'}}</view>
   </view>
 
   <!-- 我的资产 -->
@@ -127,7 +127,7 @@
     </view>
   </view>
 
-  <view class="p-footer">记账本 · 存钱罐主题 v1.2.0</view>
+  <view class="p-footer">记账本 · 存钱罐主题 v1.3.0</view>
 
   <!-- 改昵称（昵称授权失败时的手动兜底） -->
   <view class="modal-mask" wx:if="{{showRename}}">
@@ -156,18 +156,6 @@
     </view>
   </view>
 
-  <!-- 会员 -->
-  <view class="modal-mask" wx:if="{{showVip}}">
-    <view class="modal">
-      <view class="modal-title">存钱罐会员</view>
-      <view class="modal-sub">这是自部署版本，会员体系尚未开放</view>
-      <view class="modal-sub">存钱挑战、预算、资产等功能已全部免费可用</view>
-      <view class="modal-actions">
-        <view class="btn-primary" bindtap="closeVip">知道了</view>
-      </view>
-    </view>
-  </view>
-
   <!-- 帮助 -->
   <view class="modal-mask" wx:if="{{showHelp}}">
     <view class="modal">
@@ -193,7 +181,7 @@
       <view class="modal-title">关于我们</view>
       <view class="help-list">
         <view class="help-item">记账本 · 存钱罐主题</view>
-        <view class="help-item">版本 1.1.0</view>
+        <view class="help-item">版本 1.3.0</view>
         <view class="help-item">本地优先的个人记账工具，数据存于你自己的服务器。</view>
         <view class="help-item">无广告、无支付、无金融业务。</view>
       </view>

@@ -41,7 +41,7 @@ function saveHidden() {
 
 function defaultDb() {
   return {
-    me: { id: u.genId('u'), name: '', profile: { avatar: '', phone: '' } },
+    me: { id: u.genId('u'), name: '', profile: { avatar: '', phone: '', vip: false } },
     ledgers: [],
     records: [],
     currentLedgerId: '',
@@ -131,6 +131,7 @@ function getProfile() {
     name: db.me.name || '',
     avatar: p.avatar || '',
     phone: p.phone || '',
+    vip: !!p.vip,
     // 首次进入的引导状态：guideDone=true 表示已跳过或已完成；registeredAt 首次注册成功时间
     guideDone: !!p.guideDone,
     registeredAt: p.registeredAt || ''
@@ -158,6 +159,7 @@ function applyCloudMe(me) {
   }
   if (me.guideDone != null) db.me.profile.guideDone = !!me.guideDone
   if (me.registeredAt != null) db.me.profile.registeredAt = String(me.registeredAt || '').slice(0, 40)
+  if (me.vip != null) db.me.profile.vip = !!me.vip
   persist()
   return getProfile()
 }
@@ -170,6 +172,7 @@ function setProfile(patch) {
   if (patch.phone !== undefined) db.me.profile.phone = String(patch.phone || '').slice(0, 20)
   if (patch.guideDone !== undefined) db.me.profile.guideDone = !!patch.guideDone
   if (patch.registeredAt !== undefined) db.me.profile.registeredAt = String(patch.registeredAt || '').slice(0, 40)
+  if (patch.vip !== undefined) db.me.profile.vip = !!patch.vip
   persist()
   return getProfile()
 }
@@ -182,6 +185,12 @@ function markRegistered() {
     persist()
   }
   return getProfile()
+}
+
+/** 是否会员（永久买断）：VIP 状态唯一真相来自云端下发的 me.vip */
+function isVip() {
+  ensure()
+  return !!(db.me && db.me.profile && db.me.profile.vip)
 }
 
 /** 设置我的昵称：同步更新各账本成员表和我名下的记录快照 */
@@ -1259,6 +1268,7 @@ module.exports = {
   getProfile: getProfile,
   setProfile: setProfile,
   markRegistered: markRegistered,
+  isVip: isVip,
   applyCloudMe: applyCloudMe,
   setMyName: setMyName,
   createLedger: createLedger,

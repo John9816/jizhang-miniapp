@@ -309,6 +309,80 @@ function bindPhone(code, manualPhone) {
   })
 }
 
+/* ---------------- 会员（个人虚拟支付：道具直购） ---------------- */
+
+/** iOS 支付前置校验：微信客户端需 ≥ 8.0.68 */
+function iosWechatPayOk() {
+  try {
+    var sys = wx.getSystemInfoSync()
+    if (sys.platform !== 'ios') return true
+    var cur = (sys.version || '').split('.').map(Number)
+    var base = [8, 0, 68]
+    for (var i = 0; i < 3; i++) {
+      if ((cur[i] || 0) > base[i]) return true
+      if ((cur[i] || 0) < base[i]) return false
+    }
+    return true
+  } catch (e) {
+    return true
+  }
+}
+
+/** 下单 → 拉起支付 → 轮询确认发货。返回 { ok } 或 { ok:false, error/needUpdate } */
+function purchaseVip(productId) {
+  if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
+  if (!iosWechatPayOk()) return Promise.resolve({ ok: false, needUpdate: true, error: '请将微信更新至最新版后再支付' })
+  var chain = state.token ? Promise.resolve() : login()
+  return chain.then(function () {
+    return request('/api/pay/order', { method: 'POST', data: { productId: productId } })
+  }).then(function (order) {
+    return new Promise(function (resolve) {
+      var payData = {
+        signData: order.signData,
+        mode: order.mode || 'short_series_goods',
+        paySig: order.paySig,
+        signature: order.signature
+      }
+      wx.requestVirtualPayment({
+        signData: payData.signData,
+        mode: payData.mode,
+        paySig: payData.paySig,
+        signature: payData.signature,
+        success: function () { confirmVip(order.signData).then(resolve) },
+        fail: function (err) { resolve({ ok: false, error: (err && err.errMsg) || '支付失败' }) }
+      })
+    })
+  }).then(function (res) {
+    if (res && res.ok) state.lastOkAt = Date.now()
+    return res
+  }).catch(function (e) {
+    return { ok: false, error: (e && e.message) || '下单失败' }
+  })
+}
+
+/** 支付成功后轮询后端，确认发货（推送可能丢失，后端主动 query_order 兜底） */
+function confirmVip(signDataStr) {
+  function outTradeNoOf(s) {
+    try { var o = JSON.parse(s || '{}'); return o.outTradeNo || '' } catch (e) { return '' }
+  }
+  var trade = outTradeNoOf(signDataStr)
+  function poll(times) {
+    var call = request('/api/vip/status', { method: 'GET' }).then(function (r) {
+      if (r.vip) {
+        db.setProfile({ vip: true })
+        return { ok: true, vip: true }
+      }
+      if (times <= 1) return { ok: false, pending: true, error: '支付已受理，会员权益稍后自动生效' }
+      return new Promise(function (res) { setTimeout(function () { poll(times - 1).then(res) }, 2000) })
+    }).catch(function () {
+      if (times <= 1) return { ok: false, pending: true, error: '支付已受理，会员权益稍后自动生效' }
+      return new Promise(function (res) { setTimeout(function () { poll(times - 1).then(res) }, 2000) })
+    })
+    return call
+  }
+  return poll(10)
+}
+
 /* ---------------- 邀请 / 加入 ---------------- */
 
 function currentInviteCode() {
@@ -390,6 +464,7 @@ module.exports = {
   joinLedger: joinLedger,
   updateProfile: updateProfile,
   bindPhone: bindPhone,
+  purchaseVip: purchaseVip,
   currentInviteCode: currentInviteCode,
   statusText: statusText
 }

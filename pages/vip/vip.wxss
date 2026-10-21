@@ -1,0 +1,93 @@
+.page {
+  min-height: 100vh;
+  background: #FAF5E8;
+  padding: 32rpx 28rpx 60rpx;
+  box-sizing: border-box;
+}
+
+.hero {
+  background: linear-gradient(135deg, #F3E6C4, #EAD7A8);
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx;
+  color: #4A3F2A;
+}
+.hero-vip {
+  background: linear-gradient(135deg, #3A3326, #5A4E36);
+  color: #F4E9C9;
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 22rpx;
+  letter-spacing: 4rpx;
+  padding: 4rpx 16rpx;
+  border: 1rpx solid currentColor;
+  border-radius: 999rpx;
+  opacity: 0.8;
+}
+.hero-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  margin-top: 16rpx;
+}
+.hero-sub {
+  font-size: 26rpx;
+  opacity: 0.85;
+  margin-top: 8rpx;
+}
+
+.benefits {
+  margin-top: 24rpx;
+}
+.benefit {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 18rpx;
+  padding: 24rpx 26rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
+}
+.b-icon { font-size: 40rpx; margin-right: 20rpx; }
+.b-text { flex: 1; }
+.b-title { font-size: 30rpx; font-weight: 600; color: #2E2A22; }
+.b-desc { font-size: 24rpx; color: #8A8275; margin-top: 4rpx; }
+.b-check { color: #2E8B57; font-size: 34rpx; font-weight: 700; }
+
+.card {
+  margin-top: 24rpx;
+  background: #FFFFFF;
+  border-radius: 22rpx;
+  padding: 36rpx 32rpx;
+  box-shadow: 0 6rpx 20rpx rgba(0,0,0,0.04);
+}
+.price-row { display: flex; align-items: baseline; }
+.price { font-size: 60rpx; font-weight: 800; color: #C8841E; }
+.price-tag {
+  margin-left: 16rpx;
+  font-size: 22rpx;
+  color: #C8841E;
+  border: 1rpx solid #C8841E;
+  border-radius: 999rpx;
+  padding: 2rpx 14rpx;
+}
+.price-period { font-size: 24rpx; color: #8A8275; margin-top: 10rpx; }
+.buy-btn {
+  margin-top: 28rpx;
+  background: #C8841E;
+  color: #FFFFFF;
+  font-size: 32rpx;
+  border-radius: 999rpx;
+  font-weight: 600;
+}
+.buy-btn[disabled] { opacity: 0.6; }
+.pay-note { font-size: 20rpx; color: #A9A193; text-align: center; margin-top: 16rpx; }
+
+.vip-card { background: #FBF3DC; }
+.vip-tip { font-size: 26rpx; color: #6B5E3C; text-align: center; }
+
+.toast {
+  margin-top: 28rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #8A8275;
+}

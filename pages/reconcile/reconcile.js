@@ -167,6 +167,16 @@ Page({
   exportCSV() {
     var ledger = this.data.ledger
     if (!ledger) return
+    if (!db.isVip()) {
+      wx.showModal({
+        title: '导出为会员功能',
+        content: '升级会员后可解锁对账 CSV 导出，方便备份与报税。',
+        confirmText: '去开通',
+        cancelText: '知道了',
+        success: function (r) { if (r.confirm) wx.navigateTo({ url: '/pages/vip/vip' }) }
+      })
+      return
+    }
     var csv = db.exportReconcileCSV(ledger.id)
     if (!csv || csv.split('\n').length < 3) {
       wx.showToast({ title: '没有可导出的记录', icon: 'none' })

@@ -170,11 +170,17 @@ Page({
     var result = this.data.result
     var ledger = this.data.ledger
     if (!result || !result.rows.length || !ledger) return
+    var rows = result.rows
+    // 免费版单次导入上限 50 笔；会员不限
+    if (!db.isVip() && rows.length > 50) {
+      rows = rows.slice(0, 50)
+      wx.showToast({ title: '免费版单次上限 50 笔，已截断', icon: 'none' })
+    }
     var catOpt = this.data.categoryOptions[this.data.categoryIndex]
     var accOpt = this.data.accountOptions[this.data.accountIndex]
     var opts = { accountId: accOpt ? accOpt.id : '' }
     if (catOpt && catOpt.key !== 'auto') opts.category = catOpt.key
-    var res = db.importRows(ledger.id, result.rows, opts)
+    var res = db.importRows(ledger.id, rows, opts)
     this.setData({
       importResult: {
         added: res.added.length,
