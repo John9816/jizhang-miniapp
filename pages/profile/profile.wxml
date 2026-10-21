@@ -15,6 +15,7 @@
           placeholder="点击设置微信昵称"
           value="{{me.name}}"
           maxlength="12"
+          bindnickname="onNicknamePick"
           bindblur="onNicknameBlur"
           bindlongpress="onNicknameLongPress"
         />

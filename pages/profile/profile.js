@@ -1,7 +1,7 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
-const avatar = require('../../utils/avatar.js')
+const profileFill = require('../../utils/profileFill.js')
 
 /** 由本地用户 id 生成一个稳定的展示编号 */
 function shortId(id) {
@@ -153,7 +153,7 @@ Page({
     wx.showToast({ title: '已更新', icon: 'success' })
   },
 
-  /* ---------------- 微信头像 / 昵称授权 ---------------- */
+  /* ---------------- 微信头像 / 昵称授权（逻辑统一走 utils/profileFill） ---------------- */
 
   onChooseAvatar(e) {
     var url = e.detail && e.detail.avatarUrl
@@ -161,14 +161,12 @@ Page({
     var self = this
     wx.showLoading({ title: '保存头像', mask: true })
     // 微信给的是临时路径，必须压成 base64 才能长期保留（否则冷启动即失效）
-    avatar.persist(url, function (err, dataUrl) {
+    profileFill.applyAvatar(url, function (err) {
       wx.hideLoading()
       if (err) {
         wx.showToast({ title: err.message || '头像保存失败', icon: 'none' })
         return
       }
-      db.setProfile({ avatar: dataUrl })
-      cloud.updateProfile({ avatar: dataUrl })
       self.refresh()
       wx.showToast({ title: '头像已更新', icon: 'success' })
     })
@@ -177,19 +175,25 @@ Page({
   onAvatarError() {
     // dataURL 不会过期；走到这里说明存的是失效地址，清掉让用户重选
     var av = this.data.me && this.data.me.avatar
-    if (av && /^https?:\/\//.test(av)) {
-      db.setProfile({ avatar: '' })
+    if (profileFill.onAvatarError(av)) {
       this.refresh()
       wx.showToast({ title: '头像已过期，请重新选择', icon: 'none' })
     }
   },
 
+  /** 微信昵称建议被选中（input type="nickname" 的 bindnickname，最可靠的获取方式） */
+  onNicknamePick(e) {
+    var v = (e.detail && e.detail.nickname) || ''
+    if (profileFill.applyNickname(v)) {
+      this.refresh()
+    }
+  },
+
   onNicknameBlur(e) {
     var v = String((e.detail && e.detail.value) || '').trim()
-    if (!v || v === this.data.me.name) return
-    db.setMyName(v)
-    cloud.updateProfile({ nickname: v })
-    this.refresh()
+    if (profileFill.applyNickname(v)) {
+      this.refresh()
+    }
   },
 
   /** 昵称输入框长按 → 手动改名（微信昵称授权失败时的兜底） */

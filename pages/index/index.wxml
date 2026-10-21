@@ -20,23 +20,8 @@
     <text class="sync-retry" wx:if="{{account.phase === 'failed'}}">重试 ›</text>
   </view>
 
-  <!-- 资料完善提示（非阻断，可关闭）：头像点左侧图标从微信里选；昵称聚焦后点键盘顶部的微信昵称一键填入 -->
-  <view class="profile-banner" wx:if="{{profileBanner}}">
-    <button class="banner-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onBannerAvatar">
-      <image class="banner-avatar" src="{{bannerAvatar}}" mode="aspectFill" />
-      <view class="banner-cam">📷</view>
-    </button>
-    <input
-      class="banner-input"
-      type="nickname"
-      value="{{bannerName}}"
-      placeholder="给自己起个名字"
-      maxlength="12"
-      bindinput="onBannerNameInput"
-      bindblur="onBannerNameConfirm"
-    />
-    <view class="banner-close" bindtap="onBannerClose">✕</view>
-  </view>
+  <!-- 首屏合并资料卡（非阻断，可关闭）：头像 + 昵称同一屏并排完成，昵称用 bindnickname 一键填入 -->
+  <profile-fill wx:if="{{showOnboard}}" mode="onboard" bind:done="onOnboardDone" />
 
   <!-- 本月支出主卡 -->
   <view class="hero" wx:if="{{ledger}}">

@@ -1,7 +1,6 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
-const avatar = require('../../utils/avatar.js')
 
 Page({
   data: {
@@ -25,10 +24,8 @@ Page({
     cloudOn: false,
     syncText: '',
     account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
-    // 资料完善提示条（非阻断）：点头像从微信里选一张，昵称聚焦后点键盘顶部的微信昵称一键填入
-    profileBanner: false,
-    bannerAvatar: '/images/avatar.png',
-    bannerName: '',
+    // 首屏合并资料卡：未完善资料且未手动关闭时展示，关闭/完成后自动消失
+    showOnboard: false,
     emptyText: '本月还没有记账记录',
     viewMode: 'list',
     calendar: { days: [], weekdays: [] },
@@ -56,7 +53,7 @@ Page({
     // 注册/登录状态变化即时反馈（首次进入时尤其重要：不能让用户在黑盒里等）
     this._offCloud = cloud.onChange(function (st) { self.onAccountChange(st) })
     this.setData({ account: cloud.accountState() })
-    this.updateProfileBanner()
+    this.updateOnboard()
   },
 
   onUnload() {
@@ -69,61 +66,25 @@ Page({
     if (st.phase === 'ready') db.markRegistered()
   },
 
-  /* ---------------- 资料完善提示条（非阻断） ---------------- */
+  /* ---------------- 首屏合并资料卡（非阻断） ---------------- */
 
   /**
    * 先记账，后补资料：
    *  - 静默注册由 cloud.init() 在 App.onLaunch 完成（wx.login → 服务端自动开户），全程无弹窗；
-   *  - 头像/昵称不做强制引导：只在首页顶部放一条可关闭的提示条，补齐或关闭后自动消失；
+   *  - 头像/昵称不做强制引导：只在首页顶部放一张可关闭的资料卡（profile-fill 组件），
+   *    头像按钮 + 昵称输入框并排，补齐或关闭后自动消失；
    *  - 手机号与首启流程解耦，只在「我的」页保留可选入口（个人主体拿不到微信手机号，首启放按钮必失败）。
    */
-  updateProfileBanner() {
+  updateOnboard() {
     var p = db.getProfile()
     var hasAvatar = !!p.avatar
     var hasName = !!p.name && p.name !== '我'
-    this.setData({
-      profileBanner: !p.guideDone && (!hasAvatar || !hasName),
-      bannerAvatar: p.avatar || '/images/avatar.png',
-      bannerName: hasName ? p.name : ''
-    })
+    this.setData({ showOnboard: !p.guideDone && (!hasAvatar || !hasName) })
   },
 
-  onBannerAvatar(e) {
-    var url = e.detail && e.detail.avatarUrl
-    if (!url) return
-    var self = this
-    wx.showLoading({ title: '保存头像', mask: true })
-    avatar.persist(url, function (err, dataUrl) {
-      wx.hideLoading()
-      if (err) {
-        wx.showToast({ title: err.message || '头像保存失败', icon: 'none' })
-        return
-      }
-      db.setProfile({ avatar: dataUrl })
-      cloud.updateProfile({ avatar: dataUrl })
-      self.setData({ bannerAvatar: dataUrl })
-      self.updateProfileBanner()
-    })
-  },
-
-  onBannerNameInput(e) {
-    this.setData({ bannerName: e.detail.value })
-  },
-
-  onBannerNameConfirm(e) {
-    var v = String((e.detail && e.detail.value) || '').trim()
-    if (!v) return
-    db.setMyName(v)
-    cloud.updateProfile({ nickname: v })
-    this.setData({ bannerName: v })
-    this.updateProfileBanner()
-    this.refresh()
-  },
-
-  onBannerClose() {
-    db.setProfile({ guideDone: true })
-    this.updateProfileBanner()
-    wx.showToast({ title: '已隐藏，可在「我的」页设置', icon: 'none' })
+  /** 资料卡关闭/完成：隐藏并标记已读 */
+  onOnboardDone() {
+    this.setData({ showOnboard: false })
   },
 
   /** 首页同步状态条：正常时点按立即同步，失败时点按重试登录 */
@@ -145,7 +106,7 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }
-    this.updateProfileBanner()
+    this.updateOnboard()
     var ledger = db.currentLedger()
     if (ledger) {
       var generated = db.runDueRecurring(ledger.id)

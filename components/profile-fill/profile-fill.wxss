@@ -1,0 +1,99 @@
+.pf-onboard {
+  margin: 0 28rpx 20rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #FFF6DF, #FFEFC2);
+  border: 2rpx solid #F5DFA0;
+}
+
+.pf-edit {
+  /* 个人页内联态：交给外层容器控制边距 */
+}
+
+.pf-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.pf-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #8A6410;
+}
+.pf-x {
+  width: 52rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  text-align: center;
+  color: #B3A683;
+  font-size: 30rpx;
+}
+.pf-x:active { opacity: 0.6; }
+
+.pf-main {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.pf-av-btn {
+  position: relative;
+  width: 88rpx;
+  height: 88rpx;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+}
+.pf-av-btn::after { border: none; }
+.pf-av {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  display: block;
+}
+.pf-cam {
+  position: absolute;
+  right: -6rpx;
+  bottom: -6rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: #FFC93C;
+  font-size: 20rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border: 3rpx solid #fff;
+  box-sizing: border-box;
+}
+.pf-fields {
+  flex: 1;
+  min-width: 0;
+}
+.pf-input {
+  height: 72rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  font-size: 27rpx;
+  color: #4A4234;
+}
+.pf-tip {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: #A79E8B;
+}
+.pf-done {
+  margin: 18rpx 0 0;
+  height: 76rpx;
+  line-height: 76rpx;
+  border-radius: 999rpx;
+  background: #FFC93C;
+  color: #5A3E00;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+.pf-done::after { border: none; }
