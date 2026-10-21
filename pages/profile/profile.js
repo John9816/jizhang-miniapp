@@ -211,32 +211,6 @@ Page({
     this.setData({ phoneInput: e.detail.value })
   },
 
-  onGetPhoneNumber(e) {
-    var detail = e.detail || {}
-    var self = this
-    if (!detail.code) {
-      // 用户拒绝或基础库不支持 → 弹层里手动填写
-      wx.showToast({ title: '请改用下方手动填写', icon: 'none' })
-      return
-    }
-    if (!cloud.enabled()) {
-      wx.showToast({ title: '未开启云同步，请手动填写', icon: 'none' })
-      return
-    }
-    wx.showLoading({ title: '绑定中' })
-    cloud.bindPhone(detail.code).then(function (res) {
-      wx.hideLoading()
-      if (res.ok) {
-        self.setData({ showPhone: false })
-        self.refresh()
-        wx.showToast({ title: '手机号已绑定', icon: 'success' })
-      } else {
-        // 个人主体无 getPhoneNumber 权限服务端会回 needManual
-        wx.showToast({ title: res.needManual ? '请在下方手动填写' : (res.error || '绑定失败'), icon: 'none' })
-      }
-    })
-  },
-
   confirmPhone() {
     var phone = this.data.phoneInput.trim()
     if (!/^1\d{10}$/.test(phone)) {

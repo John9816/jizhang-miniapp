@@ -13,6 +13,31 @@
     </view>
   </view>
 
+  <!-- 云同步状态（常驻细条；失败时点按重试） -->
+  <view class="sync-line {{account.tone}}" wx:if="{{cloudOn}}" bindtap="onSyncTap">
+    <text class="sync-dot"></text>
+    <text class="sync-text">{{account.tip}}<text wx:if="{{account.phase === 'ready'}}"> · {{syncText}}</text></text>
+    <text class="sync-retry" wx:if="{{account.phase === 'failed'}}">重试 ›</text>
+  </view>
+
+  <!-- 资料完善提示（非阻断，可关闭）：头像点左侧图标从微信里选；昵称聚焦后点键盘顶部的微信昵称一键填入 -->
+  <view class="profile-banner" wx:if="{{profileBanner}}">
+    <button class="banner-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onBannerAvatar">
+      <image class="banner-avatar" src="{{bannerAvatar}}" mode="aspectFill" />
+      <view class="banner-cam">📷</view>
+    </button>
+    <input
+      class="banner-input"
+      type="nickname"
+      value="{{bannerName}}"
+      placeholder="给自己起个名字"
+      maxlength="12"
+      bindinput="onBannerNameInput"
+      bindblur="onBannerNameConfirm"
+    />
+    <view class="banner-close" bindtap="onBannerClose">✕</view>
+  </view>
+
   <!-- 本月支出主卡 -->
   <view class="hero" wx:if="{{ledger}}">
     <view class="hero-head">
@@ -221,85 +246,5 @@
       </view>
     </view>
     <view class="sheet-cancel" bindtap="toggleMore">取消</view>
-  </view>
-
-  <!-- 首次进入：自动注册 + 一键补齐微信头像/昵称/手机号 -->
-  <view class="modal-mask guide-mask" wx:if="{{showGuide}}">
-    <view class="guide-card">
-      <image class="guide-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
-      <view class="guide-title">{{guideTitle}}</view>
-      <view class="guide-sub">{{guideSub}}</view>
-
-      <view class="guide-status {{account.tone}}" wx:if="{{cloudOn}}">
-        <text class="guide-status-dot"></text>
-        <text class="guide-status-text">{{account.tip}}</text>
-        <view class="guide-status-btn" wx:if="{{account.phase === 'failed'}}" bindtap="retryGuide">重试</view>
-      </view>
-
-      <!-- 1 头像：微信授权组件，必须由用户点击触发（平台规则，无法自动弹出） -->
-      <view class="guide-step {{guideSteps.avatar ? 'done' : ''}}">
-        <button class="guide-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onGuideAvatar">
-          <image class="guide-avatar" src="{{guideAvatarSrc}}" mode="aspectFill" />
-          <view class="guide-avatar-cam">📷</view>
-        </button>
-        <view class="guide-step-main">
-          <text class="guide-step-title">微信头像{{guideSteps.avatar ? '（已同步）' : ''}}</text>
-          <text class="guide-step-desc">点左侧图标，从微信头像里选一张</text>
-        </view>
-        <text class="guide-step-tick" wx:if="{{guideSteps.avatar}}">✓</text>
-      </view>
-
-      <!-- 2 昵称：type=nickname 输入框，聚焦后可直接回填微信昵称 -->
-      <view class="guide-step {{guideSteps.name ? 'done' : ''}}">
-        <text class="guide-step-idx">Aa</text>
-        <view class="guide-step-main">
-          <input
-            class="guide-input"
-            type="nickname"
-            value="{{guideName}}"
-            placeholder="点这里填入微信昵称"
-            maxlength="12"
-            bindblur="onGuideNameBlur"
-            bindinput="onGuideNameInput"
-          />
-          <text class="guide-step-desc">聚焦后可一键填入你的微信昵称</text>
-        </view>
-        <text class="guide-step-tick" wx:if="{{guideSteps.name}}">✓</text>
-      </view>
-
-      <!-- 3 手机号：getPhoneNumber 组件；个人主体无权限时自动切手动输入 -->
-      <view class="guide-step {{guideSteps.phone ? 'done' : ''}}">
-        <text class="guide-step-idx">📱</text>
-        <view class="guide-step-main">
-          <button
-            wx:if="{{!guideManualPhone && !guideSteps.phone}}"
-            class="guide-wx-btn"
-            open-type="getPhoneNumber"
-            bindgetphonenumber="onGuidePhone"
-          >使用微信手机号</button>
-          <input
-            wx:else
-            class="guide-input"
-            type="number"
-            value="{{guidePhone}}"
-            maxlength="11"
-            placeholder="{{guideSteps.phone ? '' : '输入手机号'}}"
-            bindinput="onGuidePhoneInput"
-            bindblur="onGuidePhoneBlur"
-          />
-          <text class="guide-step-desc" wx:if="{{guideSteps.phone}}">{{guidePhone}}</text>
-          <text class="guide-step-desc" wx:elif="{{guideManualPhone}}">当前账号不支持自动读取，手动填写即可</text>
-          <text class="guide-step-desc" wx:else>用于登录与多设备识别，随时可改</text>
-        </view>
-        <text class="guide-step-tick" wx:if="{{guideSteps.phone}}">✓</text>
-      </view>
-
-      <view class="guide-actions">
-        <view class="guide-skip" bindtap="skipGuide">跳过，先去记账</view>
-        <view class="guide-done {{guideSteps.avatar || guideSteps.name || guideSteps.phone ? '' : 'plain'}}" bindtap="finishGuide">
-          {{guideSteps.avatar || guideSteps.name || guideSteps.phone ? '完成，开始记账' : '先跳过资料'}}
-        </view>
-      </view>
-    </view>
   </view>
 </view>

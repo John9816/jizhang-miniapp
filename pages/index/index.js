@@ -25,15 +25,10 @@ Page({
     cloudOn: false,
     syncText: '',
     account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
-    // 首次进入的注册引导
-    showGuide: false,
-    guideTitle: '欢迎来到聿知记',
-    guideSub: '正在为你创建专属账号…',
-    guideAvatarSrc: '/images/avatar.png',
-    guideName: '',
-    guidePhone: '',
-    guideManualPhone: false,
-    guideSteps: { avatar: false, name: false, phone: false },
+    // 资料完善提示条（非阻断）：点头像从微信里选一张，昵称聚焦后点键盘顶部的微信昵称一键填入
+    profileBanner: false,
+    bannerAvatar: '/images/avatar.png',
+    bannerName: '',
     emptyText: '本月还没有记账记录',
     viewMode: 'list',
     calendar: { days: [], weekdays: [] },
@@ -61,7 +56,7 @@ Page({
     // 注册/登录状态变化即时反馈（首次进入时尤其重要：不能让用户在黑盒里等）
     this._offCloud = cloud.onChange(function (st) { self.onAccountChange(st) })
     this.setData({ account: cloud.accountState() })
-    this.startGuide()
+    this.updateProfileBanner()
   },
 
   onUnload() {
@@ -71,74 +66,29 @@ Page({
 
   onAccountChange(st) {
     this.setData({ account: st, syncText: st.text })
-    if (st.phase === 'ready') {
-      db.markRegistered()
-      this.setData({ guideSub: '账号已创建，ID ' + this.shortId(db.getProfile().id) })
-    } else if (st.phase === 'failed') {
-      this.setData({ guideSub: '账号未能创建成功，可以先用着，稍后重试' })
-    }
+    if (st.phase === 'ready') db.markRegistered()
   },
 
-  shortId(id) {
-    var h = 0
-    var s = String(id || 'jizhang')
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000000
-    return String(10000000 + h).slice(0, 8)
-  },
-
-  /* ---------------- 首次进入：自动注册 + 一键补齐 ---------------- */
+  /* ---------------- 资料完善提示条（非阻断） ---------------- */
 
   /**
-   * 进入小程序后的处理：
-   *  - 静默注册由 cloud.init() 在 App.onLaunch 已完成（wx.login → 服务端自动开户），这里只负责把状态呈现出来；
-   *  - 资料还没补齐且没跳过过时，自动弹出引导卡，三步各点一次即可完成头像/昵称/手机号；
-   *  - 微信不允许在无人点击的情况下拉起头像、手机号授权组件，所以「一键」是指一次点击完成一项，而不是全自动。
+   * 先记账，后补资料：
+   *  - 静默注册由 cloud.init() 在 App.onLaunch 完成（wx.login → 服务端自动开户），全程无弹窗；
+   *  - 头像/昵称不做强制引导：只在首页顶部放一条可关闭的提示条，补齐或关闭后自动消失；
+   *  - 手机号与首启流程解耦，只在「我的」页保留可选入口（个人主体拿不到微信手机号，首启放按钮必失败）。
    */
-  startGuide() {
+  updateProfileBanner() {
     var p = db.getProfile()
-    var steps = this.guideState(p)
-    if (p.guideDone) return
-    var patch = {
-      showGuide: true,
-      guideSteps: steps,
-      guideName: p.name || '',
-      guidePhone: p.phone || '',
-      guideAvatarSrc: p.avatar || '/images/avatar.png',
-      cloudOn: cloud.enabled()
-    }
-    if (!p.registeredAt) {
-      patch.guideTitle = '欢迎来到聿知记'
-      patch.guideSub = cloud.enabled() ? '正在为你创建专属账号…' : '本地模式，数据只存在这台手机'
-    } else {
-      patch.guideTitle = '完善你的资料'
-      patch.guideSub = '账号已就绪，ID ' + this.shortId(p.id)
-    }
-    this.setData(patch)
-  },
-
-  guideState(p) {
-    return {
-      avatar: !!(p && p.avatar),
-      name: !!(p && p.name) && p.name !== '我',
-      phone: !!(p && p.phone)
-    }
-  },
-
-  syncGuideSteps() {
-    this.setData({ guideSteps: this.guideState(db.getProfile()) })
-  },
-
-  retryGuide() {
-    var self = this
-    wx.showLoading({ title: '重试中', mask: true })
-    cloud.retry().then(function (res) {
-      wx.hideLoading()
-      self.setData({ account: cloud.accountState() })
-      if (!res.ok) wx.showToast({ title: (res.error || '仍失败').slice(0, 16), icon: 'none' })
+    var hasAvatar = !!p.avatar
+    var hasName = !!p.name && p.name !== '我'
+    this.setData({
+      profileBanner: !p.guideDone && (!hasAvatar || !hasName),
+      bannerAvatar: p.avatar || '/images/avatar.png',
+      bannerName: hasName ? p.name : ''
     })
   },
 
-  onGuideAvatar(e) {
+  onBannerAvatar(e) {
     var url = e.detail && e.detail.avatarUrl
     if (!url) return
     var self = this
@@ -151,84 +101,51 @@ Page({
       }
       db.setProfile({ avatar: dataUrl })
       cloud.updateProfile({ avatar: dataUrl })
-      self.setData({ guideAvatarSrc: dataUrl })
-      self.syncGuideSteps()
+      self.setData({ bannerAvatar: dataUrl })
+      self.updateProfileBanner()
     })
   },
 
-  onGuideNameInput(e) {
-    this.setData({ guideName: e.detail.value })
+  onBannerNameInput(e) {
+    this.setData({ bannerName: e.detail.value })
   },
 
-  onGuideNameBlur(e) {
+  onBannerNameConfirm(e) {
     var v = String((e.detail && e.detail.value) || '').trim()
     if (!v) return
     db.setMyName(v)
     cloud.updateProfile({ nickname: v })
-    this.setData({ guideName: v })
-    this.syncGuideSteps()
+    this.setData({ bannerName: v })
+    this.updateProfileBanner()
     this.refresh()
   },
 
-  onGuidePhoneInput(e) {
-    this.setData({ guidePhone: e.detail.value })
+  onBannerClose() {
+    db.setProfile({ guideDone: true })
+    this.updateProfileBanner()
+    wx.showToast({ title: '已隐藏，可在「我的」页设置', icon: 'none' })
   },
 
-  onGuidePhoneBlur(e) {
-    var v = String((e.detail && e.detail.value) || '').trim()
-    if (!/^1\d{10}$/.test(v)) return
-    db.setProfile({ phone: v })
-    cloud.bindPhone('', v)
-    this.setData({ guidePhone: v })
-    this.syncGuideSteps()
-  },
-
-  onGuidePhone(e) {
-    var detail = e.detail || {}
+  /** 首页同步状态条：正常时点按立即同步，失败时点按重试登录 */
+  onSyncTap() {
     var self = this
-    if (!detail.code) {
-      // 个人主体拿不到手机号权限、或用户拒绝 → 自动切手动输入，不让用户卡在这里
-      this.setData({ guideManualPhone: true })
-      wx.showToast({ title: '请手动填写手机号', icon: 'none' })
+    if (this.data.account.phase === 'failed') {
+      wx.showLoading({ title: '重试中', mask: true })
+      cloud.retry().then(function (res) {
+        wx.hideLoading()
+        self.setData({ account: cloud.accountState() })
+        if (!res.ok) wx.showToast({ title: (res.error || '仍失败').slice(0, 16), icon: 'none' })
+      })
       return
     }
-    wx.showLoading({ title: '读取中', mask: true })
-    cloud.bindPhone(detail.code).then(function (res) {
-      wx.hideLoading()
-      if (res.ok) {
-        self.setData({ guidePhone: res.phone, guideManualPhone: false })
-        self.syncGuideSteps()
-      } else {
-        self.setData({ guideManualPhone: true })
-        wx.showToast({ title: res.needManual ? '请手动填写' : (res.error || '读取失败'), icon: 'none' })
-      }
-    })
-  },
-
-  closeGuide(mark) {
-    this.setData({ showGuide: false })
-    if (mark) db.setProfile({ guideDone: true })
-    this.refresh()
-  },
-
-  skipGuide() {
-    this.closeGuide(true)
-    wx.showToast({ title: '已跳过，稍后可补', icon: 'none' })
-  },
-
-  finishGuide() {
-    var s = this.guideState(db.getProfile())
-    this.closeGuide(true)
-    var done = (s.avatar ? 1 : 0) + (s.name ? 1 : 0) + (s.phone ? 1 : 0)
-    if (done === 3) wx.showToast({ title: '资料已完善', icon: 'success' })
-    else if (done > 0) wx.showToast({ title: '已补齐 ' + done + '/3', icon: 'success' })
-    else wx.showToast({ title: '开始记账吧', icon: 'none' })
+    cloud.sync()
   },
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }
+    this.updateProfileBanner()
     var ledger = db.currentLedger()
     if (ledger) {
       var generated = db.runDueRecurring(ledger.id)

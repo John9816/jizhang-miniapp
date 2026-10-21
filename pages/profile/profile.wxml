@@ -18,9 +18,10 @@
           bindblur="onNicknameBlur"
           bindlongpress="onNicknameLongPress"
         />
+        <text class="p-hint">点 📷 从微信头像里选一张 · 昵称聚焦后点键盘顶部的微信昵称一键填入</text>
         <text class="p-id">ID: {{uid}}</text>
         <view class="p-phone" bindtap="openPhone">
-          <text class="{{me.phone ? 'p-phone-num' : 'p-phone-todo'}}">{{me.phone ? '📱 ' + me.phone : '绑定手机号 ›'}}</text>
+          <text class="{{me.phone ? 'p-phone-num' : 'p-phone-todo'}}">{{me.phone ? '📱 ' + me.phone : '绑定手机号（可选）›'}}</text>
         </view>
       </view>
     </view>
@@ -144,10 +145,8 @@
   <!-- 绑定手机号 -->
   <view class="modal-mask" wx:if="{{showPhone}}">
     <view class="modal">
-      <view class="modal-title">绑定手机号</view>
-      <view class="modal-sub">用于云同步身份识别，不展示给账本成员</view>
-      <button class="btn-primary phone-wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">使用微信手机号</button>
-      <view class="phone-or">或手动填写</view>
+      <view class="modal-title">绑定手机号（可选）</view>
+      <view class="modal-sub">仅用于找回账号，可不填；不展示给账本成员</view>
       <input class="modal-input" type="number" maxlength="11" value="{{phoneInput}}" placeholder="输入 11 位手机号" bindinput="onPhoneInput" />
       <view class="modal-actions">
         <view class="btn-plain" bindtap="closePhone">取消</view>
@@ -178,7 +177,7 @@
         <view class="help-item">2. 多人共享：账本页生成邀请码，另一方输入即加入。</view>
         <view class="help-item">3. 存钱挑战只记录进度，不计入收支统计。</view>
         <view class="help-item">4. 微信 / 支付宝账单可在「我的 → 账单导入」粘贴或从聊天文件导入，对账页逐笔核对、可导出对账 CSV。</view>
-        <view class="help-item">5. 头像、昵称、手机号授权都在本页完成；个人主体拿不到微信手机号时可手动填写。</view>
+        <view class="help-item">5. 头像、昵称都在本页设置：点 📷 从微信头像里选，昵称聚焦后点键盘顶部的微信昵称一键填入；手机号仅用于找回账号，可选。</view>
         <view class="help-item">6. 同步异常时可核对服务器地址：</view>
       </view>
       <view class="help-api" bindtap="copyApi">https://jizhang-api.751152.xyz</view>
