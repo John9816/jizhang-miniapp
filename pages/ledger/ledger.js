@@ -1,6 +1,7 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
+const vip = require('../../utils/vip.js')
 
 Page({
   data: {
@@ -76,7 +77,7 @@ Page({
 
   confirmCreate() {
     var name = this.data.newName.trim()
-    if (!db.isVip() && db.listLedgers().length >= 2) {
+    if (vip.featureEnabled() && !db.isVip() && db.listLedgers().length >= 2) {
       wx.showModal({
         title: '账本数量已达上限',
         content: '免费版最多创建 2 个账本，升级会员后可无限创建并解除成员上限。',
@@ -223,7 +224,7 @@ Page({
 
   exportCSV() {
     if (!this.data.ledger) return
-    if (!db.isVip()) {
+    if (vip.featureEnabled() && !db.isVip()) {
       wx.showModal({
         title: '导出为会员功能',
         content: '升级会员后可解锁 Excel / PDF 数据导出，方便备份与报税。',

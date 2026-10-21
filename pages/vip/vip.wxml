@@ -16,7 +16,7 @@
     </view>
   </view>
 
-  <view class="card" wx:if="{{!vip && product}}">
+  <view class="card" wx:if="{{!vip && vipOn && product}}">
     <view class="price-row">
       <text class="price">¥{{product.priceYuan}}</text>
       <text class="price-tag">{{product.tag}}</text>
@@ -30,6 +30,10 @@
 
   <view class="card vip-card" wx:if="{{vip}}">
     <view class="vip-tip">已享受去广告、多账本、导出、高级图表、导入对账等全部权益</view>
+  </view>
+
+  <view class="card vip-card" wx:if="{{!vip && !vipOn}}">
+    <view class="vip-tip">会员功能即将开放，敬请期待</view>
   </view>
 
   <view class="toast" wx:if="{{toast}}">{{toast}}</view>

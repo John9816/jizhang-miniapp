@@ -11,6 +11,7 @@
 
 var cfg = require('../config.js')
 var db = require('./db.js')
+var vip = require('./vip.js')
 
 var state = {
   token: '',
@@ -330,6 +331,7 @@ function iosWechatPayOk() {
 
 /** 下单 → 拉起支付 → 轮询确认发货。返回 { ok } 或 { ok:false, error/needUpdate } */
 function purchaseVip(productId) {
+  if (!vip.featureEnabled()) return Promise.resolve({ ok: false, error: '会员功能即将开放' })
   if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
   if (!iosWechatPayOk()) return Promise.resolve({ ok: false, needUpdate: true, error: '请将微信更新至最新版后再支付' })
   var chain = state.token ? Promise.resolve() : login()

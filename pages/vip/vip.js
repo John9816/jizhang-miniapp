@@ -1,9 +1,11 @@
 var cloud = require('../../utils/cloud.js')
 var db = require('../../utils/db.js')
 var vipProducts = require('../../utils/vip-products.js')
+var vip = require('../../utils/vip.js')
 
 Page({
   data: {
+    vipOn: false,
     vip: false,
     product: null,
     benefits: [],
@@ -14,11 +16,17 @@ Page({
     this.refresh()
   },
   refresh: function () {
+    var on = vip.featureEnabled()
     var p = vipProducts.products[0]
-    this.setData({ vip: db.isVip(), product: p, benefits: vipProducts.benefits })
+    // 开关关闭时只展示"敬请期待"，不暴露价格与购买入口
+    this.setData({ vipOn: on, vip: db.isVip(), product: on ? p : null, benefits: vipProducts.benefits })
   },
   buy: function () {
     var that = this
+    if (!this.data.vipOn) {
+      wx.showToast({ title: '会员功能即将开放', icon: 'none' })
+      return
+    }
     if (this.data.buying) return
     this.setData({ buying: true, toast: '正在唤起支付…' })
     cloud.purchaseVip(this.data.product.id).then(function (r) {

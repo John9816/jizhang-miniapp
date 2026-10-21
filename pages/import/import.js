@@ -1,6 +1,7 @@
 const db = require('../../utils/db.js')
 const bill = require('../../utils/billParser.js')
 const u = require('../../utils/util.js')
+const vip = require('../../utils/vip.js')
 
 /** 解析结果 → 可展示的明细行 */
 function decorateRows(result) {
@@ -171,8 +172,8 @@ Page({
     var ledger = this.data.ledger
     if (!result || !result.rows.length || !ledger) return
     var rows = result.rows
-    // 免费版单次导入上限 50 笔；会员不限
-    if (!db.isVip() && rows.length > 50) {
+    // 免费版单次导入上限 50 笔；会员不限（会员功能关闭时也放行，避免无意义的截断）
+    if (vip.featureEnabled() && !db.isVip() && rows.length > 50) {
       rows = rows.slice(0, 50)
       wx.showToast({ title: '免费版单次上限 50 笔，已截断', icon: 'none' })
     }

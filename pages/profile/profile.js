@@ -2,6 +2,7 @@ const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
 const profileFill = require('../../utils/profileFill.js')
+const vip = require('../../utils/vip.js')
 
 /** 由本地用户 id 生成一个稳定的展示编号 */
 function shortId(id) {
@@ -24,6 +25,7 @@ Page({
     debtsText: '0.00',
     challengeCount: 0,
     memberCount: 1,
+    vipOn: false,
     syncText: '',
     cloudOn: false,
     account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
@@ -63,6 +65,7 @@ Page({
     var patch = {
       me: me,
       vip: db.isVip(),
+      vipOn: vip.featureEnabled(),
       uid: shortId(me.id),
       cloudOn: cloud.enabled(),
       syncText: cloud.statusText(),

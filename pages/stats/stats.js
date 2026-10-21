@@ -1,5 +1,6 @@
 const db = require('../../utils/db.js')
 const u = require('../../utils/util.js')
+const vip = require('../../utils/vip.js')
 
 var PALETTE = ['#FFD24A', '#FFAE63', '#F08A7E', '#86C7A8', '#8CB6EE', '#B49BE8', '#D9CDB0']
 
@@ -547,7 +548,7 @@ Page({
   makePoster() {
     var ledger = db.currentLedger()
     if (!ledger) return
-    if (!db.isVip()) {
+    if (vip.featureEnabled() && !db.isVip()) {
       wx.showModal({
         title: '海报为会员功能',
         content: '升级会员后可解锁高级统计图表与年度海报，分享更美观的收支报告。',

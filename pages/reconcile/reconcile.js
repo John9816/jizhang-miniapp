@@ -1,6 +1,7 @@
 const db = require('../../utils/db.js')
 const bill = require('../../utils/billParser.js')
 const u = require('../../utils/util.js')
+const vip = require('../../utils/vip.js')
 
 Page({
   data: {
@@ -167,7 +168,7 @@ Page({
   exportCSV() {
     var ledger = this.data.ledger
     if (!ledger) return
-    if (!db.isVip()) {
+    if (vip.featureEnabled() && !db.isVip()) {
       wx.showModal({
         title: '导出为会员功能',
         content: '升级会员后可解锁对账 CSV 导出，方便备份与报税。',

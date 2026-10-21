@@ -11,6 +11,12 @@ var cloud = {
   apiBase: 'https://jizhang-api.751152.xyz'
 }
 
+// 会员功能开关：
+//   false = 前端隐藏所有价格/购买入口与付费门控（审核期、或后台尚未开通虚拟支付时使用）；
+//   true  = 正常展示会员中心与付费门控。
+// 待 MP 后台开通虚拟支付 + 发布道具后，把这里改为 true 并重新上传，会员能力即原地上线（代码始终保留）。
+var vipEnabled = false
+
 try {
   var local = require('./config.local.js')
   if (local && local.cloud) {
@@ -22,5 +28,6 @@ try {
 }
 
 module.exports = {
-  cloud: cloud
+  cloud: cloud,
+  vipEnabled: vipEnabled
 }
