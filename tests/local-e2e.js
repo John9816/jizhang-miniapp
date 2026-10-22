@@ -133,7 +133,7 @@ api('POST', '/api/login', { code: 'local-devA', nickname: '我' }).then(function
   var fs = require('fs')
   var path = require('path')
   var sqlite = require('node:sqlite')
-  var dbFile = path.join(__dirname, '..', 'jizhang-data', 'jizhang.db')
+  var dbFile = path.join(__dirname, '..', 'server', 'data', 'jizhang.db')
   ok(fs.existsSync(dbFile), '数据库文件存在：' + dbFile)
   var d = new sqlite.DatabaseSync(dbFile)
   var n = d.prepare('SELECT COUNT(*) c FROM records').get().c

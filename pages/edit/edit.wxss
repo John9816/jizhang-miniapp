@@ -96,7 +96,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.ledger-arrow { font-size: 22rpx; }
 
 /* ============ 主体 ============ */
 .mid {

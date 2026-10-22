@@ -1,12 +1,13 @@
 <view class="edit-page" style="height:{{pageH}}px">
   <view style="height:{{statusBar}}px"></view>
 
-  <!-- 顶部：取消 / 收支切换 / 完成 -->
+  <!-- 顶部：取消 / 支出·收入·转账 三段切换 / 完成 -->
   <view class="nav">
     <text class="nav-btn" bindtap="onCancel">取消</text>
     <view class="seg">
-      <view class="seg-item {{mode === 'normal' && type === 'expense' ? 'seg-on' : ''}}" bindtap="setType" data-type="expense">支出</view>
-      <view class="seg-item {{mode === 'normal' && type === 'income' ? 'seg-on' : ''}}" bindtap="setType" data-type="income">收入</view>
+      <view class="seg-item {{mode !== 'transfer' && type === 'expense' ? 'seg-on' : ''}}" bindtap="setType" data-type="expense">支出</view>
+      <view class="seg-item {{mode !== 'transfer' && type === 'income' ? 'seg-on' : ''}}" bindtap="setType" data-type="income">收入</view>
+      <view class="seg-item {{mode === 'transfer' ? 'seg-on' : ''}}" bindtap="setType" data-type="transfer">转账</view>
     </view>
     <text class="nav-done {{canSave ? '' : 'nav-done-off'}}" bindtap="onSave">完成</text>
   </view>
@@ -21,9 +22,9 @@
     <view class="amount-foot">
       <text class="calc-hint" wx:if="{{calcHint}}">{{calcHint}}</text>
       <text class="calc-hint" wx:else>{{mode === 'transfer' ? '转账不计入收支' : (type === 'expense' ? '记一笔支出' : '记一笔收入')}}</text>
-      <view class="ledger-line" bindtap="toggleTransfer">
-        <text>{{mode === 'transfer' ? '退出转账' : ledgerName}}</text>
-        <text class="ledger-arrow">{{mode === 'transfer' ? '×' : '›'}}</text>
+      <!-- 所属账本（纯展示；记账归属当前打开的账本） -->
+      <view class="ledger-line">
+        <text>{{ledgerName}}</text>
       </view>
     </view>
   </view>

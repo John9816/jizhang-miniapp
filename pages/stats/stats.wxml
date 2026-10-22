@@ -3,32 +3,29 @@
 
   <!-- 标题 -->
   <view class="s-head">
-    <view class="s-head-l">
-      <text class="s-title">统计</text>
-      <text class="s-sub">{{periodLabel}}</text>
-    </view>
+    <text class="s-title">统计</text>
     <image class="s-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
   </view>
 
-  <!-- 支出 / 收入 -->
-  <view class="type-seg">
-    <view class="type-item {{pieType === 'expense' ? 'type-on' : ''}}" bindtap="setPieType" data-type="expense">支出</view>
-    <view class="type-item {{pieType === 'income' ? 'type-on' : ''}}" bindtap="setPieType" data-type="income">收入</view>
-  </view>
-
-  <!-- 周期 -->
-  <view class="period-bar">
-    <view class="period-item {{period === item.key ? 'period-on' : ''}}" wx:for="{{periods}}" wx:key="key" bindtap="setPeriod" data-period="{{item.key}}">{{item.name}}</view>
-  </view>
-
-  <!-- 上一期 / 下一期 -->
+  <!-- 周期主行：翻期 + 当前周期（大字号，唯一一处周期标签） -->
   <view class="pn-bar" wx:if="{{period !== 'custom'}}">
     <text class="pn-btn" bindtap="prevPeriod">‹</text>
     <text class="pn-label">{{periodLabel}}</text>
     <text class="pn-btn" bindtap="nextPeriod">›</text>
   </view>
   <view class="pn-bar" wx:else>
-    <text class="pn-label" bindtap="setPeriod" data-period="custom">{{periodLabel}} · 点击修改</text>
+    <text class="pn-label pn-label-custom" bindtap="setPeriod" data-period="custom">{{periodLabel}} · 点击修改</text>
+  </view>
+
+  <!-- 口径行：支出/收入 切换 + 周期 选择，同一行 -->
+  <view class="scope-bar">
+    <view class="type-seg">
+      <view class="type-item {{pieType === 'expense' ? 'type-on' : ''}}" bindtap="setPieType" data-type="expense">支出</view>
+      <view class="type-item {{pieType === 'income' ? 'type-on' : ''}}" bindtap="setPieType" data-type="income">收入</view>
+    </view>
+    <view class="period-bar">
+      <view class="period-item {{period === item.key ? 'period-on' : ''}}" wx:for="{{periods}}" wx:key="key" bindtap="setPeriod" data-period="{{item.key}}">{{item.name}}</view>
+    </view>
   </view>
 
   <!-- 总览 + 折线图 -->

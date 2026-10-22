@@ -123,8 +123,10 @@ Page({
 
   setType(e) {
     var type = e.currentTarget.dataset.type
-    if (type === this.data.type && this.data.mode === 'normal') return
+    // 转账为独立记账类型：与支出/收入并列在顶部切换
+    if (type === 'transfer') return this.toggleTransfer()
     var self = this
+    // 从转账模式切回支出/收入：先退到 normal 再同步分类
     this.setData({ type: type, mode: 'normal' }, function () {
       self.syncCategories()
       self.refreshAmount()
@@ -138,10 +140,8 @@ Page({
   },
 
   toggleTransfer() {
-    if (this.data.mode === 'transfer') {
-      this.setData({ mode: 'normal' }, function () { this.refreshAmount() }.bind(this))
-      return
-    }
+    // 已在转账模式时无操作：避免误触丢失已选账户；退出走支出/收入切换
+    if (this.data.mode === 'transfer') return
     if (this.data.accounts.length < 2) {
       wx.showToast({ title: '请先到「资产」添加两个账户', icon: 'none' })
       return
