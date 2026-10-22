@@ -19,11 +19,10 @@ Page({
     summary: { income: 0, expense: 0, balance: 0, incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' },
     today: { expenseText: '0.00', incomeText: '0.00', has: false },
     streak: 0,
-    budgetCard: null,
+    heroBudget: null,
     topCats: [],
     challenge: null,
     challengeCount: 0,
-    budgetAlert: '',
     loading: true,
     showMore: false,
     cloudOn: false,
@@ -147,15 +146,14 @@ Page({
         recordCount: 0,
         challenge: null,
         challengeCount: 0,
-        loading: false,
-        emptyText: '还没有账本，去创建一个吧',
-        budgetAlert: '',
-        dayGroups: [],
-        calendar: { days: [], weekdays: [] },
-        today: { expenseText: '0.00', incomeText: '0.00', has: false },
-        streak: 0,
-        budgetCard: null,
-        topCats: [],
+      loading: false,
+      emptyText: '还没有账本，去创建一个吧',
+      dayGroups: [],
+      calendar: { days: [], weekdays: [] },
+      today: { expenseText: '0.00', incomeText: '0.00', has: false },
+      streak: 0,
+      heroBudget: null,
+      topCats: [],
         summary: { income: 0, expense: 0, balance: 0, incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' }
       })
       return
@@ -182,6 +180,7 @@ Page({
         date: r.date,
         note: r.note,
         createdAt: r.createdAt,
+        timeText: u.hmText(r.createdAt),
         type: r.type,
         amount: r.amount,
         icon: isTransfer ? '🔁' : u.categoryIcon(r.type, r.category),
@@ -216,23 +215,21 @@ Page({
       has: todayRecs.length > 0
     }
     var isCurMonth = this.data.monthKey === u.currentMonthKey()
-    var budgetCard = null
-    var budgetAlert = ''
+    // 预算进度内嵌主卡（有预算时）：进度条 + 剩余/超支文案，点击进预算管理
+    var heroBudget = null
     if (isCurMonth) {
       var status = u.budgetStatus(db.budgetOf(ledger.id), all, null)
       if (status.total) {
         var t = status.total
-        budgetCard = {
+        heroBudget = {
           pct: Math.min(100, t.pct),
           pctText: t.pct + '%',
           usedText: u.formatCents(t.used),
           limitText: u.formatCents(t.limit),
           leftText: u.formatCents(Math.max(0, t.limit - t.used)),
+          overText: u.formatCents(Math.max(0, t.used - t.limit)),
           over: t.over
         }
-        budgetAlert = t.over
-          ? '本月支出已超出预算 ' + u.formatCents(t.used - t.limit) + ' 元'
-          : (t.pct >= 80 ? '本月支出已达预算的 ' + t.pct + '%，注意控制' : '')
       }
     }
 
@@ -263,8 +260,7 @@ Page({
       emptyText: emptyText,
       challenge: active,
       challengeCount: running,
-      budgetAlert: budgetAlert,
-      budgetCard: budgetCard,
+      heroBudget: heroBudget,
       today: today,
       streak: u.calcStreak(allLedger),
       topCats: u.topCategories(allLedger, 'expense', 5),
@@ -418,10 +414,6 @@ Page({
 
   goSearch() {
     wx.navigateTo({ url: '/pages/search/search' })
-  },
-
-  goLedger() {
-    wx.navigateTo({ url: '/pages/ledger/ledger' })
   },
 
   goChallenge() {

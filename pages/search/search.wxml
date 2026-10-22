@@ -81,7 +81,7 @@
             <text>{{rec.categoryName}}</text>
             <text class="rec-member" wx:if="{{rec.isOther}}">{{rec.memberName}}</text>
           </view>
-          <text class="rec-note" wx:if="{{rec.note}}">{{rec.note}}</text>
+          <text class="rec-note" wx:if="{{rec.timeText || rec.note}}">{{rec.timeText}}{{rec.timeText && rec.note ? ' · ' : ''}}{{rec.note}}</text>
         </view>
         <view class="rec-amount {{rec.type === 'income' ? 'text-income' : 'text-expense'}}">{{rec.amountText}}</view>
       </view>

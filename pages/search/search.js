@@ -105,6 +105,7 @@ Page({
         date: r.date,
         note: r.note,
         createdAt: r.createdAt,
+        timeText: u.hmText(r.createdAt),
         type: r.type,
         amount: r.amount,
         icon: isTransfer ? '🔀' : u.categoryIcon(r.type, r.category),

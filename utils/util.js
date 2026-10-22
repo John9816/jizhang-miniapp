@@ -128,6 +128,26 @@ function formatMonth(key) {
 
 var WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 
+/** createdAt 兼容数字时间戳 / 数字字符串 / ISO 字符串 → 毫秒数（用于排序） */
+function tsOf(v) {
+  if (typeof v === 'number' && isFinite(v)) return v
+  if (typeof v === 'string') {
+    if (/^\d+$/.test(v)) return Number(v)
+    var t = Date.parse(v)
+    if (!isNaN(t)) return t
+  }
+  return 0
+}
+
+/** createdAt → 本地「HH:mm」；无法解析时返回空串（页面自行隐藏） */
+function hmText(v) {
+  var t = tsOf(v)
+  if (!t) return ''
+  var d = new Date(t)
+  if (isNaN(d.getTime())) return ''
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes())
+}
+
 /** 按日期分组（倒序），并附组内小计与展示文本（转账不计收支） */
 function groupByDate(records) {
   var map = {}
@@ -149,13 +169,15 @@ function groupByDate(records) {
   for (i = 0; i < keys.length; i++) {
     var k = keys[i]
     var grp = map[k]
-    grp.records.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0) })
+    // createdAt 可能是数字（本地新建）或 ISO 字符串（云同步回填），统一转毫秒再排序
+    grp.records.sort(function (a, b) { return tsOf(b.createdAt) - tsOf(a.createdAt) })
     var mm = parseInt(k.slice(5, 7), 10)
     var dd = parseInt(k.slice(8, 10), 10)
     var wd = '周' + WEEKDAY_NAMES[new Date(parseInt(k.slice(0, 4), 10), mm - 1, dd).getDay()]
+    // 组头始终带完整日期 + 星期；今天/昨天加前缀便于定位
     var label = mm + '月' + dd + '日 ' + wd
-    if (k === today) label = '今天'
-    else if (k === yesterday) label = '昨天'
+    if (k === today) label = '今天 ' + label
+    else if (k === yesterday) label = '昨天 ' + label
     grp.label = label
     grp.incomeText = formatCents(grp.income)
     grp.expenseText = formatCents(grp.expense)
@@ -775,6 +797,8 @@ module.exports = {
   formatMonth: formatMonth,
   calcSummary: calcSummary,
   groupByDate: groupByDate,
+  hmText: hmText,
+  tsOf: tsOf,
   memberStats: memberStats,
   genId: genId,
   b64encodeUtf8: b64encodeUtf8,

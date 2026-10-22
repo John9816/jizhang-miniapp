@@ -124,14 +124,6 @@
   color: #8A6410;
   font-weight: 500;
 }
-.hero-month {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  background: rgba(255, 255, 255, 0.55);
-  border-radius: 999rpx;
-  padding: 4rpx 10rpx;
-}
 .hero-step {
   display: flex;
   align-items: center;
@@ -147,21 +139,7 @@
   font-size: 26rpx;
   color: #8A6410;
 }
-.hero-month-btn {
-  width: 44rpx;
-  text-align: center;
-  font-size: 28rpx;
-  color: #8A6410;
-  line-height: 44rpx;
-}
 .hero-month-disabled { color: rgba(138, 100, 16, 0.28); }
-.hero-month-text {
-  font-size: 22rpx;
-  color: #8A6410;
-  font-weight: 600;
-  min-width: 52rpx;
-  text-align: center;
-}
 .hero-amount {
   display: block;
   font-size: 64rpx;
@@ -205,26 +183,45 @@
 .hero-coin.c1 { width: 150rpx; height: 150rpx; right: 96rpx; top: -46rpx; }
 .hero-coin.c2 { width: 76rpx; height: 76rpx; right: 40rpx; top: 44rpx; opacity: 0.6; }
 
-/* ============ 预算提醒 ============ */
-.alert-pill {
+/* ============ 主卡内嵌预算进度 ============ */
+.hero-budget { margin-top: 20rpx; }
+.hero-budget:active { opacity: 0.75; }
+.hb-track {
+  height: 10rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.45);
+  overflow: hidden;
+}
+.hb-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: #7A5A10;
+}
+.hb-fill.hb-over { background: #E2543F; }
+.hb-line {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  margin: 18rpx 24rpx 0;
-  padding: 16rpx 24rpx;
-  background: #FFF6E2;
+  justify-content: space-between;
+  margin-top: 10rpx;
+}
+.hb-text { font-size: 21rpx; color: rgba(74, 50, 0, 0.72); }
+.hb-go { font-size: 21rpx; color: #7A5A10; font-weight: 600; flex-shrink: 0; }
+
+/* ============ 今日速览条（一行薄卡，仅当月显示） ============ */
+.today-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16rpx 24rpx 0;
+  padding: 20rpx 28rpx;
+  background: #FFFFFF;
   border-radius: 999rpx;
+  box-shadow: 0 6rpx 20rpx rgba(120, 100, 40, 0.06);
 }
-.alert-dot { font-size: 22rpx; }
-.alert-text {
-  flex: 1;
-  font-size: 23rpx;
-  color: #8A6410;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.alert-go { font-size: 26rpx; color: #C09A3A; }
+.ts-item { font-size: 23rpx; color: #A79E8B; }
+.ts-val { font-size: 26rpx; font-weight: 700; color: #2E2A22; }
+.ts-sep { width: 1rpx; height: 24rpx; background: #EFE8D6; flex-shrink: 0; }
+.ts-streak { color: #B8860B; font-weight: 600; }
 
 /* ============ 存钱挑战 ============ */
 .challenge-card { padding: 26rpx 28rpx 22rpx; }
@@ -290,59 +287,31 @@
 }
 .ch-foot-go { color: #C0A160; }
 
-.challenge-empty {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20rpx;
+/* ============ 快速记一笔（常用分类横滑） ============ */
+.qc-head { padding: 26rpx 32rpx 0; }
+.qc-title { font-size: 24rpx; font-weight: 600; color: #8B8271; }
+.quick-cats {
+  width: 100%;
+  white-space: nowrap;
+  padding: 14rpx 28rpx 4rpx;
 }
-.ch-empty-title {
-  display: block;
-  font-size: 29rpx;
-  font-weight: 700;
-  color: #2E2A22;
-}
-.ch-empty-sub {
-  display: block;
-  font-size: 23rpx;
-  color: #A79E8B;
-  margin-top: 8rpx;
-}
-.ch-empty-btn {
-  padding: 14rpx 34rpx;
-  font-size: 25rpx;
-  flex-shrink: 0;
-}
-
-/* ============ 功能宫格 ============ */
-.quick {
-  display: flex;
-  margin: 20rpx 24rpx 0;
-  padding: 26rpx 8rpx 22rpx;
-  background: #FFFFFF;
-  border-radius: 28rpx;
-  box-shadow: 0 6rpx 24rpx rgba(196, 158, 54, 0.07);
-}
-.quick-item {
-  flex: 1;
-  display: flex;
+.qc-item {
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
+  gap: 10rpx;
+  width: 128rpx;
 }
-.quick-icon {
+.qc-icon {
   width: 88rpx;
   height: 88rpx;
   border-radius: 26rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42rpx;
 }
-.quick-text {
-  font-size: 23rpx;
-  color: #6B6455;
-  margin-top: 12rpx;
-}
+.qc-emoji { font-size: 40rpx; }
+.qc-name { font-size: 22rpx; color: #6B6455; }
 
 /* ============ 成员筛选 ============ */
 .member-filter {
@@ -376,6 +345,7 @@
   padding: 20rpx 0 8rpx;
 }
 .bill-date-sum { color: #C0B49C; }
+.bill-date-in { color: #D0923E; }
 .bill-row {
   display: flex;
   align-items: center;
@@ -414,7 +384,8 @@
   padding: 2rpx 10rpx;
   flex-shrink: 0;
 }
-.bill-note {
+/* 行内次行：记账时间（HH:mm）· 备注 */
+.bill-sub {
   display: block;
   font-size: 22rpx;
   color: #A79E8B;
@@ -473,88 +444,6 @@
 }
 .cal-amt-in { color: #E2543F; }
 .cal-amt-out { color: #9C8E6B; }
-
-/* ============ 今日卡片 / 连续记账 ============ */
-.today-row {
-  display: flex;
-  gap: 20rpx;
-  margin: 0 28rpx 20rpx;
-}
-.today-card {
-  flex: 1;
-  background: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 22rpx 24rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  box-shadow: 0 8rpx 24rpx rgba(120, 100, 40, 0.06);
-}
-.today-label { font-size: 22rpx; color: #A79E8B; }
-.today-val { font-size: 34rpx; font-weight: 700; color: #2E2A22; }
-.streak-card {
-  width: 168rpx;
-  background: linear-gradient(150deg, #FFF3D6, #FFE9AE);
-  border-radius: 24rpx;
-  padding: 18rpx 20rpx;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6rpx;
-}
-.streak-top {
-  display: flex;
-  align-items: baseline;
-  gap: 6rpx;
-}
-.streak-fire { font-size: 26rpx; }
-.streak-num { font-size: 40rpx; font-weight: 700; color: #B8860B; }
-.streak-unit { font-size: 20rpx; color: #B8860B; }
-.streak-label { font-size: 20rpx; color: #A88F3F; }
-
-/* ============ 本月预算进度卡 ============ */
-.budget-card { margin: 0 28rpx 20rpx; }
-.bc-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 14rpx;
-}
-.bc-title { font-size: 26rpx; font-weight: 600; color: #2E2A22; }
-.bc-left { font-size: 30rpx; font-weight: 700; }
-.bc-progress { margin-bottom: 12rpx; }
-.bc-over { background: #E2543F !important; }
-.bc-foot {
-  display: flex;
-  justify-content: space-between;
-  font-size: 22rpx;
-  color: #A79E8B;
-}
-.bc-go { color: #C9A227; }
-
-/* ============ 常用分类快捷行 ============ */
-.quick-cats {
-  width: 100%;
-  white-space: nowrap;
-  padding: 4rpx 28rpx 8rpx;
-}
-.qc-item {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10rpx;
-  width: 128rpx;
-}
-.qc-icon {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 26rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.qc-emoji { font-size: 40rpx; }
-.qc-name { font-size: 22rpx; color: #6B6455; }
 
 /* ============ 更多面板 ============ */
 .more-grid {

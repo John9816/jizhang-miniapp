@@ -88,6 +88,34 @@ test('按日期分组与组内小计', function () {
   assert.strictEqual(groups[0].label.indexOf('10月2日'), 0)
 })
 
+test('记账时间显示：hmText 兼容数字与 ISO', function () {
+  var d = new Date(2026, 9, 22, 3, 4)
+  assert.strictEqual(u.hmText(d.getTime()), '03:04', '数字时间戳 → 本地 HH:mm')
+  assert.strictEqual(u.hmText(String(d.getTime())), '03:04', '数字字符串')
+  var iso = new Date(2026, 9, 22, 7, 8).toISOString()
+  var isoLocal = new Date(iso)
+  var exp = ('0' + isoLocal.getHours()).slice(-2) + ':' + ('0' + isoLocal.getMinutes()).slice(-2)
+  assert.strictEqual(u.hmText(iso), exp, 'ISO 字符串 → 本地 HH:mm')
+  assert.strictEqual(u.hmText(''), '', '空值返回空串')
+  assert.strictEqual(u.hmText('garbage'), '', '非法输入返回空串')
+})
+
+test('按日期分组：今天/昨天含完整日期，混合 createdAt 排序', function () {
+  var now = new Date()
+  var todayStr = u.dateStr(now)
+  var yesterdayStr = u.dateStr(new Date(now.getTime() - 86400000))
+  // 混合类型 createdAt：数字（本地新建）+ ISO 字符串（云同步回填）
+  var groups = u.groupByDate([
+    { id: 'old', date: todayStr, type: 'expense', amount: 100, createdAt: now.getTime() - 7200000 },
+    { id: 'new', date: todayStr, type: 'expense', amount: 200, createdAt: new Date(now.getTime() - 1000).toISOString() }
+  ])
+  assert.strictEqual(groups[0].records[0].id, 'new', 'ISO 记录也应按时间排在最新')
+  assert.ok(groups[0].label.indexOf('今天') === 0, '今天组头应有前缀')
+  assert.ok(groups[0].label.indexOf('月') > 0 && groups[0].label.indexOf('周') > 0, '组头应含完整日期与星期')
+  var g2 = u.groupByDate([{ id: 'y', date: yesterdayStr, type: 'expense', amount: 1, createdAt: 1 }])
+  assert.ok(g2[0].label.indexOf('昨天') === 0, '昨天组头应有前缀')
+})
+
 test('成员统计', function () {
   var members = u.memberStats(
     [
