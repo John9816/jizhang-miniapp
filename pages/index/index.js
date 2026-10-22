@@ -30,6 +30,8 @@ Page({
     account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
     // 首屏合并资料卡：未完善资料且未手动关闭时展示，关闭/完成后自动消失
     showOnboard: false,
+    ledgerSheet: false,
+    ledgerOptions: [],
     emptyText: '本月还没有记账记录',
     viewMode: 'list',
     calendar: { days: [], weekdays: [] },
@@ -310,6 +312,46 @@ Page({
 
   toggleMore() {
     this.setData({ showMore: !this.data.showMore })
+  },
+
+  /* ---------------- 账本切换（点顶部账本名） ---------------- */
+
+  openLedgerSheet() {
+    var options = db.listLedgers().map(function (l) {
+      return { id: l.id, name: l.name, memberCount: l.memberCount || 1, isCurrent: l.isCurrent }
+    })
+    if (!options.length) return
+    this.setData({ ledgerOptions: options, ledgerSheet: true, showMore: false })
+  },
+
+  closeLedgerSheet() {
+    this.setData({ ledgerSheet: false })
+  },
+
+  switchLedger(e) {
+    var id = e.currentTarget.dataset.id
+    if (!id || id === db.currentLedger().id) {
+      this.closeLedgerSheet()
+      return
+    }
+    db.setCurrentLedger(id)
+    // 切账本后重置到当前月与全部成员，避免带着上一個账本的月份/筛选看新账本
+    var key = u.currentMonthKey()
+    this.setData({
+      monthKey: key,
+      monthLabel: u.formatMonth(key),
+      monthShort: parseInt(key.slice(5, 7), 10) + '月',
+      memberFilter: 'all',
+      ledgerSheet: false
+    })
+    this.refresh()
+    var name = db.currentLedger().name
+    wx.showToast({ title: '已切换到「' + name + '」', icon: 'none' })
+  },
+
+  goLedgerFromSheet() {
+    this.setData({ ledgerSheet: false })
+    wx.navigateTo({ url: '/pages/ledger/ledger' })
   },
 
   toggleCalendar() {

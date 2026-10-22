@@ -16,12 +16,45 @@
   color: #2E2A22;
   letter-spacing: 0.5rpx;
 }
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.brand-row:active { opacity: 0.6; }
+.brand-arrow {
+  font-size: 30rpx;
+  color: #C9A227;
+  font-weight: 700;
+  margin-top: 6rpx;
+}
 .brand-sub {
   display: block;
   font-size: 24rpx;
   color: #A79E8B;
   margin-top: 10rpx;
 }
+
+/* ============ 账本切换弹层 ============ */
+.ledger-scroll { max-height: 52vh; }
+.ledger-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26rpx 28rpx;
+  border-bottom: 1rpx solid #F0E9D8;
+}
+.ledger-item:active { background: #FAF6EA; }
+.ledger-item-l {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.ledger-item-name { font-size: 30rpx; color: #2E2A22; font-weight: 500; }
+.ledger-item-on .ledger-item-name { color: #B8860B; font-weight: 700; }
+.ledger-item-meta { font-size: 20rpx; color: #A79E8B; }
+.ledger-check { font-size: 32rpx; color: #C9A227; font-weight: 700; }
+.ledger-manage { color: #6B6455; }
 .topbar-r { display: flex; gap: 16rpx; margin-top: 6rpx; }
 .icon-btn {
   width: 64rpx;

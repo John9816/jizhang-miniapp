@@ -4,7 +4,10 @@
   <!-- 顶部：账本名 + 问候 -->
   <view class="topbar">
     <view class="topbar-l">
-      <text class="brand">{{ledger.name || '我的账本'}}</text>
+      <view class="brand-row" bindtap="openLedgerSheet">
+        <text class="brand">{{ledger.name || '我的账本'}}</text>
+        <text class="brand-arrow">⌄</text>
+      </view>
       <text class="brand-sub">{{greeting}}，今天也要存一点哦！</text>
     </view>
     <view class="topbar-r">
@@ -278,5 +281,23 @@
       </view>
     </view>
     <view class="sheet-cancel" bindtap="toggleMore">取消</view>
+  </view>
+
+  <!-- 账本切换弹层：点顶部账本名弹出 -->
+  <view class="sheet-mask" wx:if="{{ledgerSheet}}" bindtap="closeLedgerSheet"></view>
+  <view class="sheet" wx:if="{{ledgerSheet}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-title">切换账本</view>
+    <scroll-view scroll-y class="ledger-scroll">
+      <view class="ledger-item {{item.isCurrent ? 'ledger-item-on' : ''}}" wx:for="{{ledgerOptions}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
+        <view class="ledger-item-l">
+          <text class="ledger-item-name">{{item.name}}</text>
+          <text class="ledger-item-meta" wx:if="{{item.memberCount > 1}}">{{item.memberCount}} 人共享</text>
+        </view>
+        <text class="ledger-check" wx:if="{{item.isCurrent}}">✓</text>
+      </view>
+    </scroll-view>
+    <view class="sheet-item ledger-manage" bindtap="goLedgerFromSheet">⚙️ 账本管理 / 新建账本</view>
+    <view class="sheet-cancel" bindtap="closeLedgerSheet">取消</view>
   </view>
 </view>
