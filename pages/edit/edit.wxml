@@ -32,6 +32,13 @@
   <view class="mid">
     <scroll-view scroll-y class="mid-scroll">
       <block wx:if="{{mode === 'normal'}}">
+        <!-- 最近使用：按近 30 天频次排序，横滑快选 -->
+        <scroll-view scroll-x class="recent-scroll" wx:if="{{recentCats.length > 0}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+          <view class="recent-chip {{category === item.key ? 'recent-chip-on' : ''}}" wx:for="{{recentCats}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
+            <text class="recent-emoji">{{item.icon}}</text>
+            <text>{{item.name}}</text>
+          </view>
+        </scroll-view>
         <view class="cat-grid">
           <view class="cat-item" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
             <view class="cat-icon {{category === item.key ? 'cat-icon-on' : ''}}" style="background:{{item.tint}}">

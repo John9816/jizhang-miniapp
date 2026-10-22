@@ -11,6 +11,8 @@ Page({
     statusBar: 20,
     pageH: 667,             // 由 JS 按真实窗口高度设定，避免 100vh 与自定义导航叠加导致键盘被挤出屏幕
     type: 'expense',        // expense | income
+    categories: [],
+    recentCats: [],
     mode: 'normal',         // normal | transfer
     categories: [],
     category: 'food',
@@ -73,6 +75,9 @@ Page({
       }
     } else if (options.mode === 'transfer') {
       this.setData({ mode: 'transfer' })
+    } else if (options.category) {
+      // 首页常用分类快捷进入：预选分类（仅支出类型有快捷行）
+      this.setData({ type: 'expense', category: decodeURIComponent(options.category) })
     }
 
     this.syncCategories()
@@ -98,12 +103,20 @@ Page({
     var list = db.categoriesOf(this.data.ledgerId, this.data.type).map(function (c) {
       return { key: c.key, name: c.name, icon: c.icon, tint: u.categoryTint(c.key) }
     })
+    // 最近使用：按最近 30 天出现频次取前 6 个，横滑条放在分类网格上方
+    var since = u.dateStr(new Date(Date.now() - 30 * 86400000))
+    var recent = u.topCategories(
+      db.recordsOf(this.data.ledgerId).filter(function (r) { return r.date >= since }),
+      this.data.type,
+      6
+    )
     var valid = false
     for (var i = 0; i < list.length; i++) {
       if (list[i].key === this.data.category) valid = true
     }
     this.setData({
       categories: list,
+      recentCats: recent,
       category: valid ? this.data.category : (list[0] ? list[0].key : 'other_out')
     })
   },

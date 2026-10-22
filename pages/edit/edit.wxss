@@ -105,6 +105,32 @@
 }
 .mid-scroll { height: 100%; }
 
+/* 最近使用分类（横滑快选） */
+.recent-scroll {
+  white-space: nowrap;
+  padding: 14rpx 20rpx 4rpx;
+  border-bottom: 1rpx solid #F0E9D8;
+}
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 22rpx;
+  margin-right: 14rpx;
+  border-radius: 999rpx;
+  background: #FAF6EA;
+  font-size: 24rpx;
+  color: #6B6455;
+  border: 2rpx solid transparent;
+}
+.recent-chip-on {
+  background: #FFD64F;
+  color: #3A2A00;
+  font-weight: 600;
+  border-color: #E8B93C;
+}
+.recent-emoji { font-size: 26rpx; }
+
 .cat-grid {
   display: flex;
   flex-wrap: wrap;

@@ -16,6 +16,10 @@ Page({
     groups: [],
     recordCount: 0,
     summary: { income: 0, expense: 0, balance: 0, incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' },
+    today: { expenseText: '0.00', incomeText: '0.00', has: false },
+    streak: 0,
+    budgetCard: null,
+    topCats: [],
     challenge: null,
     challengeCount: 0,
     budgetAlert: '',
@@ -144,6 +148,10 @@ Page({
         budgetAlert: '',
         dayGroups: [],
         calendar: { days: [], weekdays: [] },
+        today: { expenseText: '0.00', incomeText: '0.00', has: false },
+        streak: 0,
+        budgetCard: null,
+        topCats: [],
         summary: { income: 0, expense: 0, balance: 0, incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' }
       })
       return
@@ -193,13 +201,34 @@ Page({
     var calendar = u.calendarMonth(this.data.monthKey, all)
     var dayGroups = groups.filter(function (g) { return g.date === self.data.selectedDay })
 
+    // 今日卡片 / 连续记账天数 / 常用分类：基于账本全部记录（翻看历史月份时今日卡自动隐藏）
+    var allLedger = db.recordsOf(ledger.id)
+    var todayKey = u.dateStr(new Date())
+    var todayRecs = allLedger.filter(function (r) { return r.date === todayKey })
+    var todaySum = u.calcSummary(todayRecs)
+    var today = {
+      expenseText: u.formatCents(todaySum.expense),
+      incomeText: u.formatCents(todaySum.income),
+      has: todayRecs.length > 0
+    }
+    var isCurMonth = this.data.monthKey === u.currentMonthKey()
+    var budgetCard = null
     var budgetAlert = ''
-    if (this.data.monthKey === u.currentMonthKey()) {
+    if (isCurMonth) {
       var status = u.budgetStatus(db.budgetOf(ledger.id), all, null)
-      if (status.total && status.total.pct >= 80) {
-        budgetAlert = status.total.over
-          ? '本月支出已超出预算 ' + u.formatCents(status.total.used - status.total.limit) + ' 元'
-          : '本月支出已达预算的 ' + status.total.pct + '%，注意控制'
+      if (status.total) {
+        var t = status.total
+        budgetCard = {
+          pct: Math.min(100, t.pct),
+          pctText: t.pct + '%',
+          usedText: u.formatCents(t.used),
+          limitText: u.formatCents(t.limit),
+          leftText: u.formatCents(Math.max(0, t.limit - t.used)),
+          over: t.over
+        }
+        budgetAlert = t.over
+          ? '本月支出已超出预算 ' + u.formatCents(t.used - t.limit) + ' 元'
+          : (t.pct >= 80 ? '本月支出已达预算的 ' + t.pct + '%，注意控制' : '')
       }
     }
 
@@ -230,7 +259,11 @@ Page({
       challenge: active,
       challengeCount: running,
       budgetAlert: budgetAlert,
-      isCurrentMonth: this.data.monthKey === u.currentMonthKey(),
+      budgetCard: budgetCard,
+      today: today,
+      streak: u.calcStreak(allLedger),
+      topCats: u.topCategories(allLedger, 'expense', 5),
+      isCurrentMonth: isCurMonth,
       summary: {
         income: s.income,
         expense: s.expense,
@@ -308,6 +341,12 @@ Page({
 
   goEdit() {
     wx.navigateTo({ url: '/pages/edit/edit' })
+  },
+
+  /** 常用分类快捷记账：带上分类直接进记一笔 */
+  goEditWithCategory(e) {
+    var key = e.currentTarget.dataset.key
+    wx.navigateTo({ url: '/pages/edit/edit?category=' + encodeURIComponent(key) })
   },
 
   goStats() {

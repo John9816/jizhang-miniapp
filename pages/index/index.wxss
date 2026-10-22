@@ -391,13 +391,103 @@
 .cal-selected .cal-day { color: #3A2A00; font-weight: 700; }
 .cal-marks {
   display: flex;
-  gap: 4rpx;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
   margin-top: 4rpx;
-  height: 8rpx;
+  height: 44rpx;
 }
-.cal-dot { width: 8rpx; height: 8rpx; border-radius: 50%; }
-.cal-dot-in { background: #E2543F; }
-.cal-dot-out { background: #C9A227; }
+.cal-amt {
+  font-size: 18rpx;
+  line-height: 22rpx;
+  max-width: 92rpx;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.cal-amt-in { color: #E2543F; }
+.cal-amt-out { color: #9C8E6B; }
+
+/* ============ 今日卡片 / 连续记账 ============ */
+.today-row {
+  display: flex;
+  gap: 20rpx;
+  margin: 0 28rpx 20rpx;
+}
+.today-card {
+  flex: 1;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 22rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  box-shadow: 0 8rpx 24rpx rgba(120, 100, 40, 0.06);
+}
+.today-label { font-size: 22rpx; color: #A79E8B; }
+.today-val { font-size: 34rpx; font-weight: 700; color: #2E2A22; }
+.streak-card {
+  width: 168rpx;
+  background: linear-gradient(150deg, #FFF3D6, #FFE9AE);
+  border-radius: 24rpx;
+  padding: 18rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6rpx;
+}
+.streak-top {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+}
+.streak-fire { font-size: 26rpx; }
+.streak-num { font-size: 40rpx; font-weight: 700; color: #B8860B; }
+.streak-unit { font-size: 20rpx; color: #B8860B; }
+.streak-label { font-size: 20rpx; color: #A88F3F; }
+
+/* ============ 本月预算进度卡 ============ */
+.budget-card { margin: 0 28rpx 20rpx; }
+.bc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14rpx;
+}
+.bc-title { font-size: 26rpx; font-weight: 600; color: #2E2A22; }
+.bc-left { font-size: 30rpx; font-weight: 700; }
+.bc-progress { margin-bottom: 12rpx; }
+.bc-over { background: #E2543F !important; }
+.bc-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  color: #A79E8B;
+}
+.bc-go { color: #C9A227; }
+
+/* ============ 常用分类快捷行 ============ */
+.quick-cats {
+  width: 100%;
+  white-space: nowrap;
+  padding: 4rpx 28rpx 8rpx;
+}
+.qc-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  width: 128rpx;
+}
+.qc-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qc-emoji { font-size: 40rpx; }
+.qc-name { font-size: 22rpx; color: #6B6455; }
 
 /* ============ 更多面板 ============ */
 .more-grid {

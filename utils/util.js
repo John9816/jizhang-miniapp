@@ -369,6 +369,8 @@ function calendarMonth(monthKey, records) {
       weekday: (first.getDay() + i) % 7,
       income: v.income,
       expense: v.expense,
+      incomeText: compactAmount(v.income),
+      expenseText: compactAmount(v.expense),
       today: ds === dateStr(new Date()),
       inMonth: true
     })
@@ -377,6 +379,62 @@ function calendarMonth(monthKey, records) {
 }
 
 /* ---------------- 预算 ---------------- */
+
+/**
+ * 连续记账天数：从今天起向前数有记录的日子；
+ * 今天还没记时从昨天起算（给了用户一整天的时间，不会一早醒来就断）。
+ */
+function calcStreak(records) {
+  var set = {}
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].type !== 'transfer') set[records[i].date] = true
+  }
+  var d = new Date()
+  if (!set[dateStr(d)]) {
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)
+    if (!set[dateStr(d)]) return 0
+  }
+  var n = 0
+  while (set[dateStr(d)]) {
+    n++
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)
+  }
+  return n
+}
+
+/** 常用分类：按出现频次取前 N 个（快捷记账行用） */
+function topCategories(records, type, limit) {
+  var count = {}
+  for (var i = 0; i < records.length; i++) {
+    var r = records[i]
+    if (r.type !== type || !r.category) continue
+    count[r.category] = (count[r.category] || 0) + 1
+  }
+  return Object.keys(count)
+    .sort(function (a, b) { return count[b] - count[a] })
+    .slice(0, limit || 5)
+    .map(function (k) {
+      return {
+        key: k,
+        name: categoryName(type, k),
+        icon: categoryIcon(type, k),
+        tint: categoryTint(k),
+        count: count[k]
+      }
+    })
+}
+
+/** 紧凑金额文本：日历格子用。157150 → "1,571.5"；1000000 → "1万"；3000 → "30" */
+function compactAmount(cents) {
+  var v = Math.abs(Math.round(Number(cents) || 0))
+  if (v >= 1000000) { // 满 1 万（100 万分）才折成「万」；100 万以上取整
+    var wan = v / 1000000
+    return (wan >= 100 ? Math.round(wan) : Math.round(wan * 10) / 10) + '万'
+  }
+  var yuan = v / 100
+  var t = (Math.round(yuan * 100) / 100).toString()
+  return t
+}
 
 /**
  * 预算执行状态。budget: { monthlyTotal, categoryBudgets }，records 为当月记录。
@@ -686,6 +744,9 @@ module.exports = {
   trendSeries: trendSeries,
   momChange: momChange,
   calendarMonth: calendarMonth,
+  calcStreak: calcStreak,
+  topCategories: topCategories,
+  compactAmount: compactAmount,
   budgetStatus: budgetStatus,
   ACCOUNT_TYPES: ACCOUNT_TYPES,
   ACCOUNT_GROUPS: ACCOUNT_GROUPS,

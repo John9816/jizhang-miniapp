@@ -46,6 +46,43 @@
     <view class="hero-coin c2"></view>
   </view>
 
+  <!-- 今日收支 + 连续记账天数（翻看历史月份时隐藏今日部分） -->
+  <view class="today-row" wx:if="{{ledger && isCurrentMonth}}">
+    <view class="today-card">
+      <text class="today-label">今日支出</text>
+      <text class="today-val num">{{today.expenseText}}</text>
+    </view>
+    <view class="today-card">
+      <text class="today-label">今日收入</text>
+      <text class="today-val num text-income">{{today.incomeText}}</text>
+    </view>
+    <view class="streak-card" wx:if="{{streak > 0}}">
+      <view class="streak-top">
+        <text class="streak-fire">🔥</text>
+        <text class="streak-num num">{{streak}}</text>
+        <text class="streak-unit">天</text>
+      </view>
+      <text class="streak-label">连续记账</text>
+    </view>
+  </view>
+
+  <!-- 本月预算进度卡 -->
+  <view class="card budget-card" wx:if="{{budgetCard}}" bindtap="goBudget">
+    <view class="bc-head">
+      <text class="bc-title">本月预算</text>
+      <text class="bc-left {{budgetCard.over ? 'text-expense' : 'text-income'}}">
+        {{budgetCard.over ? '已超支 ' + budgetCard.usedText : '还剩 ' + budgetCard.leftText}}
+      </text>
+    </view>
+    <view class="progress bc-progress">
+      <view class="progress-bar {{budgetCard.over ? 'bc-over' : ''}}" style="width:{{budgetCard.pct}}%"></view>
+    </view>
+    <view class="bc-foot">
+      <text>已用 {{budgetCard.usedText}} / {{budgetCard.limitText}} · {{budgetCard.pctText}}</text>
+      <text class="bc-go">调整 ›</text>
+    </view>
+  </view>
+
   <!-- 预算提醒 -->
   <view class="alert-pill" wx:if="{{budgetAlert}}" bindtap="goBudget">
     <text class="alert-dot">⚠️</text>
@@ -110,6 +147,16 @@
     </view>
   </view>
 
+  <!-- 常用分类快捷记账 -->
+  <scroll-view scroll-x class="quick-cats" wx:if="{{topCats.length > 0}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+    <view class="qc-item" wx:for="{{topCats}}" wx:key="key" bindtap="goEditWithCategory" data-key="{{item.key}}">
+      <view class="qc-icon" style="background:{{item.tint}}">
+        <text class="qc-emoji">{{item.icon}}</text>
+      </view>
+      <text class="qc-name">{{item.name}}</text>
+    </view>
+  </scroll-view>
+
   <!-- 成员筛选 -->
   <scroll-view scroll-x class="member-filter" wx:if="{{members.length > 1}}" enhanced="{{true}}" show-scrollbar="{{false}}">
     <view class="chip {{memberFilter === 'all' ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="all">全部</view>
@@ -168,8 +215,8 @@
               wx:for="{{calendar.days}}" wx:key="date" bindtap="selectDay" data-day="{{item.date}}">
           <text class="cal-day">{{item.day}}</text>
           <view class="cal-marks">
-            <view class="cal-dot cal-dot-in" wx:if="{{item.income > 0}}"></view>
-            <view class="cal-dot cal-dot-out" wx:if="{{item.expense > 0}}"></view>
+            <text class="cal-amt cal-amt-in" wx:if="{{item.income > 0}}">{{item.incomeText}}</text>
+            <text class="cal-amt cal-amt-out" wx:if="{{item.expense > 0}}">{{item.expenseText}}</text>
           </view>
         </view>
       </view>

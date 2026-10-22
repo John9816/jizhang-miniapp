@@ -222,5 +222,52 @@ test('数据层：非法分享包与删除账本兜底', function () {
   assert.ok(cur, '删除后应仍有可用账本')
 })
 
+test('首页增强：连续记账天数 / 常用分类 / 日历金额文本', function () {
+  var u = require(path.join(ROOT, 'utils/util.js'))
+  var today = u.dateStr(new Date())
+  var yesterday = u.dateStr(new Date(Date.now() - 86400000))
+  var dayBefore = u.dateStr(new Date(Date.now() - 2 * 86400000))
+
+  // 连续天数：昨天+今天有记录 → 2；断开 → 1；都没有 → 0
+  var recs = [
+    { date: today, type: 'expense', category: 'food', amount: 1000 },
+    { date: yesterday, type: 'expense', category: 'food', amount: 2000 },
+    { date: dayBefore, type: 'income', category: 'salary', amount: 100 }
+  ]
+  assert.strictEqual(u.calcStreak(recs), 3, '三天连续')
+  assert.strictEqual(u.calcStreak(recs.slice(0, 2)), 2, '昨天+今天')
+  assert.strictEqual(u.calcStreak([recs[0]]), 1, '只有今天')
+  assert.strictEqual(u.calcStreak([{ date: dayBefore, type: 'expense', category: 'food', amount: 100 }]), 0, '断了')
+  assert.strictEqual(u.calcStreak([]), 0, '空')
+
+  // 常用分类：按频次排序，取前 N
+  var top = u.topCategories(recs.concat([
+    { date: today, type: 'expense', category: 'food', amount: 100 },
+    { date: today, type: 'expense', category: 'transport', amount: 100 },
+    { date: today, type: 'income', category: 'salary', amount: 100 }
+  ]), 'expense', 2)
+  assert.strictEqual(top.length, 2)
+  assert.strictEqual(top[0].key, 'food')
+  assert.ok(top[0].name && top[0].icon && top[0].tint)
+
+  // 紧凑金额：日历格用
+  assert.strictEqual(u.compactAmount(3000), '30')
+  assert.strictEqual(u.compactAmount(157150), '1571.5')
+  assert.strictEqual(u.compactAmount(0), '0')
+  assert.strictEqual(u.compactAmount(1000000), '1万')
+  assert.strictEqual(u.compactAmount(12345600), '12.3万')
+  assert.strictEqual(u.compactAmount(100000000), '100万')
+
+  // 日历每天带收支文本
+  var cal = u.calendarMonth(today.slice(0, 7), recs)
+  var todayCell = cal.days.filter(function (d) { return d.date === today })[0]
+  assert.strictEqual(todayCell.expenseText, '10')
+  assert.strictEqual(todayCell.incomeText, '0')
+  var yesterdayCell = cal.days.filter(function (d) { return d.date === yesterday })[0]
+  assert.strictEqual(yesterdayCell.incomeText, '0')
+  var dayBeforeCell = cal.days.filter(function (d) { return d.date === dayBefore })[0]
+  assert.strictEqual(dayBeforeCell.incomeText, '1')
+})
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed')
 process.exit(failed > 0 ? 1 : 0)
