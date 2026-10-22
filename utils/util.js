@@ -424,12 +424,21 @@ function budgetStatus(budget, records, categoryMeta) {
 /* ---------------- 资产账户 ---------------- */
 
 var ACCOUNT_TYPES = [
-  { key: 'cash', name: '现金', icon: '💵' },
-  { key: 'bank', name: '储蓄卡', icon: '🏦' },
-  { key: 'credit', name: '信用卡', icon: '💳' },
-  { key: 'alipay', name: '支付宝', icon: '🅰️' },
-  { key: 'wechat', name: '微信钱包', icon: '💬' },
-  { key: 'other', name: '其他', icon: '📦' }
+  { key: 'cash', name: '现金', icon: '💵', group: 'fund' },
+  { key: 'bank', name: '储蓄卡', icon: '🏦', group: 'fund' },
+  { key: 'alipay', name: '支付宝', icon: '🅰️', group: 'fund' },
+  { key: 'wechat', name: '微信钱包', icon: '💬', group: 'fund' },
+  { key: 'house', name: '房产', icon: '🏠', group: 'fixed' },
+  { key: 'car', name: '车产', icon: '🚗', group: 'fixed' },
+  { key: 'credit', name: '信用卡', icon: '💳', group: 'debt' },
+  { key: 'other', name: '其他', icon: '📦', group: 'fund' }
+]
+
+/** 账户分组：fund=资金 / fixed=固定资产（房产车产，按估值计） / debt=负债 */
+var ACCOUNT_GROUPS = [
+  { key: 'fund', name: '资金账户', hint: '现金、银行卡、微信、支付宝等随时可用的钱' },
+  { key: 'fixed', name: '固定资产', hint: '房产、车产等，按当前估值计入总资产' },
+  { key: 'debt', name: '负债', hint: '信用卡等待还款项，从总资产中扣除' }
 ]
 
 function accountTypeInfo(key) {
@@ -437,6 +446,16 @@ function accountTypeInfo(key) {
     if (ACCOUNT_TYPES[i].key === key) return ACCOUNT_TYPES[i]
   }
   return ACCOUNT_TYPES[ACCOUNT_TYPES.length - 1]
+}
+
+/** 账户所属分组 key：fund / fixed / debt */
+function accountGroupOf(type) {
+  return accountTypeInfo(type).group || 'fund'
+}
+
+/** 固定资产（房产/车产）的余额展示为「估值」而非流水余额 */
+function accountIsFixed(type) {
+  return accountGroupOf(type) === 'fixed'
 }
 
 /** 账户余额：初始 + 收入 - 支出 + 转入 - 转出；信用卡负债为负 */
@@ -669,7 +688,10 @@ module.exports = {
   calendarMonth: calendarMonth,
   budgetStatus: budgetStatus,
   ACCOUNT_TYPES: ACCOUNT_TYPES,
+  ACCOUNT_GROUPS: ACCOUNT_GROUPS,
   accountTypeInfo: accountTypeInfo,
+  accountGroupOf: accountGroupOf,
+  accountIsFixed: accountIsFixed,
   accountBalance: accountBalance,
   defaultAccounts: defaultAccounts,
   RECUR_CYCLES: RECUR_CYCLES,

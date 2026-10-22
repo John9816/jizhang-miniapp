@@ -13,6 +13,7 @@ Page({
     editingId: '',
     editName: '',
     editType: 'cash',
+    editIsFixed: false,
     editInitial: '',
     accountTypes: []
   },
@@ -66,8 +67,9 @@ Page({
       netWorthAbs: s.netWorth < 0 ? u.formatCents(-s.netWorth) : s.netWorthText,
       netWorthPositive: s.netWorth >= 0,
       accounts: s.accounts,
+      groups: s.groups,
       records: recs,
-      groups: u.groupByDate(decorated)
+      recordGroups: u.groupByDate(decorated)
     })
   },
 
@@ -80,7 +82,7 @@ Page({
   },
 
   openManage() {
-    this.setData({ showManage: true, editingId: '', editName: '', editType: 'cash', editInitial: '' })
+    this.setData({ showManage: true, editingId: '', editName: '', editType: 'cash', editIsFixed: false, editInitial: '' })
   },
 
   closeManage() {
@@ -102,6 +104,7 @@ Page({
           editingId: id,
           editName: accounts[i].name,
           editType: accounts[i].type,
+          editIsFixed: !!accounts[i].isFixed,
           editInitial: initial > 0 ? (initial / 100).toFixed(2) : '0'
         })
         return
@@ -110,12 +113,15 @@ Page({
   },
 
   addAccount() {
-    this.setData({ editingId: '', editName: '', editType: 'cash', editInitial: '0' })
+    this.setData({ editingId: '', editName: '', editType: 'cash', editIsFixed: false, editInitial: '0' })
   },
 
   onEditName(e) { this.setData({ editName: e.detail.value }) },
   onEditInitial(e) { this.setData({ editInitial: String(e.detail.value == null ? '' : e.detail.value).replace(/[^\d.]/g, '') }) },
-  setEditType(e) { this.setData({ editType: e.currentTarget.dataset.type }) },
+  setEditType(e) {
+    var type = e.currentTarget.dataset.type
+    this.setData({ editType: type, editIsFixed: u.accountIsFixed(type) })
+  },
 
   saveAccount() {
     var ledger = db.currentLedger()

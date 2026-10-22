@@ -50,6 +50,46 @@
   font-size: 26rpx;
 }
 
+/* 分组小计 */
+.sum-card {
+  margin: 0 24rpx 20rpx;
+  padding: 24rpx 28rpx;
+}
+
+.sum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 0;
+}
+
+.sum-row + .sum-row {
+  border-top: 1rpx solid #F7F1E2;
+}
+
+.sum-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.sum-name {
+  font-size: 26rpx;
+  color: #2E2A22;
+  font-weight: 500;
+}
+
+.sum-count {
+  font-size: 20rpx;
+  color: #A79E8B;
+}
+
+.sum-val {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2E2A22;
+}
+
 /* 账户列表 */
 .acc-row {
   display: flex;
@@ -94,6 +134,23 @@
 
 .acc-balance {
   font-size: 30rpx;
+  font-weight: 600;
+}
+
+.section-hint {
+  display: block;
+  font-size: 20rpx;
+  color: #A79E8B;
+  font-weight: 400;
+  margin-top: 6rpx;
+}
+
+.group-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 16rpx;
+  font-size: 24rpx;
+  color: #6B6455;
   font-weight: 600;
 }
 

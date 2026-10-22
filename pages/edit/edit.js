@@ -58,7 +58,7 @@ Page({
           dateLabel: u.cnDate(rec.date),
           note: rec.note,
           amountInput: plainAmount(rec.amount),
-          accounts: this.normalizeAccounts(db.accountsOf(rec.ledgerId)),
+          accounts: this.normalizeAccounts(db.accountsOf(rec.ledgerId), rec.accountId),
           accountId: rec.accountId || ''
         }
         if (rec.type === 'transfer') {
@@ -79,11 +79,16 @@ Page({
     this.refreshAmount()
   },
 
-  normalizeAccounts(accounts) {
+  /**
+   * 账户列表归一化。固定资产（房产/车产）不参与日常记账与转账选择——
+   * 它们的估值只在「我的资产」页维护，避免记一笔误改房价车价。
+   * keepId：编辑历史记录时保留原账户（可能是固定资产）。
+   */
+  normalizeAccounts(accounts, keepId) {
     return (accounts || []).map(function (a) {
       var info = u.accountTypeInfo(a.type)
-      return { id: a.id, name: a.name, type: a.type, icon: info.icon, initialBalance: a.initialBalance }
-    })
+      return { id: a.id, name: a.name, type: a.type, icon: info.icon, initialBalance: a.initialBalance, isFixed: info.group === 'fixed' }
+    }).filter(function (a) { return !a.isFixed || a.id === keepId })
   },
 
   /* ---------------- 类型 / 分类 ---------------- */

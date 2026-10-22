@@ -457,21 +457,34 @@ function saveAccounts(ledgerId, accounts) {
 function assetSummary(ledgerId) {
   ensure()
   var l = getLedger(ledgerId)
-  if (!l) return { accounts: [], netWorth: 0 }
+  if (!l) return { accounts: [], netWorth: 0, netWorthText: '0.00', groups: [] }
   ensureExtras(l)
   var records = db.records.filter(function (r) { return r.ledgerId === ledgerId && !r.deleted })
   var accounts = l.accounts.map(function (a) {
     var bal = u.accountBalance(a, records)
+    var info = u.accountTypeInfo(a.type)
     return {
       id: a.id, name: a.name, type: a.type,
-      icon: u.accountTypeInfo(a.type).icon,
+      group: u.accountGroupOf(a.type),
+      icon: info.icon,
+      typeName: info.name,
+      isFixed: u.accountIsFixed(a.type),
       balance: bal,
       balanceText: u.formatCents(bal)
     }
   })
+  // 分组小计：fund=可用资金 / fixed=固定资产估值 / debt=负债（负数，计入净资产时自动扣除）
+  var groups = []
+  u.ACCOUNT_GROUPS.forEach(function (g) {
+    var list = accounts.filter(function (a) { return a.group === g.key })
+    if (!list.length) return
+    var sum = 0
+    list.forEach(function (a) { sum += a.balance })
+    groups.push({ key: g.key, name: g.name, hint: g.hint, accounts: list, total: sum, totalText: u.formatCents(sum) })
+  })
   var net = 0
   for (var i = 0; i < accounts.length; i++) net += accounts[i].balance
-  return { accounts: accounts, netWorth: net, netWorthText: u.formatCents(net) }
+  return { accounts: accounts, netWorth: net, netWorthText: u.formatCents(net), groups: groups }
 }
 
 /* ---- 预算 ---- */
@@ -706,6 +719,15 @@ function importedKeySet() {
   return keys
 }
 
+/** 分类 key 是否属于指定收/支类型（防止手动分类串到另一类型上） */
+function categoryBelongsTo(key, type) {
+  var list = u.categoriesFor(type)
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].key === key) return true
+  }
+  return false
+}
+
 /**
  * 批量入账外部流水（按 txn 键去重）。
  * opts: { category, accountId, note } —— 默认分类/账户/备注
@@ -726,12 +748,17 @@ function importRows(ledgerId, rows, opts) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) continue
     var key = txnKey(row)
     if (seen[key]) { dupes++; continue }
+    // 手动指定分类只套到同类型的行上：用户选了「支出｜餐饮」时，
+    // 收入行仍走自动识别，避免工资被记成餐饮支出、统计错乱。
+    var category = row.category
+    if (opts.category && categoryBelongsTo(opts.category, row.type)) category = opts.category
+    if (!category) category = row.type === 'income' ? 'salary' : 'food'
     var rec = addRecord({
       ledgerId: ledgerId,
       type: row.type,
       amount: amount,
       date: row.date,
-      category: opts.category || row.category || (row.type === 'income' ? 'salary' : 'food'),
+      category: category,
       accountId: opts.accountId || '',
       note: row.note || (row.party || ''),
       external: { src: row.src, txn: row.txn, party: row.party }

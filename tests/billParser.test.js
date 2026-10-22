@@ -244,6 +244,24 @@ test('集成：微信流水导入账本 → 对账 → 导出 → 反向解析',
   assert.strictEqual(selfIncome.date, '2026-09-12')
 })
 
+test('导入：手动指定分类只套同类型行，收入不被支出分类覆盖', function () {
+  var parsed = p.parseBytes(readFix('wechat-sample.csv'))
+  var dbp = path.resolve(__dirname, '../utils/db.js')
+  Object.keys(store).forEach(function (k) { delete store[k] })
+  delete require.cache[dbp]
+  var db = require(dbp)
+  var l = db.createLedger('分类覆盖测试')
+  // 用户在导入页手动选了「支出｜餐饮」：收入行必须仍走自动识别（工资/转账），不能变成餐饮
+  db.importRows(l.id, parsed.rows, { category: 'food' })
+  var recs = db.recordsOf(l.id)
+  var incomes = recs.filter(function (r) { return r.type === 'income' })
+  var expenses = recs.filter(function (r) { return r.type === 'expense' })
+  assert.ok(incomes.length > 0, '收入行应存在')
+  incomes.forEach(function (r) { assert.notStrictEqual(r.category, 'food', '收入不应被套上支出分类') })
+  assert.ok(expenses.length > 0, '支出行应存在')
+  expenses.forEach(function (r) { assert.strictEqual(r.category, 'food', '支出行应套用手动分类') })
+})
+
 test('集成：同步到新设备后重复导入仍全部判重（含旧版冗余表兼容）', function () {
   var parsed = p.parseBytes(readFix('wechat-sample.csv'))
   var dbp = path.resolve(__dirname, '../utils/db.js')

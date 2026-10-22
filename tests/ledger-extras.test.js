@@ -70,6 +70,34 @@ test('saveAccounts：裁剪长度、排序、非法项过滤', function () {
   assert.strictEqual(db.accountsOf(L)[0].name, '招行卡')
 })
 
+test('资产汇总：房产/车产按估值计入固定资产分组，信用卡进负债分组', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var L = db.currentLedger().id
+  // 现金 5000 + 房产估值 2000000 + 车产估值 80000 + 信用卡 -3000
+  db.saveAccounts(L, [
+    { name: '现金', type: 'cash', initialBalance: 500000 },
+    { name: '自住房', type: 'house', initialBalance: 200000000 },
+    { name: '家用车', type: 'car', initialBalance: 8000000 },
+    { name: '招行信用卡', type: 'credit', initialBalance: -300000 }
+  ])
+  var s = db.assetSummary(L)
+  assert.strictEqual(s.netWorth, 500000 + 200000000 + 8000000 - 300000)
+  var byGroup = {}
+  s.groups.forEach(function (g) { byGroup[g.key] = g })
+  assert.strictEqual(byGroup.fixed.total, 208000000) // 房产 + 车产
+  assert.strictEqual(byGroup.fixed.accounts.length, 2)
+  assert.strictEqual(byGroup.debt.total, -300000)
+  assert.strictEqual(byGroup.fund.total, 500000)
+  var house = byGroup.fixed.accounts.filter(function (a) { return a.type === 'house' })[0]
+  assert.strictEqual(house.isFixed, true)
+  assert.strictEqual(house.typeName, '房产')
+  // 记账页已屏蔽固定资产账户；db 层仍按余额公式计算（防御性，UI 上不应发生）
+  db.addRecord({ ledgerId: L, type: 'expense', amount: 1000, category: 'food', date: '2026-10-05', accountId: house.id })
+  assert.strictEqual(db.assetSummary(L).groups.filter(function (g) { return g.key === 'fixed' })[0].total, 208000000 - 1000)
+})
+
 test('转账校验：同账户、缺目标被拒绝', function () {
   var db = freshDbModule()
   store = {}
