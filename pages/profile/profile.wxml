@@ -1,8 +1,9 @@
 <view class="page profile-page">
   <view style="height:{{statusBar}}px"></view>
 
-  <!-- 用户信息 -->
+  <!-- 顶部资料卡：一张暖金渐变卡片收拢头像/昵称/同步状态，去掉此前的多条堆叠 -->
   <view class="p-head">
+    <view class="p-glow"></view>
     <view class="p-user">
       <view class="avatar-box">
         <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFit" binderror="onAvatarError" />
@@ -19,26 +20,15 @@
           bindblur="onNicknameBlur"
           bindlongpress="onNicknameLongPress"
         />
-        <text class="p-hint">点 📷 从微信头像里选一张 · 昵称聚焦后点键盘顶部的微信昵称一键填入</text>
-        <text class="p-id">ID: {{uid}}</text>
-        <view class="p-phone" bindtap="openPhone">
-          <text class="{{me.phone ? 'p-phone-num' : 'p-phone-todo'}}">{{me.phone ? '📱 ' + me.phone : '绑定手机号（可选）›'}}</text>
+        <view class="p-meta" bindtap="onStatusTap">
+          <text class="p-dot {{account.tone}}"></text>
+          <text class="p-meta-text">{{metaTip}}</text>
+          <text class="p-meta-sync" wx:if="{{account.logged && syncText}}">· {{syncText}}</text>
+          <text class="p-meta-id">ID {{uid}}</text>
         </view>
       </view>
     </view>
-    <view class="p-actions">
-      <view class="p-icon" bindtap="syncNow">🔔</view>
-      <view class="p-icon" bindtap="goLedger">⚙️</view>
-    </view>
-  </view>
-
-  <!-- 账号状态：一眼看清注册/登录有没有成功，失败可直接重试 -->
-  <view class="acct-bar {{account.tone}}">
-    <text class="acct-dot"></text>
-    <text class="acct-text">{{account.tip}}</text>
-    <text class="acct-sub" wx:if="{{account.logged}}">{{syncText}}</text>
-    <view class="acct-btn" wx:if="{{account.phase === 'failed'}}" bindtap="retryAccount">重试</view>
-    <view class="acct-btn" wx:elif="{{account.phase === 'off'}}">本地</view>
+    <view class="p-icon" bindtap="goLedger">⚙️</view>
   </view>
 
   <view class="vip-card {{vip ? 'vip-card-on' : ''}}" bindtap="goVip" wx:if="{{vipOn}}">
@@ -128,7 +118,7 @@
     </view>
   </view>
 
-  <view class="p-footer">记账本 · 存钱罐主题 v1.1.6</view>
+  <view class="p-footer">记账本 · 存钱罐主题 v1.1.7</view>
 
   <!-- 改昵称（昵称授权失败时的手动兜底） -->
   <view class="modal-mask" wx:if="{{showRename}}">
@@ -143,20 +133,6 @@
     </view>
   </view>
 
-  <!-- 绑定手机号 -->
-  <view class="modal-mask" wx:if="{{showPhone}}">
-    <view class="modal">
-      <view class="modal-title">绑定手机号（可选）</view>
-      <view class="modal-sub">仅用于找回账号，可不填；不展示给账本成员</view>
-      <input class="modal-input" type="number" maxlength="11" value="{{phoneInput}}" placeholder="输入 11 位手机号" bindinput="onPhoneInput" />
-      <view class="modal-actions">
-        <view class="btn-plain" bindtap="closePhone">取消</view>
-        <view class="btn-primary" bindtap="confirmPhone">保存</view>
-      </view>
-      <view class="phone-tip">未开启云同步时，号码只保存在本机</view>
-    </view>
-  </view>
-
   <!-- 帮助 -->
   <view class="modal-mask" wx:if="{{showHelp}}">
     <view class="modal">
@@ -166,7 +142,7 @@
         <view class="help-item">2. 多人共享：账本页生成邀请码，另一方输入即加入。</view>
         <view class="help-item">3. 存钱挑战只记录进度，不计入收支统计。</view>
         <view class="help-item">4. 微信 / 支付宝账单可在「我的 → 账单导入」粘贴或从聊天文件导入，对账页逐笔核对、可导出对账 CSV。</view>
-        <view class="help-item">5. 头像、昵称都在本页设置：点 📷 从微信头像里选，昵称聚焦后点键盘顶部的微信昵称一键填入；手机号仅用于找回账号，可选。</view>
+        <view class="help-item">5. 头像、昵称都在本页设置：点 📷 从微信头像里选，昵称聚焦后点键盘顶部的微信昵称一键填入。</view>
         <view class="help-item">6. 同步异常时可核对服务器地址：</view>
       </view>
       <view class="help-api" bindtap="copyApi">https://jizhang-api.751152.xyz</view>
@@ -182,7 +158,7 @@
       <view class="modal-title">关于我们</view>
       <view class="help-list">
         <view class="help-item">记账本 · 存钱罐主题</view>
-        <view class="help-item">版本 1.1.6</view>
+        <view class="help-item">版本 1.1.7</view>
         <view class="help-item">本地优先的个人记账工具，数据存于你自己的服务器。</view>
         <view class="help-item">无广告、无支付、无金融业务。</view>
       </view>

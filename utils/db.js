@@ -41,7 +41,7 @@ function saveHidden() {
 
 function defaultDb() {
   return {
-    me: { id: u.genId('u'), name: '', profile: { avatar: '', phone: '', vip: false } },
+    me: { id: u.genId('u'), name: '', profile: { avatar: '', vip: false } },
     ledgers: [],
     records: [],
     currentLedgerId: '',
@@ -103,8 +103,8 @@ function init() {
       for (var i = 0; i < arr.length; i++) hiddenIds[String(arr[i])] = true
     }
   } catch (e) {}
-  if (!db.me || !db.me.id) db.me = { id: u.genId('u'), name: '', profile: { avatar: '', phone: '' } }
-  if (!db.me.profile || typeof db.me.profile !== 'object') db.me.profile = { avatar: (db.me.avatar || ''), phone: '' }
+  if (!db.me || !db.me.id) db.me = { id: u.genId('u'), name: '', profile: { avatar: '' } }
+  if (!db.me.profile || typeof db.me.profile !== 'object') db.me.profile = { avatar: (db.me.avatar || '') }
   if (!db.imported || typeof db.imported !== 'object') db.imported = {}
   if (!Array.isArray(db.ledgers)) db.ledgers = []
   if (!Array.isArray(db.records)) db.records = []
@@ -122,7 +122,7 @@ function getMe() {
   return db.me
 }
 
-/** 本机资料（头像 / 手机号），随账本同步只在云端侧保留，本地为展示兜底 */
+/** 本机资料（头像），随账本同步只在云端侧保留，本地为展示兜底 */
 function getProfile() {
   ensure()
   var p = db.me.profile || {}
@@ -130,7 +130,6 @@ function getProfile() {
     id: db.me.id,
     name: db.me.name || '',
     avatar: p.avatar || '',
-    phone: p.phone || '',
     vip: !!p.vip,
     // 首次进入的引导状态：guideDone=true 表示已跳过或已完成；registeredAt 首次注册成功时间
     guideDone: !!p.guideDone,
@@ -140,22 +139,18 @@ function getProfile() {
 
 /**
  * 合并云端下发的身份（login / sync 快照里的 me）。
- * 昵称走 setMyName 的那套联动（成员名 + 记录人名快照），头像/手机号只更新本机。
+ * 昵称走 setMyName 的那套联动（成员名 + 记录人名快照），头像只更新本机。
  */
 function applyCloudMe(me) {
   ensure()
   if (!me || typeof me !== 'object') return getProfile()
   if (me.id && me.id !== db.me.id) replaceMyId(me.id)
   if (me.name != null && String(me.name).trim()) setMyName(String(me.name))
-  db.me.profile = db.me.profile || { avatar: '', phone: '' }
+  db.me.profile = db.me.profile || { avatar: '' }
   if (me.avatar != null) {
     var av = String(me.avatar || '')
     // 头像支持 http(s) 地址与压缩后的 dataURL（本地持久化的微信头像）
     db.me.profile.avatar = av.slice(0, 200000)
-  }
-  if (me.phone != null) {
-    var ph = String(me.phone || '')
-    db.me.profile.phone = ph.slice(0, 20)
   }
   if (me.guideDone != null) db.me.profile.guideDone = !!me.guideDone
   if (me.registeredAt != null) db.me.profile.registeredAt = String(me.registeredAt || '').slice(0, 40)
@@ -169,7 +164,6 @@ function setProfile(patch) {
   ensure()
   patch = patch || {}
   if (patch.avatar !== undefined) db.me.profile.avatar = String(patch.avatar || '').slice(0, 200000)
-  if (patch.phone !== undefined) db.me.profile.phone = String(patch.phone || '').slice(0, 20)
   if (patch.guideDone !== undefined) db.me.profile.guideDone = !!patch.guideDone
   if (patch.registeredAt !== undefined) db.me.profile.registeredAt = String(patch.registeredAt || '').slice(0, 40)
   if (patch.vip !== undefined) db.me.profile.vip = !!patch.vip

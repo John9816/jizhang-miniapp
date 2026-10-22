@@ -473,73 +473,6 @@ function migrateSchema(d) {
 
 /* ---------------- 微信登录 ---------------- */
 
-var accessTokenCache = { token: '', expiresAt: 0 }
-
-/** 获取全局 access_token（缓存到过期前 3 分钟） */
-async function getAccessToken() {
-  if (accessTokenCache.token && Date.now() < accessTokenCache.expiresAt) return accessTokenCache.token
-  const appid = process.env.APPID || ''
-  const secret = process.env.APPSECRET || ''
-  if (!appid || !secret) return ''
-  const url = 'https://api.weixin.qq.com/cgi-bin/token'
-    + '?grant_type=client_credential'
-    + '&appid=' + encodeURIComponent(appid)
-    + '&secret=' + encodeURIComponent(secret)
-  try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(function () { ctrl.abort() }, 8000)
-    const resp = await fetch(url, { signal: ctrl.signal })
-    clearTimeout(timer)
-    const data = await resp.json()
-    if (data.errcode || !data.access_token) {
-      console.error('[jizhang-api] 取 access_token 失败:', data.errcode, data.errmsg)
-      return ''
-    }
-    // 微信有效期 7200s，提前 3 分钟续
-    accessTokenCache.token = data.access_token
-    accessTokenCache.expiresAt = Date.now() + (Number(data.expires_in || 7000) - 180) * 1000
-    return accessTokenCache.token
-  } catch (e) {
-    return ''
-  }
-}
-
-/**
- * 用 getPhoneNumber 按钮回调的 code 换取真实手机号。
- * 返回 { phone } 或 { error }。
- * 注意：个人主体小程序通常无「手机号快速验证」权限，会拿到 errcode，此时走手动填写兜底。
- */
-async function phoneFromCode(code) {
-  if (process.env.MOCK_WX === '1') {
-    // 本地/测试模式：不依赖微信接口，直接由 code 派生一个号码
-    return { phone: '138' + String(code || '').replace(/\D/g, '').slice(0, 8) }
-  }
-  const token = await getAccessToken()
-  if (!token) return { error: '服务端未配置 APPID/APPSECRET' }
-  const url = 'https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=' + encodeURIComponent(token)
-  try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(function () { ctrl.abort() }, 8000)
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: code }),
-      signal: ctrl.signal
-    })
-    clearTimeout(timer)
-    const data = await resp.json()
-    if (data.errcode) {
-      // 40001 = secret 错误/无该权限；40013 = 无效 appid；86004 = 个人主体无权限
-      return { error: '获取手机号失败(' + data.errcode + ')：' + (data.errmsg || ''), errcode: data.errcode }
-    }
-    const p = data.phone_info && (data.phone_info.purePhoneNumber || data.phone_info.phoneNumber) || ''
-    if (!p) return { error: '微信未返回手机号' }
-    return { phone: String(p) }
-  } catch (e) {
-    return { error: '微信服务网络异常，请稍后重试' }
-  }
-}
-
 async function wxCode2Session(code) {
   const appid = process.env.APPID || ''
   const secret = process.env.APPSECRET || ''
@@ -580,12 +513,11 @@ function userNickname(openid) {
 
 /** 完整用户资料（昵称/头像/手机号/会员），无记录时返回空态 */
 function userProfile(openid) {
-  const row = db.prepare('SELECT openid, nickname, avatar, phone, vip, vip_at FROM users WHERE openid = ?').get(openid)
+  const row = db.prepare('SELECT openid, nickname, avatar, vip, vip_at FROM users WHERE openid = ?').get(openid)
   return {
     id: openid,
     name: row ? (row.nickname || '') : '',
     avatar: row ? (row.avatar || '') : '',
-    phone: row ? (row.phone || '') : '',
     vip: !!(row && row.vip),
     vipAt: row ? (row.vip_at || '') : ''
   }
@@ -895,31 +827,6 @@ async function handleProfileUpdate(req, res) {
   sendJson(res, 200, { ok: true, me: userProfile(openid) })
 }
 
-/** 绑定手机号：优先走微信 getPhoneNumber 的 code；失败时前端走手动填写 */
-async function handlePhoneBind(req, res) {
-  const openid = requireAuth(req, res)
-  if (!openid) return
-  const body = await readBody(req)
-  db.prepare("INSERT OR IGNORE INTO users (openid, nickname, created_at) VALUES (?,?,?)")
-    .run(openid, '', nowIso())
-  const code = str(body.code, 128)
-  const manual = str(body.phone, 20).replace(/[^\d+-]/g, '')
-  if (code) {
-    const r = await phoneFromCode(code)
-    if (r.error) {
-      // 个人主体无手机号权限时返回 ercode，前端据此切换成手动填写
-      return sendJson(res, 400, { error: r.error, errcode: r.errcode || 0, needManual: true })
-    }
-    db.prepare('UPDATE users SET phone = ? WHERE openid = ?').run(r.phone, openid)
-    return sendJson(res, 200, { ok: true, phone: r.phone })
-  }
-  if (!/^\d{7,20}$/.test(manual)) {
-    return sendJson(res, 400, { error: '手机号格式不正确' })
-  }
-  db.prepare('UPDATE users SET phone = ? WHERE openid = ?').run(manual, openid)
-  sendJson(res, 200, { ok: true, phone: manual })
-}
-
 const ROUTES = [
   ['POST', /^\/api\/login$/, handleLogin],
   ['GET', /^\/api\/sync$/, handleSyncGet],
@@ -927,7 +834,6 @@ const ROUTES = [
   ['POST', /^\/api\/ledgers\/join$/, handleJoin],
   ['POST', /^\/api\/ledgers\/invite$/, handleInviteRegen],
   ['POST', /^\/api\/user\/profile$/, handleProfileUpdate],
-  ['POST', /^\/api\/user\/phone$/, handlePhoneBind],
   ['POST', /^\/api\/pay\/order$/, handlePayOrder],
   ['POST', /^\/api\/pay\/query$/, handlePayQuery],
   ['GET', /^\/api\/pay\/notify$/, handlePayNotify],

@@ -105,50 +105,6 @@ async function main() {
     assert.strictEqual(hit[0].data.avatar, 'https://cdn/av.png')
   })
 
-  await test('bindPhone：成功时回写本机 phone（code 模式）', async function () {
-    var cloud = freshCloudModule()
-    var db = require(path.join(ROOT, 'utils/db.js'))
-    // 第一个响应预留给 login，第二个才是 phone 请求的
-    global.__nextResponses = [
-      { statusCode: 200, data: { ok: true, token: 't-mock', me: { id: 'oid_1', name: '小明', avatar: '', phone: '' } } },
-      { statusCode: 200, data: { ok: true, phone: '13800138000' } }
-    ]
-    var res = await cloud.bindPhone('mock-code')
-    assert.strictEqual(res.ok, true)
-    assert.strictEqual(res.phone, '13800138000')
-    assert.strictEqual(db.getProfile().phone, '13800138000')
-    var hit = drainRequests(function (r) { return r.url.indexOf('/api/user/phone') >= 0 })
-    assert.strictEqual(hit.length, 1)
-    assert.strictEqual(hit[0].data.code, 'mock-code')
-  })
-
-  await test('bindPhone：个人主体无权限（needManual）时透出错误且不改本机', async function () {
-    var cloud = freshCloudModule()
-    var db = require(path.join(ROOT, 'utils/db.js'))
-    db.setProfile({ phone: '' })
-    global.__nextResponses = [
-      { statusCode: 200, data: { ok: true, token: 't-mock', me: { id: 'oid_1', name: '小明', avatar: '', phone: '' } } },
-      { statusCode: 400, data: { error: '获取手机号失败(86004)', errcode: 86004, needManual: true } }
-    ]
-    var res = await cloud.bindPhone('bad-code')
-    assert.strictEqual(res.ok, false)
-    assert.strictEqual(res.needManual, true)
-    assert.strictEqual(db.getProfile().phone, '')
-  })
-
-  await test('bindPhone：手动填写走 phone 字段', async function () {
-    var cloud = freshCloudModule()
-    global.__nextResponses = [
-      { statusCode: 200, data: { ok: true, token: 't-mock', me: { id: 'oid_1', name: '小明', avatar: '', phone: '' } } },
-      { statusCode: 200, data: { ok: true, phone: '13912345678' } }
-    ]
-    var res = await cloud.bindPhone('', '13912345678')
-    assert.strictEqual(res.ok, true)
-    var hit = drainRequests(function (r) { return r.url.indexOf('/api/user/phone') >= 0 && r.data && r.data.phone === '13912345678' })
-    assert.strictEqual(hit.length, 1, '未找到带 phone 的绑定请求')
-    assert.strictEqual(hit[0].data.code, undefined)
-  })
-
   await test('updateProfile：云端 400 时返回错误但本机已本地优先', async function () {
     var cloud = freshCloudModule()
     var db = require(path.join(ROOT, 'utils/db.js'))
@@ -166,7 +122,7 @@ async function main() {
 
   /* ---------- B. server 层 ---------- */
 
-  console.log('B. server 层：资料 / 手机号端点（真实进程 · MOCK_WX）')
+  console.log('B. server 层：资料端点（真实进程 · MOCK_WX；手机号功能已移除）')
 
   var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jizhang-user-test-'))
   var child = spawn(NODE, [SERVER], {
@@ -200,14 +156,15 @@ async function main() {
   var openidA = ''
   var ledgerId = 'L_user_test'
 
-  await test('登录返回 me 档案（含空 avatar/phone）', async function () {
+  await test('登录返回 me 档案（头像为空，且不再携带手机号字段）', async function () {
     var a = await api('POST', '/api/login', { code: 'code-a', nickname: '小明' })
     assert(a.data.ok, '登录失败')
     tokenA = a.data.token
     openidA = a.data.me.id
     assert(openidA === 'mock_code-a', 'openid 映射错误: ' + openidA)
     assert(a.data.me.name === '小明')
-    assert(a.data.me.avatar === '' && a.data.me.phone === '', '新用户头像/手机号应为空')
+    assert(a.data.me.avatar === '', '新用户头像应为空')
+    assert(!('phone' in a.data.me), '手机号功能已移除，me 不应再返回 phone 字段')
   })
 
   await test('POST /api/user/profile 更新昵称与头像', async function () {
@@ -243,29 +200,16 @@ async function main() {
     assert(m && m.name === '明总', '成员名未跟随昵称刷新: ' + JSON.stringify(m))
   })
 
-  await test('POST /api/user/phone 手动绑定 + 非法手机号拒绝', async function () {
-    var bad = await api('POST', '/api/user/phone', { phone: '123' }, tokenA)
-    assert(bad.status === 400, '非法手机号应 400，实际 ' + bad.status)
-    var ok = await api('POST', '/api/user/phone', { phone: '13800138000' }, tokenA)
-    assert(ok.data.ok, '绑定失败: ' + JSON.stringify(ok.data))
-    assert(ok.data.phone === '13800138000')
+  await test('手机号端点已移除：/api/user/phone 返回 404', async function () {
+    var r = await api('POST', '/api/user/phone', { phone: '13800138000' }, tokenA)
+    assert(r.status === 404, '已移除的端点应 404，实际 ' + r.status)
     var s = await api('GET', '/api/sync', null, tokenA)
-    assert(s.data.me.phone === '13800138000', 'sync 快照手机号不对')
+    assert(!('phone' in s.data.me), 'sync 快照不应再含手机号')
   })
 
-  await test('POST /api/user/phone 走 MOCK code 派生号码', async function () {
-    var r = await api('POST', '/api/user/phone', { code: 'mock-code-12345678' }, tokenA)
-    assert(r.data.ok, 'mock code 绑定失败: ' + JSON.stringify(r.data))
-    assert(/^138\d{0,8}$/.test(r.data.phone), 'mock 号码格式: ' + r.data.phone)
-    var s = await api('GET', '/api/sync', null, tokenA)
-    assert(s.data.me.phone === r.data.phone, 'sync 快照手机号未刷新')
-  })
-
-  await test('profile / phone 端点都需要登录态', async function () {
+  await test('profile 端点需要登录态', async function () {
     var p1 = await api('POST', '/api/user/profile', { nickname: '无凭证' })
     assert(p1.status === 401, 'profile 无 token 应 401，实际 ' + p1.status)
-    var p2 = await api('POST', '/api/user/phone', { phone: '13800138000' })
-    assert(p2.status === 401, 'phone 无 token 应 401，实际 ' + p2.status)
   })
 
   child.kill()

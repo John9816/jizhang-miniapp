@@ -1,139 +1,133 @@
 .profile-page { padding-bottom: calc(190rpx + env(safe-area-inset-bottom)); }
 
-/* ============ 用户信息 ============ */
+/* ============ 顶部资料卡（暖金渐变单卡，收拢头像/昵称/同步状态） ============ */
 .p-head {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20rpx 28rpx 8rpx;
+  gap: 20rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 36rpx 32rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(135deg, #FFF7E0 0%, #FFE6AE 100%);
+  box-shadow: 0 12rpx 32rpx rgba(196, 158, 54, 0.18);
+  overflow: hidden;
+}
+/* 右上角柔光装饰，让渐变不那么平 */
+.p-glow {
+  position: absolute;
+  right: -60rpx;
+  top: -80rpx;
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
 }
 .p-user {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 24rpx;
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 .avatar-box {
   position: relative;
   flex-shrink: 0;
 }
 .p-avatar {
-  width: 118rpx;
-  height: 118rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
   background: #FFF3D0;
+  border: 6rpx solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8rpx 20rpx rgba(160, 120, 30, 0.18);
 }
 .avatar-cam {
   position: absolute;
-  right: -6rpx;
-  bottom: -6rpx;
-  width: 52rpx;
-  height: 52rpx;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
   background: #FFFFFF;
   border: 2rpx solid #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  font-size: 20rpx;
   padding: 0;
   line-height: 1;
-  box-shadow: 0 4rpx 12rpx rgba(196, 158, 54, 0.22);
+  box-shadow: 0 4rpx 12rpx rgba(196, 158, 54, 0.26);
 }
 .p-info {
   flex: 1;
   min-width: 0;
 }
 .p-name-input {
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: 800;
   color: #2E2A22;
-  max-width: 320rpx;
-  height: 52rpx;
-  line-height: 52rpx;
+  width: 100%;
+  height: 50rpx;
+  line-height: 50rpx;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.p-phone {
-  display: inline-block;
-  margin-top: 6rpx;
-}
-.p-phone-num { font-size: 24rpx; color: #6B6455; }
-.p-phone-todo { font-size: 24rpx; color: #F5B417; font-weight: 600; }
-.p-id {
-  display: block;
-  font-size: 22rpx;
-  color: #B9B2A3;
-  margin-top: 8rpx;
-}
-.p-actions { display: flex; gap: 14rpx; }
-.p-icon {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: #FFFFFF;
+/* 状态行：点按 = 失败重试 / 手动同步 */
+.p-meta {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  box-shadow: 0 4rpx 14rpx rgba(196, 158, 54, 0.10);
+  margin-top: 10rpx;
+  min-width: 0;
 }
-
-/* ============ 绑定手机号弹层 ============ */
-.phone-tip {
-  text-align: center;
-  font-size: 20rpx;
-  color: #B9B2A3;
-  margin-top: 20rpx;
-}
-
-/* ============ 账号状态条 ============ */
-.acct-bar {
-  display: flex;
-  align-items: center;
-  margin: 16rpx 24rpx 0;
-  padding: 16rpx 20rpx;
-  border-radius: 20rpx;
-  background: #FFFDF5;
-  border: 2rpx solid #F0E6CC;
-}
-.acct-bar.ok { background: #F4FCF0; border-color: #CFE9BE; }
-.acct-bar.busy { background: #FFF8E8; border-color: #F5DFA6; }
-.acct-bar.bad { background: #FFF1F0; border-color: #F6CFCA; }
-.acct-dot {
-  width: 16rpx;
-  height: 16rpx;
+.p-meta:active { opacity: 0.6; }
+.p-dot {
+  width: 14rpx;
+  height: 14rpx;
   border-radius: 50%;
-  margin-right: 14rpx;
+  margin-right: 10rpx;
   flex-shrink: 0;
   background: #B9B2A3;
 }
-.acct-bar.ok .acct-dot { background: #3FA34D; }
-.acct-bar.busy .acct-dot { background: #E9A825; }
-.acct-bar.bad .acct-dot { background: #D9534F; }
-.acct-text {
-  font-size: 25rpx;
+.p-dot.ok { background: #3FA34D; }
+.p-dot.busy { background: #E9A825; }
+.p-dot.bad { background: #D9534F; }
+.p-meta-text {
+  font-size: 23rpx;
   color: #6F6757;
   font-weight: 600;
+  flex-shrink: 0;
 }
-.acct-bar.bad .acct-text { color: #B23A32; }
-.acct-sub {
-  margin-left: auto;
-  font-size: 22rpx;
+.p-meta-sync {
+  font-size: 21rpx;
   color: #A79E8B;
+  margin-left: 6rpx;
+  flex-shrink: 0;
 }
-.acct-btn {
+.p-meta-id {
+  font-size: 21rpx;
+  color: #B4AC9C;
   margin-left: auto;
-  padding: 8rpx 24rpx;
-  border-radius: 999rpx;
-  background: #FFD75E;
-  color: #6B4E00;
-  font-size: 23rpx;
-  font-weight: 700;
+  padding-left: 16rpx;
+  white-space: nowrap;
 }
-.acct-btn:active { opacity: 0.75; }
+.p-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.p-icon:active { opacity: 0.6; }
 
 /* ============ 会员卡 ============ */
 .vip-card {
@@ -272,12 +266,4 @@
   font-size: 22rpx;
   color: #A8811C;
   word-break: break-all;
-}
-
-.p-hint {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 20rpx;
-  line-height: 1.5;
-  color: #A79E8B;
 }

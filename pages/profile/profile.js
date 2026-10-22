@@ -33,8 +33,7 @@ Page({
     renameInput: '',
     showAbout: false,
     showHelp: false,
-    showPhone: false,
-    phoneInput: ''
+    metaTip: '本地模式'
   },
 
   onLoad() {
@@ -43,7 +42,7 @@ Page({
     this.refresh()
     var self = this
     this._offChange = db.onChange(function () { self.refresh() })
-    this._offCloud = cloud.onChange(function (st) { self.setData({ account: st }) })
+    this._offCloud = cloud.onChange(function (st) { self.applyAccount(st) })
     this.setData({ account: cloud.accountState() })
   },
 
@@ -62,6 +61,7 @@ Page({
   refresh() {
     var me = db.getProfile()
     var ledger = db.currentLedger()
+    var account = cloud.accountState()
     var patch = {
       me: me,
       vip: db.isVip(),
@@ -69,7 +69,9 @@ Page({
       uid: shortId(me.id),
       cloudOn: cloud.enabled(),
       syncText: cloud.statusText(),
-      account: cloud.accountState()
+      account: account,
+      // 顶部状态行文案：失败时直接告诉用户「点此重试」，其余场景用云端提示
+      metaTip: account.phase === 'failed' ? '同步失败 · 点此重试' : account.tip
     }
     if (ledger) {
       var sum = db.assetSummary(ledger.id)
@@ -204,44 +206,23 @@ Page({
     this.openRename()
   },
 
-  /* ---------------- 手机号绑定 ---------------- */
+  /* ---------------- 顶部状态行点按：失败重试 / 正常手动同步 ---------------- */
 
-  openPhone() {
-    this.setData({ showPhone: true, phoneInput: this.data.me.phone || '' })
-  },
-
-  closePhone() {
-    this.setData({ showPhone: false })
-  },
-
-  onPhoneInput(e) {
-    this.setData({ phoneInput: e.detail.value })
-  },
-
-  confirmPhone() {
-    var phone = this.data.phoneInput.trim()
-    if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请填写 11 位手机号', icon: 'none' })
-      return
-    }
-    var self = this
-    if (!cloud.enabled()) {
-      // 未接入云同步：号码只落本机
-      db.setProfile({ phone: phone })
-      this.setData({ showPhone: false })
-      this.refresh()
-      wx.showToast({ title: '已保存到本机', icon: 'success' })
-      return
-    }
-    cloud.bindPhone('', phone).then(function (res) {
-      if (res.ok) {
-        self.setData({ showPhone: false })
-        self.refresh()
-        wx.showToast({ title: '手机号已绑定', icon: 'success' })
-      } else {
-        wx.showToast({ title: res.error || '保存失败', icon: 'none' })
-      }
+  /** 云端状态变化时同步刷新顶部状态行（文案 + 最近同步时间） */
+  applyAccount(st) {
+    this.setData({
+      account: st,
+      metaTip: st.phase === 'failed' ? '同步失败 · 点此重试' : st.tip,
+      syncText: cloud.statusText()
     })
+  },
+
+  onStatusTap() {
+    if (this.data.account.phase === 'failed') {
+      this.retryAccount()
+      return
+    }
+    this.syncNow()
   },
 
   toast(e) {
@@ -295,12 +276,12 @@ Page({
     }
     this._syncing = true
     wx.showLoading({ title: '同步中', mask: true })
-    this.setData({ account: cloud.accountState() })
+    this.applyAccount(cloud.accountState())
     cloud.sync().then(function () {
       wx.hideLoading()
       self._syncing = false
       var st = cloud.accountState()
-      self.setData({ account: st })
+      self.applyAccount(st)
       if (st.error) wx.showToast({ title: st.error.slice(0, 18), icon: 'none' })
       else wx.showToast({ title: '同步完成', icon: 'success' })
     })

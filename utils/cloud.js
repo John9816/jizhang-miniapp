@@ -159,7 +159,7 @@ function mergeSnapshot(res) {
   for (i = 0; i < records.length; i++) {
     if (db.applyRemoteRecord(records[i])) changed = true
   }
-  // 云端下发的身份（头像/手机号/昵称）
+  // 云端下发的身份（头像/昵称）
   if (res.me) {
     db.applyCloudMe(res.me)
     changed = true
@@ -282,31 +282,6 @@ function updateProfile(patch) {
     if (nextAvatar !== null) db.setProfile({ avatar: nextAvatar })
     else db.setProfile({ avatar: prevAvatar })
     return { ok: false, error: (e && e.message) || '保存失败' }
-  })
-}
-
-/**
- * 绑定手机号。优先用微信 getPhoneNumber 的 code；
- * 个人主体通常没有该权限（后端返回 needManual），此时自动降级为手动填写。
- */
-function bindPhone(code, manualPhone) {
-  if (!enabled()) return Promise.resolve({ ok: false, error: '云同步未开启' })
-  var chain = state.token ? Promise.resolve() : login()
-  return chain.then(function () {
-    return request('/api/user/phone', {
-      method: 'POST',
-      data: code ? { code: String(code) } : { phone: String(manualPhone || '') }
-    })
-  }).then(function (res) {
-    db.setProfile({ phone: res.phone || '' })
-    state.lastOkAt = Date.now()
-    return { ok: true, phone: res.phone || '' }
-  }).catch(function (e) {
-    // 个人主体无手机号权限：服务端 400 + needManual，让前端切手动填写
-    if (e && e.data && e.data.needManual) {
-      return { ok: false, needManual: true, error: e.data.error || '请手动填写手机号' }
-    }
-    return { ok: false, error: (e && e.message) || '绑定失败' }
   })
 }
 
@@ -465,7 +440,6 @@ module.exports = {
   accountState: accountState,
   joinLedger: joinLedger,
   updateProfile: updateProfile,
-  bindPhone: bindPhone,
   purchaseVip: purchaseVip,
   currentInviteCode: currentInviteCode,
   statusText: statusText
