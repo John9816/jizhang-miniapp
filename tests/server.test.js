@@ -253,6 +253,63 @@ async function main() {
     assert(l.challenges && l.challenges.length === 1, '旧配置把存钱挑战清空了')
   })
 
+  await test('账本封面同步：自定义图片封面落库，B 拉取可见', async function () {
+    const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    const up = await api('POST', '/api/sync', {
+      since: '',
+      ledgers: [{
+        id: ledgerId, name: '家庭账本', createdAt: iso(-86400000), ownerId: openidA, ownerName: '小明',
+        members: [{ id: openidA, name: '小明', joinedAt: iso(-86400000) }],
+        cover: { kind: 'image', image: img },
+        cfgAt: iso(9000)
+      }]
+    }, tokenA)
+    assert(up.data.ok, '封面推送失败')
+    const l = up.data.ledgers.find(function (x) { return x.id === ledgerId })
+    assert(l.cover && l.cover.kind === 'image' && l.cover.image === img, '图片封面未同步')
+    const pull = await api('GET', '/api/sync?since=', null, tokenB)
+    const lb = pull.data.ledgers.find(function (x) { return x.id === ledgerId })
+    assert(lb.cover && lb.cover.kind === 'image' && lb.cover.image === img, 'B 拉不到自定义封面')
+  })
+
+  await test('封面 LWW 与脏数据：旧配置不覆盖新封面，脏封面回退默认预设', async function () {
+    const cfg = {
+      accounts: [{ id: 'acc_wechat', name: '微信钱包', type: 'wechat', initialBalance: 520000, sortIndex: 1 }],
+      budget: { monthlyTotal: 300000, categoryBudgets: { food: 100000 } },
+      recurring: [{ id: 'rr1', name: '房租', amount: 250000, cycle: 'monthly', nextDate: '2026-11-01' }],
+      categories: [{ key: 'c1', name: '干饭', icon: '🍚', type: 'expense' }],
+      challenges: [{ id: 'ch1', name: '旅行基金', target: 500000, saved: 165000, deadline: '2027-03-01', createdAt: iso(-100000) }]
+    }
+    // 旧 cfgAt 带不同封面：不得覆盖
+    const old = await api('POST', '/api/sync', {
+      since: '',
+      ledgers: [Object.assign({
+        id: ledgerId, name: '家庭账本', createdAt: iso(-86400000), ownerId: openidA, ownerName: '小明',
+        members: [{ id: openidA, name: '小明', joinedAt: iso(-86400000) }],
+        cover: { kind: 'preset', key: 'piggy' },
+        cfgAt: '2021-01-01T00:00:00.000Z'
+      }, cfg)]
+    }, tokenA)
+    assert(old.data.ok, '旧封面推送失败')
+    const ol = old.data.ledgers.find(function (x) { return x.id === ledgerId })
+    assert(ol.cover.kind === 'image', '旧配置覆盖了新封面')
+
+    // 新 cfgAt 带脏封面：回退默认预设，且不拖垮同包的其他配置
+    const dirty = await api('POST', '/api/sync', {
+      since: '',
+      ledgers: [Object.assign({
+        id: ledgerId, name: '家庭账本', createdAt: iso(-86400000), ownerId: openidA, ownerName: '小明',
+        members: [{ id: openidA, name: '小明', joinedAt: iso(-86400000) }],
+        cover: { kind: 'image', image: 'javascript:alert(1)' },
+        cfgAt: iso(9500)
+      }, cfg)]
+    }, tokenA)
+    assert(dirty.data.ok, '脏封面推送应正常返回')
+    const dl = dirty.data.ledgers.find(function (x) { return x.id === ledgerId })
+    assert(dl.cover.kind === 'preset' && dl.cover.key === 'default', '脏封面应回退默认预设')
+    assert(dl.accounts[0].name === '微信钱包', '脏封面影响了同包账户配置')
+  })
+
   await test('transfer 记录：推送 / 拉取 / 缺字段拒绝', async function () {
     const ok = await api('POST', '/api/sync', {
       since: '',
@@ -325,6 +382,7 @@ async function main() {
     assert('accountId' in lrec, '新列未迁移到记录')
     const lledger = sj.ledgers.find(function (x) { return x.id === 'L_legacy' })
     assert(lledger && Array.isArray(lledger.accounts) && lledger.budget, '新列未迁移到账本')
+    assert(lledger.cover && lledger.cover.kind === 'preset' && lledger.cover.key === 'default', '封面列未迁移到账本')
     srv.kill()
     fs.rmSync(legacyDir, { recursive: true, force: true })
   })

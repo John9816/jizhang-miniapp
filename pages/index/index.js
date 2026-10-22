@@ -7,6 +7,7 @@ Page({
     statusBar: 20,
     me: { id: '', name: '' },
     ledger: null,
+    ledgerCover: null,
     monthKey: '',
     monthLabel: '',
     monthShort: '',
@@ -140,6 +141,7 @@ Page({
       this.setData({
         me: me,
         ledger: null,
+        ledgerCover: null,
         members: [],
         groups: [],
         recordCount: 0,
@@ -251,6 +253,7 @@ Page({
     this.setData({
       me: me,
       ledger: ledger,
+      ledgerCover: u.ledgerCoverInfo(ledger.cover),
       members: members,
       groups: groups,
       recordCount: filtered.length,
@@ -318,7 +321,13 @@ Page({
 
   openLedgerSheet() {
     var options = db.listLedgers().map(function (l) {
-      return { id: l.id, name: l.name, memberCount: l.memberCount || 1, isCurrent: l.isCurrent }
+      return {
+        id: l.id,
+        name: l.name,
+        cover: l.cover,
+        memberCount: l.memberCount || 1,
+        isCurrent: l.isCurrent
+      }
     })
     if (!options.length) return
     this.setData({ ledgerOptions: options, ledgerSheet: true, showMore: false })

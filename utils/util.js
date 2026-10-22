@@ -590,6 +590,55 @@ function dueRecurring(rules, today) {
   return out
 }
 
+/* ---------------- 账本封面 ---------------- */
+
+/**
+ * 账本封面预设：渐变 + emoji，与奶油黄主题协调的浅色系。
+ * key 会落库，新增预设只能往后加，别改已有 key（老用户的封面不能变）。
+ */
+var LEDGER_COVERS = [
+  { key: 'default', name: '默认', emoji: '📒', gradient: 'linear-gradient(135deg, #F7E8C3, #EFD49B)' },
+  { key: 'piggy', name: '存钱', emoji: '🐷', gradient: 'linear-gradient(135deg, #FFE3EC, #FFC4D8)' },
+  { key: 'home', name: '家庭', emoji: '🏠', gradient: 'linear-gradient(135deg, #E3EEFF, #C4DAFF)' },
+  { key: 'travel', name: '旅行', emoji: '✈️', gradient: 'linear-gradient(135deg, #DFF3F1, #B5E5DD)' },
+  { key: 'business', name: '生意', emoji: '💼', gradient: 'linear-gradient(135deg, #EFE9FF, #D6C8FF)' },
+  { key: 'love', name: '恋爱', emoji: '💕', gradient: 'linear-gradient(135deg, #FFE8E2, #FFC9B8)' },
+  { key: 'coffee', name: '小确幸', emoji: '☕', gradient: 'linear-gradient(135deg, #F3E7D6, #E2C6A6)' },
+  { key: 'star', name: '目标', emoji: '⭐', gradient: 'linear-gradient(135deg, #FFF3C4, #FFE083)' }
+]
+
+/**
+ * 归一化封面字段（兼容没有 cover 的旧账本 / 旧分享包 / 旧同步数据）：
+ *  - { kind: 'image', image: dataURL } 自定义图片
+ *  - { kind: 'preset', key: 'xxx' }    预设（找不到 key 时回退默认）
+ * 返回对象始终带全渲染所需字段，页面直接拿去用。
+ */
+function ledgerCoverInfo(cover) {
+  if (!cover || typeof cover !== 'object') cover = { kind: 'preset', key: 'default' }
+  if (cover.kind === 'image' && typeof cover.image === 'string' && /^data:image\//.test(cover.image)) {
+    return { kind: 'image', key: 'image', name: '自定义', emoji: '', gradient: '', image: cover.image }
+  }
+  var key = String(cover.key || 'default')
+  var hit = null
+  for (var i = 0; i < LEDGER_COVERS.length; i++) {
+    if (LEDGER_COVERS[i].key === key) { hit = LEDGER_COVERS[i]; break }
+  }
+  if (!hit) hit = LEDGER_COVERS[0]
+  return {
+    kind: 'preset',
+    key: hit.key,
+    name: hit.name,
+    emoji: hit.emoji,
+    gradient: hit.gradient,
+    image: ''
+  }
+}
+
+/** 取账本封面（账本对象或 cover 字段都吃） */
+function ledgerCoverOf(ledger) {
+  return ledgerCoverInfo(ledger && ledger.cover)
+}
+
 /* ---------------- 导出 CSV ---------------- */
 
 function csvCell(v) {
@@ -755,6 +804,9 @@ module.exports = {
   accountIsFixed: accountIsFixed,
   accountBalance: accountBalance,
   defaultAccounts: defaultAccounts,
+  LEDGER_COVERS: LEDGER_COVERS,
+  ledgerCoverInfo: ledgerCoverInfo,
+  ledgerCoverOf: ledgerCoverOf,
   RECUR_CYCLES: RECUR_CYCLES,
   recurCycleName: recurCycleName,
   nextRunDate: nextRunDate,

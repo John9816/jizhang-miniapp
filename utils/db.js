@@ -213,12 +213,13 @@ function setMyName(name) {
 
 /* ---------------- 账本 ---------------- */
 
-function createLedger(name) {
+function createLedger(name, cover) {
   ensure()
   var me = db.me
   var ledger = {
     id: u.genId('L'),
     name: String(name == null ? '' : name).trim().slice(0, 20) || '新账本',
+    cover: u.ledgerCoverInfo(cover),
     ownerId: me.id,
     ownerName: me.name || '我',
     createdAt: Date.now(),
@@ -268,6 +269,14 @@ function renameLedger(id, name) {
   return l
 }
 
+/** 设置账本封面：走 withLedger 同步刷新 cfgAt，云同步按 LWW 合并 */
+function setLedgerCover(id, cover) {
+  return withLedger(id, function (l) {
+    l.cover = u.ledgerCoverInfo(cover)
+    return l.cover
+  })
+}
+
 function deleteLedger(id) {
   ensure()
   db.ledgers = db.ledgers.filter(function (l) { return l.id !== id })
@@ -286,6 +295,7 @@ function listLedgers() {
     return {
       id: l.id,
       name: l.name,
+      cover: u.ledgerCoverInfo(l.cover),
       createdAt: l.createdAt,
       isCurrent: l.id === db.currentLedgerId,
       memberCount: Object.keys(l.members).length
@@ -901,6 +911,7 @@ function importSharePackage(text) {
     ledger = {
       id: String(l.id),
       name: String(l.name || '共享账本').slice(0, 20),
+      cover: u.ledgerCoverInfo(l.cover),
       ownerId: String(l.ownerId || ''),
       ownerName: String(l.ownerName || ''),
       createdAt: Number(l.createdAt) || Date.now(),
@@ -1011,6 +1022,7 @@ function exportLedgersForSync() {
     return {
       id: l.id,
       name: l.name,
+      cover: u.ledgerCoverInfo(l.cover),
       createdAt: toIso(l.createdAt),
       ownerId: l.ownerId,
       ownerName: l.ownerName || '',
@@ -1077,6 +1089,7 @@ function applyRemoteLedger(o) {
     var fresh = {
       id: String(o.id),
       name: String(o.name || '共享账本').slice(0, 20),
+      cover: u.ledgerCoverInfo(o.cover),
       ownerId: String(o.ownerId || ''),
       ownerName: String(o.ownerName || ''),
       createdAt: toIso(o.createdAt),
@@ -1127,6 +1140,7 @@ function applyRemoteLedger(o) {
     if (Array.isArray(o.recurring)) existing.recurring = o.recurring
     if (Array.isArray(o.categories)) existing.categories = o.categories
     if (Array.isArray(o.challenges)) existing.challenges = o.challenges
+    if (o.cover && typeof o.cover === 'object') existing.cover = u.ledgerCoverInfo(o.cover)
     existing.cfgAt = cfgAt
     changed = true
   }
@@ -1303,6 +1317,7 @@ module.exports = {
   currentLedger: currentLedger,
   setCurrentLedger: setCurrentLedger,
   renameLedger: renameLedger,
+  setLedgerCover: setLedgerCover,
   deleteLedger: deleteLedger,
   listLedgers: listLedgers,
   recordsOf: recordsOf,

@@ -274,4 +274,83 @@ test('exportLedgersForSync 携带账本级配置与 cfgAt', function () {
   assert.ok(pushed.cfgAt)
 })
 
+/* ---------------- 账本封面 ---------------- */
+
+test('新建账本可指定封面；listLedgers 返回归一化封面，旧账本兜底默认', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var old = db.currentLedger().id
+  var created = db.createLedger('旅行账本', { kind: 'preset', key: 'travel' })
+  var L = created.id
+  assert.strictEqual(db.getLedger(L).cover.key, 'travel')
+  var list = db.listLedgers()
+  var hit = list.filter(function (l) { return l.id === L })[0]
+  assert.strictEqual(hit.cover.emoji, '✈️')
+  assert.ok(hit.cover.gradient)
+  // init 创建的老账本没有 cover 字段，兜底为默认预设
+  var oldHit = list.filter(function (l) { return l.id === old })[0]
+  assert.strictEqual(oldHit.cover.kind, 'preset')
+  assert.strictEqual(oldHit.cover.key, 'default')
+  assert.strictEqual(oldHit.cover.emoji, '📒')
+})
+
+test('setLedgerCover：切换自定义图片封面并刷新 cfgAt', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var L = db.currentLedger().id
+  var before = db.getLedger(L).cfgAt
+  var img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg'
+  db.setLedgerCover(L, { kind: 'image', image: img })
+  var cover = db.getLedger(L).cover
+  assert.strictEqual(cover.kind, 'image')
+  assert.strictEqual(cover.image, img)
+  assert.ok(db.getLedger(L).cfgAt >= before)
+  // 不存在的账本静默返回，不抛异常
+  assert.strictEqual(db.setLedgerCover('L_nope', { kind: 'preset', key: 'piggy' }), null)
+})
+
+test('分享包导入携带封面（预设与自定义图片）', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var created = db.createLedger('家庭账本', { kind: 'preset', key: 'home' })
+  var L = created.id
+  db.setLedgerCover(L, { kind: 'image', image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg' })
+  var pkg = db.sharePackage(L)
+  db.deleteLedger(L)
+  var r = db.importSharePackage(pkg)
+  assert.ok(r.ok)
+  var cover = db.getLedger(L).cover
+  assert.strictEqual(cover.kind, 'image')
+  assert.ok(/^data:image\//.test(cover.image))
+})
+
+test('applyRemoteLedger：封面按 cfgAt LWW 合并，旧的远端配置不覆盖本地新封面', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var L = db.currentLedger().id
+  db.setLedgerCover(L, { kind: 'preset', key: 'star' })
+  // 远端 cfgAt 更旧：不覆盖
+  db.applyRemoteLedger({
+    id: L, name: '远端账本', ownerId: 'remote', ownerName: '远端',
+    createdAt: '2020-01-01T00:00:00.000Z',
+    cover: { kind: 'preset', key: 'piggy' },
+    members: [],
+    cfgAt: '2020-01-01T00:00:00.000Z'
+  })
+  assert.strictEqual(db.getLedger(L).cover.key, 'star')
+  // 远端 cfgAt 更新：采用远端封面
+  db.applyRemoteLedger({
+    id: L, name: '远端账本', ownerId: 'remote', ownerName: '远端',
+    createdAt: '2020-01-01T00:00:00.000Z',
+    cover: { kind: 'image', image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg' },
+    members: [],
+    cfgAt: new Date(Date.now() + 60000).toISOString()
+  })
+  assert.strictEqual(db.getLedger(L).cover.kind, 'image')
+})
+
 console.log('\n' + passed + ' tests passed')

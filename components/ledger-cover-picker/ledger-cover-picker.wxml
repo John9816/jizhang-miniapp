@@ -1,0 +1,29 @@
+<view class="cover-picker">
+  <view class="cover-picker-title" wx:if="{{title}}">{{title}}</view>
+  <view class="cover-grid">
+    <view
+      wx:for="{{covers}}"
+      wx:key="key"
+      class="cover-tile {{current.kind === 'preset' && current.key === item.key ? 'cover-tile-on' : ''}}"
+      style="background: {{item.gradient}}"
+      data-key="{{item.key}}"
+      bindtap="onPickPreset"
+    >
+      <text class="cover-tile-emoji">{{item.emoji}}</text>
+      <text class="cover-tile-name">{{item.name}}</text>
+    </view>
+    <view
+      class="cover-tile cover-tile-album {{current.kind === 'image' ? 'cover-tile-on' : ''}}"
+      bindtap="onChooseImage"
+    >
+      <block wx:if="{{current.kind === 'image'}}">
+        <image class="cover-tile-img" src="{{current.image}}" mode="aspectFill" />
+        <text class="cover-tile-name cover-tile-name-img">相册</text>
+      </block>
+      <block wx:else>
+        <text class="cover-tile-emoji">🖼️</text>
+        <text class="cover-tile-name">相册</text>
+      </block>
+    </view>
+  </view>
+</view>

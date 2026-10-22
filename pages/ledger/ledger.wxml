@@ -2,7 +2,10 @@
   <!-- 当前账本 -->
   <view class="card current-card" wx:if="{{ledger}}">
     <view class="current-head">
-      <view class="current-icon">📒</view>
+      <view class="current-icon current-icon-img" wx:if="{{currentCover.kind === 'image'}}">
+        <image src="{{currentCover.image}}" mode="aspectFill" />
+      </view>
+      <view class="current-icon" wx:else style="background: {{currentCover.gradient}}">{{currentCover.emoji}}</view>
       <view class="current-info">
         <text class="current-name">{{ledger.name}}</text>
         <text class="current-sub">{{memberCount}} 位成员 · {{stats.count}} 条记录</text>
@@ -70,6 +73,10 @@
     </view>
     <view class="ledger-row" wx:for="{{ledgers}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
       <view class="ledger-radio {{item.isCurrent ? 'radio-on' : ''}}"></view>
+      <view class="ledger-row-cover ledger-row-cover-img" wx:if="{{item.cover.kind === 'image'}}">
+        <image src="{{item.cover.image}}" mode="aspectFill" />
+      </view>
+      <view class="ledger-row-cover" wx:else style="background: {{item.cover.gradient}}">{{item.cover.emoji}}</view>
       <view class="ledger-row-info">
         <text class="ledger-row-name">{{item.name}}</text>
         <text class="ledger-row-sub">{{item.memberCount}} 位成员</text>
@@ -92,6 +99,7 @@
     <view class="modal">
       <view class="modal-title">新建账本</view>
       <input class="modal-input" value="{{newName}}" placeholder="例如：家庭账本、旅行基金" maxlength="20" bindinput="onNewNameInput" />
+      <ledger-cover-picker cover="{{newCover}}" title="封面" bindcoverchange="onCreateCoverChange" />
       <view class="modal-actions">
         <view class="btn-ghost" bindtap="closeCreate">取消</view>
         <view class="btn-primary" bindtap="confirmCreate">创建</view>
@@ -119,6 +127,7 @@
     <view class="modal">
       <view class="modal-title">重命名账本</view>
       <input class="modal-input" value="{{renameText}}" placeholder="账本名称" maxlength="20" bindinput="onRenameInput" />
+      <ledger-cover-picker cover="{{renameCover}}" title="封面" bindcoverchange="onRenameCoverChange" />
       <view class="modal-actions">
         <view class="btn-ghost" bindtap="closeRename">取消</view>
         <view class="btn-primary" bindtap="confirmRename">保存</view>

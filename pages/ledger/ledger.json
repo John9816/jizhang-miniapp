@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "账本"
+  "navigationBarTitleText": "账本",
+  "usingComponents": {
+    "ledger-cover-picker": "/components/ledger-cover-picker/ledger-cover-picker"
+  }
 }

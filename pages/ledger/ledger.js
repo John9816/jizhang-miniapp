@@ -11,11 +11,14 @@ Page({
     memberCount: 0,
     showCreate: false,
     newName: '',
+    newCover: { kind: 'preset', key: 'default' },
     showImport: false,
     importText: '',
     showRename: false,
     renameId: '',
     renameText: '',
+    renameCover: { kind: 'preset', key: 'default' },
+    currentCover: { kind: 'preset', key: 'default' },
     cloud: false,
     inviteCode: ''
   },
@@ -40,6 +43,7 @@ Page({
     this.setData({
       ledger: ledger,
       ledgers: db.listLedgers(),
+      currentCover: u.ledgerCoverInfo(ledger && ledger.cover),
       memberCount: ledger ? Object.keys(ledger.members).length : 0,
       cloud: cloud.enabled(),
       inviteCode: cloud.currentInviteCode(),
@@ -64,7 +68,7 @@ Page({
   },
 
   openCreate() {
-    this.setData({ showCreate: true, newName: '' })
+    this.setData({ showCreate: true, newName: '', newCover: { kind: 'preset', key: 'default' } })
   },
 
   closeCreate() {
@@ -73,6 +77,11 @@ Page({
 
   onNewNameInput(e) {
     this.setData({ newName: e.detail.value })
+  },
+
+  onCreateCoverChange(e) {
+    var cover = e.detail && e.detail.cover
+    if (cover) this.setData({ newCover: cover })
   },
 
   confirmCreate() {
@@ -87,7 +96,7 @@ Page({
       })
       return
     }
-    db.createLedger(name || '新账本')
+    db.createLedger(name || '新账本', this.data.newCover)
     this.setData({ showCreate: false })
     this.refresh()
     wx.showToast({ title: '已创建', icon: 'success' })
@@ -96,7 +105,13 @@ Page({
   openRename(e) {
     var id = e.currentTarget.dataset.id
     var name = e.currentTarget.dataset.name
-    this.setData({ showRename: true, renameId: id, renameText: name })
+    var l = db.getLedger(id)
+    this.setData({
+      showRename: true,
+      renameId: id,
+      renameText: name,
+      renameCover: u.ledgerCoverInfo(l && l.cover)
+    })
   },
 
   closeRename() {
@@ -107,11 +122,23 @@ Page({
     this.setData({ renameText: e.detail.value })
   },
 
+  onRenameCoverChange(e) {
+    var cover = e.detail && e.detail.cover
+    if (cover) this.setData({ renameCover: cover })
+  },
+
   confirmRename() {
-    db.renameLedger(this.data.renameId, this.data.renameText)
+    var id = this.data.renameId
+    db.renameLedger(id, this.data.renameText)
+    // 封面有变化才写库（setLedgerCover 会刷新 cfgAt，无谓的写入会放大同步包）
+    var want = u.ledgerCoverInfo(this.data.renameCover)
+    var now = u.ledgerCoverInfo(db.getLedger(id) && db.getLedger(id).cover)
+    if (JSON.stringify(want) !== JSON.stringify(now)) {
+      db.setLedgerCover(id, this.data.renameCover)
+    }
     this.setData({ showRename: false })
     this.refresh()
-    wx.showToast({ title: '已重命名', icon: 'success' })
+    wx.showToast({ title: '已保存', icon: 'success' })
   },
 
   deleteLedger(e) {

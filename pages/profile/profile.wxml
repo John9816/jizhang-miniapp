@@ -128,7 +128,7 @@
     </view>
   </view>
 
-  <view class="p-footer">记账本 · 存钱罐主题 v1.1.5</view>
+  <view class="p-footer">记账本 · 存钱罐主题 v1.1.6</view>
 
   <!-- 改昵称（昵称授权失败时的手动兜底） -->
   <view class="modal-mask" wx:if="{{showRename}}">
@@ -182,7 +182,7 @@
       <view class="modal-title">关于我们</view>
       <view class="help-list">
         <view class="help-item">记账本 · 存钱罐主题</view>
-        <view class="help-item">版本 1.1.5</view>
+        <view class="help-item">版本 1.1.6</view>
         <view class="help-item">本地优先的个人记账工具，数据存于你自己的服务器。</view>
         <view class="help-item">无广告、无支付、无金融业务。</view>
       </view>

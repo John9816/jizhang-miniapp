@@ -269,5 +269,29 @@ test('首页增强：连续记账天数 / 常用分类 / 日历金额文本', fu
   assert.strictEqual(dayBeforeCell.incomeText, '1')
 })
 
+test('账本封面归一化：空值/坏 key 兜底默认，图片封面保留 dataURL', function () {
+  var def = u.ledgerCoverInfo(null)
+  assert.strictEqual(def.kind, 'preset')
+  assert.strictEqual(def.key, 'default')
+  assert.strictEqual(def.emoji, '📒')
+  assert.ok(def.gradient)
+
+  var bad = u.ledgerCoverInfo({ kind: 'preset', key: 'not_exist' })
+  assert.strictEqual(bad.key, 'default')
+
+  var img = u.ledgerCoverInfo({ kind: 'image', image: 'data:image/png;base64,iVBORw0KGgo' })
+  assert.strictEqual(img.kind, 'image')
+  assert.strictEqual(img.image, 'data:image/png;base64,iVBORw0KGgo')
+
+  // 非 dataURL 的图片字段（脏数据）回退到默认预设，避免 image 组件渲染失败
+  var dirty = u.ledgerCoverInfo({ kind: 'image', image: 'http://tmp/xxx.png' })
+  assert.strictEqual(dirty.kind, 'preset')
+  assert.strictEqual(dirty.key, 'default')
+
+  // ledgerCoverOf 吃账本对象
+  assert.strictEqual(u.ledgerCoverOf({ name: 'x' }).key, 'default')
+  assert.strictEqual(u.ledgerCoverOf({ cover: { kind: 'preset', key: 'love' } }).emoji, '💕')
+})
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed')
 process.exit(failed > 0 ? 1 : 0)

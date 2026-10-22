@@ -70,6 +70,26 @@ function sanitizeAvatar(v) {
   return ''
 }
 
+/** 账本封面上限：封面只在列表/图标位展示，比头像还小，120KB 足够且不拖大同步包 */
+const COVER_MAX = 120000
+
+/**
+ * 封面白名单校验：{ kind:'preset', key } 或 { kind:'image', image:dataURL }，
+ * 其余（含伪造 kind / 非图片 dataURL / 超大串）一律回退默认预设。
+ */
+function sanitizeCover(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return { kind: 'preset', key: 'default' }
+  if (v.kind === 'image') {
+    const img = String(v.image == null ? '' : v.image).trim()
+    if (/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(img)) {
+      return { kind: 'image', image: img.slice(0, COVER_MAX) }
+    }
+    return { kind: 'preset', key: 'default' }
+  }
+  const key = String(v.key == null ? '' : v.key).trim().slice(0, 20)
+  return { kind: 'preset', key: key || 'default' }
+}
+
 function isoOr(v) {
   if (typeof v === 'number' && isFinite(v)) return new Date(v).toISOString()
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return v
@@ -402,6 +422,7 @@ function migrateSchema(d) {
     ['recurring_json', "ALTER TABLE ledgers ADD COLUMN recurring_json TEXT NOT NULL DEFAULT '[]'"],
     ['categories_json', "ALTER TABLE ledgers ADD COLUMN categories_json TEXT NOT NULL DEFAULT '[]'"],
     ['challenges_json', "ALTER TABLE ledgers ADD COLUMN challenges_json TEXT NOT NULL DEFAULT '[]'"],
+    ['cover_json', "ALTER TABLE ledgers ADD COLUMN cover_json TEXT NOT NULL DEFAULT '{\"kind\":\"preset\",\"key\":\"default\"}'"],
     ['cfg_at', "ALTER TABLE ledgers ADD COLUMN cfg_at TEXT NOT NULL DEFAULT ''"]
   ]
   ledgerAdd.forEach(function (pair) {
@@ -617,7 +638,7 @@ function snapshot(openid, since) {
   const out = { ledgers: [], members: [], records: [], me: userProfile(openid) }
   const ledgers = db.prepare(
     'SELECT l.id, l.name, l.owner_openid, l.invite_code, l.created_at,'
-    + ' l.accounts_json, l.budget_json, l.recurring_json, l.categories_json, l.challenges_json, l.cfg_at'
+    + ' l.accounts_json, l.budget_json, l.recurring_json, l.categories_json, l.challenges_json, l.cover_json, l.cfg_at'
     + ' FROM ledgers l JOIN members m ON m.ledger_id = l.id'
     + ' WHERE m.openid = ? ORDER BY l.created_at'
   ).all(openid)
@@ -660,6 +681,7 @@ function snapshot(openid, since) {
       recurring: jsonColumn(l.recurring_json, []),
       categories: jsonColumn(l.categories_json, []),
       challenges: jsonColumn(l.challenges_json, []),
+      cover: jsonColumn(l.cover_json, { kind: 'preset', key: 'default' }),
       cfgAt: l.cfg_at || ''
     }
   })
@@ -685,6 +707,7 @@ function applyLedgerPush(openid, l) {
   const recurringJson = toJsonColumn(l.recurring, [], 128 * 1024)
   const categoriesJson = toJsonColumn(l.categories, [], 128 * 1024)
   const challengesJson = toJsonColumn(l.challenges, [], 128 * 1024)
+  const coverJson = toJsonColumn(sanitizeCover(l.cover), { kind: 'preset', key: 'default' }, COVER_MAX + 200)
   const cfgAt = str(l.cfgAt, 40)
   let row = db.prepare('SELECT * FROM ledgers WHERE id = ?').get(id)
   if (row) {
@@ -695,17 +718,17 @@ function applyLedgerPush(openid, l) {
     if (cfgAt && cfgAt > row.cfg_at) {
       db.prepare([
         'UPDATE ledgers SET accounts_json = ?, budget_json = ?, recurring_json = ?,',
-        '  categories_json = ?, challenges_json = ?, cfg_at = ? WHERE id = ?'
-      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, cfgAt, id)
+        '  categories_json = ?, challenges_json = ?, cover_json = ?, cfg_at = ? WHERE id = ?'
+      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson, cfgAt, id)
     }
   } else {
     db.prepare([
       'INSERT INTO ledgers (id, name, owner_openid, invite_code, created_at,',
-      '  accounts_json, budget_json, recurring_json, categories_json, challenges_json, cfg_at)',
-      'VALUES (?,?,?,?,?,?,?,?,?,?,?)'
+      '  accounts_json, budget_json, recurring_json, categories_json, challenges_json, cover_json, cfg_at)',
+      'VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
     ].join(' '))
       .run(id, name || '共享账本', openid, genInviteCode(), isoOr(l.createdAt),
-        accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, cfgAt || nowIso())
+        accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson, cfgAt || nowIso())
     row = db.prepare('SELECT * FROM ledgers WHERE id = ?').get(id)
   }
   const membersIn = Array.isArray(l.members) ? l.members.slice(0, 200) : []

@@ -5,6 +5,10 @@
   <view class="topbar">
     <view class="topbar-l">
       <view class="brand-row" bindtap="openLedgerSheet">
+        <view class="brand-cover brand-cover-img" wx:if="{{ledgerCover && ledgerCover.kind === 'image'}}">
+          <image src="{{ledgerCover.image}}" mode="aspectFill" />
+        </view>
+        <view class="brand-cover" wx:elif="{{ledgerCover}}" style="background: {{ledgerCover.gradient}}">{{ledgerCover.emoji}}</view>
         <text class="brand">{{ledger.name || '我的账本'}}</text>
         <text class="brand-arrow">⌄</text>
       </view>
@@ -291,8 +295,14 @@
     <scroll-view scroll-y class="ledger-scroll">
       <view class="ledger-item {{item.isCurrent ? 'ledger-item-on' : ''}}" wx:for="{{ledgerOptions}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
         <view class="ledger-item-l">
-          <text class="ledger-item-name">{{item.name}}</text>
-          <text class="ledger-item-meta" wx:if="{{item.memberCount > 1}}">{{item.memberCount}} 人共享</text>
+          <view class="ledger-item-cover ledger-item-cover-img" wx:if="{{item.cover.kind === 'image'}}">
+            <image src="{{item.cover.image}}" mode="aspectFill" />
+          </view>
+          <view class="ledger-item-cover" wx:else style="background: {{item.cover.gradient}}">{{item.cover.emoji}}</view>
+          <view class="ledger-item-text">
+            <text class="ledger-item-name">{{item.name}}</text>
+            <text class="ledger-item-meta" wx:if="{{item.memberCount > 1}}">{{item.memberCount}} 人共享</text>
+          </view>
         </view>
         <text class="ledger-check" wx:if="{{item.isCurrent}}">✓</text>
       </view>

@@ -25,6 +25,18 @@
   margin-right: 20rpx;
 }
 
+/* 自定义封面图铺满图标位 */
+.current-icon-img {
+  background: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.current-icon-img image {
+  width: 100%;
+  height: 100%;
+}
+
 .current-info {
   flex: 1;
   min-width: 0;
@@ -148,6 +160,25 @@
   border-color: #E2543F;
   background: #E2543F;
   box-shadow: inset 0 0 0 6rpx #FFFFFF;
+}
+
+/* 账本封面缩略（预设 = 渐变底 + emoji；自定义 = 图片铺满） */
+.ledger-row-cover {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  margin-right: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ledger-row-cover image {
+  width: 100%;
+  height: 100%;
 }
 
 .ledger-row-info {

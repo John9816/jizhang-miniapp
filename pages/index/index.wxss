@@ -22,6 +22,19 @@
   gap: 8rpx;
 }
 .brand-row:active { opacity: 0.6; }
+/* 顶部账本封面小图标 */
+.brand-cover {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.brand-cover image { width: 100%; height: 100%; }
 .brand-arrow {
   font-size: 30rpx;
   color: #C9A227;
@@ -47,9 +60,30 @@
 .ledger-item:active { background: #FAF6EA; }
 .ledger-item-l {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  min-width: 0;
+}
+.ledger-item-text {
+  display: flex;
   flex-direction: column;
   gap: 6rpx;
+  min-width: 0;
 }
+/* 切换弹层里的账本封面缩略 */
+.ledger-item-cover {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.ledger-item-cover image { width: 100%; height: 100%; }
 .ledger-item-name { font-size: 30rpx; color: #2E2A22; font-weight: 500; }
 .ledger-item-on .ledger-item-name { color: #B8860B; font-weight: 700; }
 .ledger-item-meta { font-size: 20rpx; color: #A79E8B; }
