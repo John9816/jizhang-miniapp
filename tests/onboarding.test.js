@@ -130,6 +130,37 @@ async function main() {
     assert.strictEqual(again.getProfile().registeredAt, '')
   })
 
+  await test('db：shouldShowProfileGuide 随资料补全而消失', function () {
+    var pair = freshPair()
+    // 新账号：无头像无昵称 → 应展示
+    assert.strictEqual(pair.db.shouldShowProfileGuide(), true)
+    // 只补头像还不够（昵称仍缺）
+    pair.db.setProfile({ avatar: 'data:image/png;base64,AA' })
+    assert.strictEqual(pair.db.shouldShowProfileGuide(), true)
+    // 头像昵称齐全 → 消失
+    pair.db.setMyName('小明')
+    assert.strictEqual(pair.db.shouldShowProfileGuide(), false)
+    // 标记已读后即使资料缺失也不再展示
+    pair.db.setProfile({ guideDone: true })
+    pair.db.setProfile({ avatar: '' })
+    assert.strictEqual(pair.db.shouldShowProfileGuide(), false)
+  })
+
+  await test('db：applyCloudMe 同步到达触发 onChange（截图 bug 回归）', function () {
+    var pair = freshPair()
+    // 模拟首页 onShow 早于云同步完成：本地无资料，先按页面逻辑挂上监听
+    var seen = 0
+    var off = pair.db.onChange(function () { seen++ })
+    pair.db.applyCloudMe({ name: '远端昵称', avatar: 'data:image/png;base64,BB' })
+    off()
+    assert.ok(seen > 0, '同步写入资料必须广播 onChange，否则页面重估不了引导卡')
+    var p = pair.db.getProfile()
+    assert.strictEqual(p.name, '远端昵称')
+    assert.strictEqual(p.avatar, 'data:image/png;base64,BB')
+    // 同步到达后引导卡应消失（这正是截图里「我的页已就绪、首页仍展示引导卡」的修复点）
+    assert.strictEqual(pair.db.shouldShowProfileGuide(), false)
+  })
+
   await test('db：头像支持长 dataURL（不再被 512 截断）', function () {
     var pair = freshPair()
     var long = 'data:image/png;base64,' + new Array(3000).join('A')

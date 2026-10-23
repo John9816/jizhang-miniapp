@@ -19,6 +19,20 @@ Component({
         localAvatar: p.avatar || '',
         localName: p.name || ''
       })
+      // 云同步可能晚于 attached 到货（登录同步是异步的）：监听 db 变化，
+      // 同步拉取到头像/昵称时立即回显，避免卡片里显示空资料
+      var self = this
+      this._offDb = db.onChange(function () {
+        var q = db.getProfile()
+        var next = {}
+        if ((q.avatar || '') !== self.data.localAvatar) next.localAvatar = q.avatar || ''
+        if ((q.name || '') !== self.data.localName) next.localName = q.name || ''
+        if (Object.keys(next).length) self.setData(next)
+      })
+    },
+    detached: function () {
+      if (this._offDb) this._offDb()
+      this._offDb = null
     }
   },
 

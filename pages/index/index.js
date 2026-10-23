@@ -54,7 +54,12 @@ Page({
     })
     this.refresh()
     var self = this
-    this._offChange = db.onChange(function () { self.refresh() })
+    // 数据变化时同步重估完善资料卡：云同步拉取到头像/昵称后卡片要立即消失，
+    // 不能只依赖 onShow——用户停留在首页时同步才到货的场景（onShow 早于同步完成）会留下过期卡片
+    this._offChange = db.onChange(function () {
+      self.refresh()
+      self.updateOnboard()
+    })
     // 云同步状态不再在首页展示（按需求收敛到「我的」页），此处仅保留静默订阅：
     // 登录成功时落 registeredAt 时间戳（会随云快照同步），不产生任何 UI
     this._offCloud = cloud.onChange(function (st) {
@@ -78,10 +83,7 @@ Page({
    *  - 手机号与首启流程解耦，个人主体拿不到微信手机号，首启放按钮必失败，故本版起彻底移除手机号功能。
    */
   updateOnboard() {
-    var p = db.getProfile()
-    var hasAvatar = !!p.avatar
-    var hasName = !!p.name && p.name !== '我'
-    this.setData({ showOnboard: !p.guideDone && (!hasAvatar || !hasName) })
+    this.setData({ showOnboard: db.shouldShowProfileGuide() })
   },
 
   /** 资料卡关闭/完成：隐藏并标记已读 */

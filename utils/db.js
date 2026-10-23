@@ -139,6 +139,19 @@ function getProfile() {
 }
 
 /**
+ * 是否应展示「完善资料」引导卡：未标记已读 且（缺头像或缺昵称）。
+ * 注意：云同步是异步的，页面必须在 onChange 到达时**重估**本函数——
+ * 只在 onShow 评估会留下过期卡片（截图 bug：我的页已显示头像昵称，首页仍展示引导卡）。
+ */
+function shouldShowProfileGuide() {
+  ensure()
+  var p = getProfile()
+  var hasAvatar = !!p.avatar
+  var hasName = !!p.name && p.name !== '我'
+  return !p.guideDone && (!hasAvatar || !hasName)
+}
+
+/**
  * 合并云端下发的身份（login / sync 快照里的 me）。
  * 昵称走 setMyName 的那套联动（成员名 + 记录人名快照），头像只更新本机。
  */
@@ -1333,6 +1346,7 @@ module.exports = {
   getMe: getMe,
   getProfile: getProfile,
   setProfile: setProfile,
+  shouldShowProfileGuide: shouldShowProfileGuide,
   markRegistered: markRegistered,
   isVip: isVip,
   applyCloudMe: applyCloudMe,
