@@ -169,7 +169,7 @@ test('自定义分类：优先、回退、保留另一类型', function () {
   store = {}
   db.init()
   var L = db.currentLedger().id
-  assert.strictEqual(db.categoriesOf(L, 'expense').length, 10, '无自定义时回退内置')
+  assert.strictEqual(db.categoriesOf(L, 'expense').length, 15, '无自定义时回退内置（含水电气物业话费）')
   db.saveCategories(L, 'expense', [
     { name: '房租', icon: '🏠' },
     { name: '干饭', icon: '🍚' }

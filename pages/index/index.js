@@ -21,6 +21,8 @@ Page({
     streak: 0,
     heroBudget: null,
     topCats: [],
+    recurringHint: null,
+    recurringCount: 0,
     challenge: null,
     challengeCount: 0,
     loading: true,
@@ -117,7 +119,7 @@ Page({
     if (ledger) {
       var generated = db.runDueRecurring(ledger.id)
       if (generated.length > 0) {
-        wx.showToast({ title: '周期记账 +' + generated.length, icon: 'none' })
+        wx.showToast({ title: '周期记账：已自动入账 ' + generated.length + ' 笔', icon: 'none' })
       }
     }
     this.setData({ greeting: u.greeting() })
@@ -150,10 +152,12 @@ Page({
       emptyText: '还没有账本，去创建一个吧',
       dayGroups: [],
       calendar: { days: [], weekdays: [] },
-      today: { expenseText: '0.00', incomeText: '0.00', has: false },
-      streak: 0,
-      heroBudget: null,
-      topCats: [],
+        today: { expenseText: '0.00', incomeText: '0.00', has: false },
+        streak: 0,
+        heroBudget: null,
+        topCats: [],
+        recurringHint: null,
+        recurringCount: 0,
         summary: { income: 0, expense: 0, balance: 0, incomeText: '0.00', expenseText: '0.00', balanceText: '0.00' }
       })
       return
@@ -247,6 +251,30 @@ Page({
       ? (this.data.monthKey === u.currentMonthKey() ? '本月还没有记账记录' : '这个月还没有记录')
       : '该成员本月还没有记录'
 
+    // 周期记账提示条：有启用中规则时常驻首页（入口不再只藏在更多面板），展示待执行条数与最近一次扣款
+    var recurRules = db.recurringList(ledger.id)
+    var recurActive = 0
+    var recurNext = null
+    for (var ri = 0; ri < recurRules.length; ri++) {
+      var rr = recurRules[ri]
+      if (rr.paused) continue
+      recurActive++
+      if (!recurNext || String(rr.nextDate) < String(recurNext.nextDate)) recurNext = rr
+    }
+    var recurringHint = null
+    if (recurActive > 0 && recurNext) {
+      var todayStr = u.dateStr(new Date())
+      var tomorrowStr = u.dateStr(new Date(Date.now() + 86400000))
+      var nextPrefix = ''
+      if (recurNext.nextDate === todayStr) nextPrefix = '今天 '
+      else if (recurNext.nextDate === tomorrowStr) nextPrefix = '明天 '
+      recurringHint = {
+        count: recurActive,
+        name: recurNext.name || u.categoryName(recurNext.type, recurNext.category),
+        nextText: nextPrefix + u.cnDate(recurNext.nextDate)
+      }
+    }
+
     this.setData({
       me: me,
       ledger: ledger,
@@ -264,6 +292,8 @@ Page({
       today: today,
       streak: u.calcStreak(allLedger),
       topCats: u.topCategories(allLedger, 'expense', 5),
+      recurringHint: recurringHint,
+      recurringCount: recurActive,
       isCurrentMonth: isCurMonth,
       summary: {
         income: s.income,
@@ -406,6 +436,12 @@ Page({
 
   goBudget() {
     wx.navigateTo({ url: '/pages/budget/budget' })
+  },
+
+  /** 周期记账提示条 / 更多面板入口：进入周期记账管理页 */
+  goRecurring() {
+    this.setData({ showMore: false })
+    wx.navigateTo({ url: '/pages/recurring/recurring' })
   },
 
   goAssets() {

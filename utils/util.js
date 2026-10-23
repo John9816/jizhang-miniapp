@@ -8,6 +8,11 @@ var EXPENSE_CATEGORIES = [
   { key: 'shopping', name: '购物', icon: '🛍️' },
   { key: 'transport', name: '交通', icon: '🚌' },
   { key: 'home', name: '日用', icon: '🧴' },
+  { key: 'water', name: '水费', icon: '💧' },
+  { key: 'electric', name: '电费', icon: '⚡' },
+  { key: 'gas', name: '燃气费', icon: '🔥' },
+  { key: 'property', name: '物业费', icon: '🏢' },
+  { key: 'phonebill', name: '话费', icon: '📞' },
   { key: 'fun', name: '娱乐', icon: '🎮' },
   { key: 'phone', name: '通讯', icon: '📱' },
   { key: 'social', name: '人情', icon: '🧧' },
@@ -28,6 +33,8 @@ var INCOME_CATEGORIES = [
 /** 分类图标底色：浅色系，与奶油黄主题协调 */
 var CATEGORY_TINTS = {
   food: '#FFEFD2', shopping: '#FDE6DC', transport: '#E3EEFF', home: '#EAF4E2',
+  water: '#DDEFF6', electric: '#FFF0BE', gas: '#FFE1CC', property: '#E3E8F6',
+  phonebill: '#E0F1E5',
   fun: '#FBE6F1', phone: '#E7F0FF', social: '#FFE6E2', study: '#EFE9FF',
   medical: '#FFE8E6', other_out: '#F0EDE3',
   salary: '#FFEFC8', invest: '#E4F6E9', parttime: '#E8EFFF', redpacket: '#FFE6E2',

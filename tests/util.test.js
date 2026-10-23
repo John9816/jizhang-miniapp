@@ -116,6 +116,27 @@ test('按日期分组：今天/昨天含完整日期，混合 createdAt 排序',
   assert.ok(g2[0].label.indexOf('昨天') === 0, '昨天组头应有前缀')
 })
 
+test('支出分类：水费/电费/燃气费/物业费/话费五件套与专属底色', function () {
+  var u = require(path.join(ROOT, 'utils/util.js'))
+  var exp = u.categoriesFor('expense')
+  var keys = {}
+  for (var i = 0; i < exp.length; i++) keys[exp[i].key] = exp[i]
+  assert.strictEqual(exp.length, 15, '支出分类共 15 个')
+  var utils = ['water', 'electric', 'gas', 'property', 'phonebill']
+  var names = { water: '水费', electric: '电费', gas: '燃气费', property: '物业费', phonebill: '话费' }
+  for (var j = 0; j < utils.length; j++) {
+    var k = utils[j]
+    assert.ok(keys[k], '缺少分类 ' + k)
+    assert.ok(keys[k].name && keys[k].icon, k + ' 应有名称与图标')
+    assert.strictEqual(u.categoryName('expense', k), names[k])
+    assert.notStrictEqual(u.categoryTint(k), '#F3EFE4', k + ' 应有专属底色（非兜底灰）')
+  }
+  // 既有「通讯」分类保留（宽带/其他通讯场景），与「话费」并存
+  assert.strictEqual(u.categoryName('expense', 'phone'), '通讯')
+  // 未知 key 仍走兜底：首个分类
+  assert.strictEqual(u.categoryName('expense', 'no_such_key'), '餐饮')
+})
+
 test('成员统计', function () {
   var members = u.memberStats(
     [

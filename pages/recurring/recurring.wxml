@@ -1,4 +1,18 @@
 <view class="page">
+  <!-- 快捷预设：居家固定开销一键创建周期规则 -->
+  <view class="card preset-card">
+    <view class="preset-head">
+      <text class="preset-title">快捷预设</text>
+      <text class="preset-sub">水电气物业话费，设一次每月自动入账</text>
+    </view>
+    <scroll-view scroll-x class="preset-row" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="preset-item" wx:for="{{presets}}" wx:key="key" bindtap="usePreset" data-idx="{{index}}">
+        <view class="preset-icon">{{item.icon}}</view>
+        <text class="preset-name">{{item.name}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
   <!-- 规则列表 -->
   <block wx:if="{{rules.length > 0}}">
     <view class="card rule-card" wx:for="{{rules}}" wx:key="id">
@@ -29,7 +43,7 @@
   <view class="add-btn" bindtap="openAdd" wx:if="{{rules.length > 0}}">＋ 添加周期规则</view>
 
   <view class="card notice-card">
-    <view class="notice-text">到期后，在账本首页打开时会自动记账（每台设备各自执行也不会重复，记录按规则 ID 去重）。暂停后不再自动记账。</view>
+    <view class="notice-text">到期后，每次打开账本首页会自动入账（首页也会有「周期记账」提示条展示下次扣款；每台设备各自执行也不会重复，记录按规则 ID 去重）。暂停后不再自动记账。</view>
   </view>
 
   <!-- 添加弹层 -->

@@ -74,6 +74,13 @@
     </block>
   </view>
 
+  <!-- 周期记账提示条：有启用中规则时常驻，点击进管理页；到期后打开首页即自动入账 -->
+  <view class="recur-hint" wx:if="{{ledger && recurringHint}}" bindtap="goRecurring">
+    <text class="recur-hint-icon">🔁</text>
+    <text class="recur-hint-text">周期记账 {{recurringHint.count}} 条 · 下次 {{recurringHint.name}} {{recurringHint.nextText}}</text>
+    <text class="recur-hint-go">管理 ›</text>
+  </view>
+
   <!-- 存钱挑战（仅在进行中有挑战时占用首屏；创建入口在更多面板） -->
   <view class="card challenge-card" wx:if="{{ledger && challenge}}" bindtap="goChallenge">
     <view class="ch-row">
@@ -228,7 +235,11 @@
         <text class="more-emoji">🏷️</text><text>分类管理</text>
       </view>
       <view class="more-item" bindtap="openSheetItem" data-key="recurring">
-        <text class="more-emoji">🔁</text><text>周期记账</text>
+        <view class="more-icon-wrap">
+          <text class="more-emoji">🔁</text>
+          <text class="more-badge" wx:if="{{recurringCount > 0}}">{{recurringCount}}</text>
+        </view>
+        <text>周期记账</text>
       </view>
       <view class="more-item" bindtap="openSheetItem" data-key="transfer">
         <text class="more-emoji">🔄</text><text>账户转账</text>

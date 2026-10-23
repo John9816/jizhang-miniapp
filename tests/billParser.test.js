@@ -77,10 +77,22 @@ test('guessCategory：常见商家 / 工资', function () {
   assert.strictEqual(p.guessCategory('expense', '星巴克', '拿铁'), 'food')
   assert.strictEqual(p.guessCategory('expense', '滴滴出行', '快车'), 'transport')
   assert.strictEqual(p.guessCategory('expense', '海底捞', '聚餐'), 'food')
-  assert.strictEqual(p.guessCategory('expense', '中国移动', '话费充值'), 'phone')
+  // 话费充值走独立「话费」分类；宽带/运营商名称仍归「通讯」
+  assert.strictEqual(p.guessCategory('expense', '中国移动', '话费充值'), 'phonebill')
+  assert.strictEqual(p.guessCategory('expense', '中国电信', '宽带续费'), 'phone')
   assert.strictEqual(p.guessCategory('income', '某某公司', '9月工资'), 'salary')
   assert.strictEqual(p.guessCategory('expense', '完全陌生的店', '买了东西'), 'other_out')
   assert.strictEqual(p.guessCategory('income', '路人甲', '感谢'), 'other_in')
+})
+
+test('guessCategory：居家缴费五件套（水电气物业话费）', function () {
+  assert.strictEqual(p.guessCategory('expense', '自来水公司', '水费'), 'water')
+  assert.strictEqual(p.guessCategory('expense', '国家电网', '电费'), 'electric')
+  assert.strictEqual(p.guessCategory('expense', '燃气公司', '燃气费'), 'gas')
+  assert.strictEqual(p.guessCategory('expense', '某某物业', '物业费'), 'property')
+  assert.strictEqual(p.guessCategory('expense', '中国联通', '套餐月费'), 'phonebill')
+  // 房租/供暖/垃圾费仍归「日用」
+  assert.strictEqual(p.guessCategory('expense', '房东', '房租'), 'home')
 })
 
 test('rowKey：有单号用单号，无单号走日期+金额+对方', function () {

@@ -223,6 +223,29 @@
 .ts-sep { width: 1rpx; height: 24rpx; background: #EFE8D6; flex-shrink: 0; }
 .ts-streak { color: #B8860B; font-weight: 600; }
 
+/* ============ 周期记账提示条（有启用中规则时常驻，一行薄卡） ============ */
+.recur-hint {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: 16rpx 24rpx 0;
+  padding: 20rpx 28rpx;
+  background: #FFFFFF;
+  border-radius: 999rpx;
+  box-shadow: 0 6rpx 20rpx rgba(120, 100, 40, 0.06);
+}
+.recur-hint-icon { font-size: 26rpx; flex-shrink: 0; }
+.recur-hint-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 23rpx;
+  color: #6B6455;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recur-hint-go { font-size: 22rpx; color: #F5B417; font-weight: 600; flex-shrink: 0; }
+
 /* ============ 存钱挑战 ============ */
 .challenge-card { padding: 26rpx 28rpx 22rpx; }
 .ch-row {
@@ -462,6 +485,22 @@
   color: #6B6455;
 }
 .more-emoji { font-size: 40rpx; }
+.more-icon-wrap { position: relative; }
+.more-badge {
+  position: absolute;
+  top: -10rpx;
+  right: -18rpx;
+  min-width: 28rpx;
+  padding: 0 6rpx;
+  height: 28rpx;
+  border-radius: 999rpx;
+  background: #F04646;
+  color: #FFFFFF;
+  font-size: 18rpx;
+  line-height: 28rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
 
 /* ============ 云同步状态条 + 资料完善提示（非阻断） ============ */
 .sync-line {

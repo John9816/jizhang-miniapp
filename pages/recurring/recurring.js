@@ -1,6 +1,25 @@
 const db = require('../../utils/db.js')
 const u = require('../../utils/util.js')
 
+/** 快捷预设：居家固定开销 + 工资/房租，点击即带入添加弹层（周期每月） */
+var PRESETS = [
+  { key: 'water', name: '水费', icon: '💧', type: 'expense', category: 'water' },
+  { key: 'electric', name: '电费', icon: '⚡', type: 'expense', category: 'electric' },
+  { key: 'gas', name: '燃气费', icon: '🔥', type: 'expense', category: 'gas' },
+  { key: 'property', name: '物业费', icon: '🏢', type: 'expense', category: 'property' },
+  { key: 'phonebill', name: '话费', icon: '📞', type: 'expense', category: 'phonebill' },
+  { key: 'rent', name: '房租', icon: '🏠', type: 'expense', category: 'home' },
+  { key: 'salary', name: '工资', icon: '💰', type: 'income', category: 'salary' }
+]
+
+/** 预设默认下次执行日：当月 1 日未过则当月 1 日，否则次月 1 日 */
+function presetNextDate() {
+  var d = new Date()
+  var first = new Date(d.getFullYear(), d.getMonth(), 1)
+  if (u.dateStr(d) > u.dateStr(first)) first = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  return u.dateStr(first)
+}
+
 Page({
   data: {
     rules: [],
@@ -14,7 +33,8 @@ Page({
     categories: [],
     cycles: u.RECUR_CYCLES,
     accounts: [],
-    formAccount: ''
+    formAccount: '',
+    presets: PRESETS
   },
 
   onLoad() {
@@ -66,6 +86,30 @@ Page({
     })
     var ledger = db.currentLedger()
     if (ledger) this.setData({ categories: db.categoriesOf(ledger.id, 'expense') })
+  },
+
+  /** 快捷预设：带入类型/名称/分类/周期，金额留空待填，下次执行日默认月度 1 日 */
+  usePreset(e) {
+    var p = PRESETS[e.currentTarget.dataset.idx]
+    if (!p) return
+    var ledger = db.currentLedger()
+    var cats = db.categoriesOf(ledger ? ledger.id : '', p.type)
+    // 账本若启用了自定义分类，预设 key 可能不在其中：沿用 edit 页策略回退首个分类
+    var valid = false
+    for (var i = 0; i < cats.length; i++) {
+      if (cats[i].key === p.category) { valid = true; break }
+    }
+    this.setData({
+      showAdd: true,
+      formName: p.name,
+      formAmount: '',
+      formType: p.type,
+      formCategory: valid ? p.category : (cats[0] ? cats[0].key : 'other_out'),
+      formCycle: 'monthly',
+      formDate: presetNextDate(),
+      formAccount: '',
+      categories: cats
+    })
   },
 
   closeAdd() {
