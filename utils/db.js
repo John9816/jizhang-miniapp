@@ -68,6 +68,7 @@ function ensureExtras(l) {
   if (!Array.isArray(l.recurring)) l.recurring = []
   if (!Array.isArray(l.categories)) l.categories = []
   if (!Array.isArray(l.challenges)) l.challenges = []
+  l.defaultAccountId = String(l.defaultAccountId || '')
   if (!l.cfgAt) l.cfgAt = isoNow()
 }
 
@@ -518,6 +519,32 @@ function saveBudget(ledgerId, budget) {
   })
 }
 
+/* ---- 默认记账账户 ---- */
+
+/**
+ * 账本默认记账账户：记一笔时自动预选，省去每次手动选账户。
+ * 存账本级配置（随 cfgAt LWW 同步）；账户被删除后自动失效（返回 ''）。
+ */
+function defaultAccountOf(ledgerId) {
+  ensure()
+  var l = getLedger(ledgerId)
+  if (!l) return ''
+  ensureExtras(l)
+  var id = String(l.defaultAccountId || '')
+  if (!id) return ''
+  for (var i = 0; i < l.accounts.length; i++) {
+    if (l.accounts[i].id === id) return id
+  }
+  return ''
+}
+
+function setDefaultAccount(ledgerId, accountId) {
+  return withLedger(ledgerId, function (l) {
+    l.defaultAccountId = accountId ? String(accountId) : ''
+    return l.defaultAccountId
+  })
+}
+
 /* ---- 周期记账 ---- */
 
 function recurringList(ledgerId) {
@@ -915,6 +942,7 @@ function importSharePackage(text) {
       budget: l.budget && typeof l.budget === 'object' ? l.budget : fx.budget,
       recurring: Array.isArray(l.recurring) ? l.recurring : [],
       categories: Array.isArray(l.categories) ? l.categories : [],
+      defaultAccountId: String(l.defaultAccountId || ''),
       cfgAt: isoNow()
     }
     db.ledgers.push(ledger)
@@ -1026,6 +1054,7 @@ function exportLedgersForSync() {
       recurring: l.recurring,
       categories: l.categories,
       challenges: l.challenges,
+      defaultAccountId: l.defaultAccountId || '',
       cfgAt: toIso(l.cfgAt)
     }
   })
@@ -1096,6 +1125,7 @@ function applyRemoteLedger(o) {
     fresh.recurring = Array.isArray(o.recurring) ? o.recurring : []
     fresh.categories = Array.isArray(o.categories) ? o.categories : []
     fresh.challenges = Array.isArray(o.challenges) ? o.challenges : []
+    fresh.defaultAccountId = String(o.defaultAccountId || '')
     fresh.cfgAt = toIso(o.cfgAt)
     db.ledgers.push(fresh)
     if (!db.currentLedgerId) db.currentLedgerId = String(o.id)
@@ -1126,7 +1156,7 @@ function applyRemoteLedger(o) {
       changed = true
     }
   }
-  // 账本级配置（账户/预算/周期/分类）：按 cfgAt 时间戳 LWW
+  // 账本级配置（账户/预算/周期/分类/默认账户）：按 cfgAt 时间戳 LWW
   var cfgAt = toIso(o.cfgAt)
   if (cfgAt && (!existing.cfgAt || cfgAt > existing.cfgAt)) {
     if (Array.isArray(o.accounts) && o.accounts.length) existing.accounts = o.accounts
@@ -1134,6 +1164,7 @@ function applyRemoteLedger(o) {
     if (Array.isArray(o.recurring)) existing.recurring = o.recurring
     if (Array.isArray(o.categories)) existing.categories = o.categories
     if (Array.isArray(o.challenges)) existing.challenges = o.challenges
+    if (o.defaultAccountId !== undefined) existing.defaultAccountId = String(o.defaultAccountId || '')
     if (o.cover && typeof o.cover === 'object') existing.cover = u.ledgerCoverInfo(o.cover)
     existing.cfgAt = cfgAt
     changed = true
@@ -1326,6 +1357,8 @@ module.exports = {
   assetSummary: assetSummary,
   budgetOf: budgetOf,
   saveBudget: saveBudget,
+  defaultAccountOf: defaultAccountOf,
+  setDefaultAccount: setDefaultAccount,
   recurringList: recurringList,
   addRecurring: addRecurring,
   removeRecurring: removeRecurring,

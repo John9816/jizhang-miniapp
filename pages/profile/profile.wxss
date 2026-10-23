@@ -9,20 +9,18 @@
   margin: 20rpx 24rpx 0;
   padding: 36rpx 32rpx;
   border-radius: 32rpx;
-  background: linear-gradient(135deg, #FFF7E0 0%, #FFE6AE 100%);
-  box-shadow: 0 12rpx 32rpx rgba(196, 158, 54, 0.18);
+  background: linear-gradient(135deg, #FFE9A8 0%, #FFD24A 55%, #F5B417 100%);
+  box-shadow: 0 12rpx 32rpx rgba(196, 158, 54, 0.22);
   overflow: hidden;
 }
-/* 右上角柔光装饰，让渐变不那么平 */
-.p-glow {
+/* 装饰圆：与首页主卡同一套语言（低透明度白圆）；替代此前生硬的白色大光斑 */
+.p-coin {
   position: absolute;
-  right: -60rpx;
-  top: -80rpx;
-  width: 240rpx;
-  height: 240rpx;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.20);
 }
+.p-coin.c1 { width: 170rpx; height: 170rpx; right: -40rpx; top: -60rpx; }
+.p-coin.c2 { width: 84rpx; height: 84rpx; right: 110rpx; bottom: -28rpx; opacity: 0.55; }
 .p-user {
   display: flex;
   align-items: center;
@@ -76,6 +74,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.p-name-ph { color: rgba(74, 50, 0, 0.42); font-weight: 500; }
 /* 状态行：点按 = 失败重试 / 手动同步 */
 .p-meta {
   display: flex;
@@ -97,19 +96,19 @@
 .p-dot.bad { background: #D9534F; }
 .p-meta-text {
   font-size: 23rpx;
-  color: #6F6757;
+  color: #574E3E;
   font-weight: 600;
   flex-shrink: 0;
 }
 .p-meta-sync {
   font-size: 21rpx;
-  color: #A79E8B;
+  color: #7A6F58;
   margin-left: 6rpx;
   flex-shrink: 0;
 }
 .p-meta-id {
   font-size: 21rpx;
-  color: #B4AC9C;
+  color: #8A7E64;
   margin-left: auto;
   padding-left: 16rpx;
   white-space: nowrap;

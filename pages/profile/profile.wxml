@@ -3,7 +3,8 @@
 
   <!-- 顶部资料卡：一张暖金渐变卡片收拢头像/昵称/同步状态，去掉此前的多条堆叠 -->
   <view class="p-head">
-    <view class="p-glow"></view>
+    <view class="p-coin c1"></view>
+    <view class="p-coin c2"></view>
     <view class="p-user">
       <view class="avatar-box">
         <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFit" binderror="onAvatarError" />
@@ -14,6 +15,7 @@
           class="p-name-input"
           type="nickname"
           placeholder="点击设置微信昵称"
+          placeholder-class="p-name-ph"
           value="{{me.name}}"
           maxlength="12"
           bindnickname="onNicknamePick"

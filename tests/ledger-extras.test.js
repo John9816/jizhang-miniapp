@@ -5,6 +5,7 @@
 var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
+var u = require('../utils/util.js')
 
 /* ---- 最小 wx mock（复用 cloud.test 的模式） ---- */
 var store = {}
@@ -68,6 +69,53 @@ test('saveAccounts：裁剪长度、排序、非法项过滤', function () {
   assert.strictEqual(out[0].initialBalance, 12345)
   assert.strictEqual(out[1].name, '公交卡')
   assert.strictEqual(db.accountsOf(L)[0].name, '招行卡')
+})
+
+test('defaultAccountOf/setDefaultAccount：设置、取消、删除账户后自动失效', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var L = db.currentLedger().id
+  assert.strictEqual(db.defaultAccountOf(L), '') // 未设置时为空
+  assert.strictEqual(db.setDefaultAccount(L, 'acc_wechat'), 'acc_wechat')
+  assert.strictEqual(db.defaultAccountOf(L), 'acc_wechat')
+  // 不存在的账户：写入返回原值，但读取时校验失效
+  db.setDefaultAccount(L, 'acc_gone')
+  assert.strictEqual(db.defaultAccountOf(L), '')
+  // 取消默认
+  db.setDefaultAccount(L, 'acc_bank')
+  assert.strictEqual(db.defaultAccountOf(L), 'acc_bank')
+  db.setDefaultAccount(L, '')
+  assert.strictEqual(db.defaultAccountOf(L), '')
+  // 删除默认账户后自动失效（defaultAccountOf 校验 accounts 列表）
+  db.setDefaultAccount(L, 'acc_bank')
+  var rest = db.accountsOf(L).filter(function (a) { return a.id !== 'acc_bank' })
+  db.saveAccounts(L, rest)
+  assert.strictEqual(db.defaultAccountOf(L), '')
+})
+
+test('defaultAccountId 随账本导出/远端合并透传', function () {
+  var db = freshDbModule()
+  store = {}
+  db.init()
+  var L = db.currentLedger().id
+  db.setDefaultAccount(L, 'acc_wechat')
+  // 分享包：ledger 对象带 defaultAccountId
+  var payload = u.decodeSharePayload(db.sharePackage(L))
+  assert.ok(payload && payload.ledger)
+  assert.strictEqual(payload.ledger.defaultAccountId, 'acc_wechat')
+  // 云端同步导出结构带 defaultAccountId
+  var sync = db.exportLedgersForSync()
+  assert.strictEqual(sync[0].defaultAccountId, 'acc_wechat')
+  // 远端合并：新账本分支保留 defaultAccountId
+  var applied = db.applyRemoteLedger({
+    id: 'led_remote1', name: '远端账本', ownerId: 'u1', ownerName: '阿 remote',
+    accounts: [{ id: 'acc_r1', name: '远程卡', type: 'bank', initialBalance: 0, sortIndex: 0 }],
+    defaultAccountId: 'acc_r1',
+    cfgAt: '2099-01-01T00:00:00.000Z'
+  })
+  assert.strictEqual(applied, true)
+  assert.strictEqual(db.defaultAccountOf('led_remote1'), 'acc_r1')
 })
 
 test('资产汇总：房产/车产按估值计入固定资产分组，信用卡进负债分组', function () {

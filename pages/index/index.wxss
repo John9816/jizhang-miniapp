@@ -124,22 +124,33 @@
   color: #8A6410;
   font-weight: 500;
 }
-.hero-step {
+/* 月份切换药丸：大触控目标，左右滑动主卡也可翻月 */
+.month-pill {
   display: flex;
   align-items: center;
-  gap: 6rpx;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 999rpx;
+  padding: 4rpx;
 }
-.hero-step-btn {
-  width: 44rpx;
-  height: 44rpx;
-  line-height: 40rpx;
+.mp-btn {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 52rpx;
   text-align: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-  font-size: 26rpx;
+  font-size: 30rpx;
   color: #8A6410;
+  font-weight: 700;
 }
-.hero-month-disabled { color: rgba(138, 100, 16, 0.28); }
+.mp-btn:active { background: rgba(255, 255, 255, 0.9); }
+.mp-label {
+  min-width: 72rpx;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #6B4E06;
+}
+.mp-off { color: rgba(138, 100, 16, 0.28); }
 .hero-amount {
   display: block;
   font-size: 64rpx;
@@ -501,29 +512,3 @@
   text-align: center;
   box-sizing: border-box;
 }
-
-/* ============ 云同步状态条 + 资料完善提示（非阻断） ============ */
-.sync-line {
-  display: flex;
-  align-items: center;
-  margin: 0 28rpx 16rpx;
-  padding: 12rpx 24rpx;
-  border-radius: 999rpx;
-  background: #F7F2E7;
-}
-.sync-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  margin-right: 12rpx;
-  background: #C9C0AC;
-  flex-shrink: 0;
-}
-.sync-line.ok .sync-dot { background: #3FA34D; }
-.sync-line.busy .sync-dot { background: #E9A825; }
-.sync-line.bad { background: #FDEEEC; }
-.sync-line.bad .sync-dot { background: #D9534F; }
-.sync-text { flex: 1; min-width: 0; font-size: 22rpx; color: #8B8271; }
-.sync-line.ok .sync-text { color: #6F6757; }
-.sync-line.bad .sync-text { color: #B3402F; font-weight: 600; }
-.sync-retry { flex-shrink: 0; font-size: 22rpx; color: #D9534F; font-weight: 700; padding-left: 16rpx; }

@@ -252,6 +252,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   border-radius: 16rpx;
   padding: 22rpx 24rpx;
   font-size: 28rpx;
+  color: #2E2A22;
 }
 .modal-textarea {
   margin-top: 32rpx;
@@ -259,6 +260,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
   font-size: 24rpx;
+  color: #2E2A22;
   width: 100%;
   height: 160rpx;
   line-height: 1.5;

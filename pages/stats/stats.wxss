@@ -1,54 +1,57 @@
 /* 底部为自定义 tabBar 预留空间 */
 .stats-page { padding-bottom: calc(180rpx + env(safe-area-inset-bottom)); }
 
-/* ============ 标题 ============ */
+/* ============ 顶部一行：标题 + 周期切换 + 吉祥物（原两行合一） ============ */
 .s-head {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 20rpx 32rpx 0;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx 0;
 }
 .s-title {
   display: block;
-  font-size: 44rpx;
+  font-size: 36rpx;
   font-weight: 800;
   color: #2E2A22;
+  flex-shrink: 0;
 }
 .s-mascot {
-  width: 132rpx;
-  height: 132rpx;
-  margin-top: -6rpx;
-  opacity: 0.96;
+  width: 96rpx;
+  height: 96rpx;
+  flex-shrink: 0;
 }
-
-/* ============ 周期主行（翻期 + 当前周期，大字号居中） ============ */
-.pn-bar {
+.s-period {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32rpx;
-  margin-top: 14rpx;
+  gap: 20rpx;
 }
+
+/* 周期翻页控件（内嵌顶部行） */
 .pn-btn {
-  width: 56rpx;
-  height: 56rpx;
-  line-height: 52rpx;
+  width: 52rpx;
+  height: 52rpx;
+  line-height: 48rpx;
   text-align: center;
   border-radius: 50%;
   background: #FFFFFF;
   color: #8A8474;
-  font-size: 30rpx;
+  font-size: 28rpx;
+  flex-shrink: 0;
   box-shadow: 0 4rpx 14rpx rgba(196, 158, 54, 0.10);
 }
+.pn-btn:active { background: #FFF3D0; }
 .pn-label {
-  font-size: 32rpx;
+  font-size: 30rpx;
   color: #2E2A22;
   font-weight: 700;
-  min-width: 200rpx;
+  min-width: 180rpx;
   text-align: center;
 }
-.pn-label-custom { color: #6B6455; font-size: 26rpx; font-weight: 600; }
+.pn-label-custom { color: #6B6455; font-size: 25rpx; font-weight: 600; }
 
 /* ============ 口径行：支出/收入 + 周期 同排 ============ */
 .scope-bar {
@@ -56,7 +59,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
-  margin: 20rpx 32rpx 0;
+  margin: 16rpx 32rpx 0;
 }
 .type-seg {
   display: flex;
@@ -252,3 +255,61 @@
   width: 620rpx;
   height: 470px;
 }
+
+/* ============ 海报预览弹层 ============ */
+.poster-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 24, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 48rpx;
+}
+.poster-modal {
+  width: 100%;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #FFFDF6;
+  border-radius: 28rpx;
+  padding: 32rpx 28rpx 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  box-sizing: border-box;
+}
+.poster-modal-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #2E2A22;
+  text-align: center;
+}
+.poster-img {
+  width: 100%;
+  border-radius: 18rpx;
+  background: #FAF5E8;
+}
+.poster-loading {
+  padding: 140rpx 0;
+  text-align: center;
+  color: #A79E8B;
+  font-size: 24rpx;
+}
+.poster-modal-actions {
+  display: flex;
+  gap: 16rpx;
+}
+.poster-modal-actions .btn-ghost,
+.poster-modal-actions .btn-primary {
+  flex: 1;
+  margin: 0;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: 16rpx;
+}
+.btn-off { opacity: 0.45; pointer-events: none; }

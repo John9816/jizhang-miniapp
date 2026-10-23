@@ -558,22 +558,53 @@ Page({
       })
       return
     }
-    var year = (this.data.refKey || u.dateStr(new Date())).slice(0, 4)
-    var p = u.periodOf('year', year + '-06-01')
+    // 与按钮文案一致：生成「当前查看周期」的海报（早期版本固定生成年度海报，与文案不符）
+    var p = u.periodOf(this.data.period, this.data.refKey || u.dateStr(new Date()), {
+      start: this.data.customStart,
+      end: this.data.customEnd
+    })
     var recs = db.recordsOf(ledger.id).filter(function (r) {
-      return r.date >= p.start && r.date <= p.end
+      return r.type !== 'transfer' && r.date >= p.start && r.date <= p.end
     })
     if (!recs.length) {
-      wx.showToast({ title: year + ' 年还没有记录', icon: 'none' })
+      wx.showToast({ title: this.data.periodLabel + ' 还没有记录', icon: 'none' })
       return
     }
     var self = this
-    this.setData({ posterShow: true }, function () {
-      setTimeout(function () { self.drawPoster(ledger, year, recs) }, 60)
+    this.setData({ posterShow: true, posterPath: '' }, function () {
+      setTimeout(function () { self.drawPoster(ledger, self.data.periodLabel, recs) }, 80)
     })
   },
 
-  drawPoster(ledger, year, recs) {
+  closePoster() {
+    this.setData({ posterShow: false, posterPath: '' })
+  },
+
+  /** 保存海报到相册；被拒时引导去设置打开权限 */
+  savePoster() {
+    var path = this.data.posterPath
+    if (!path) return
+    wx.saveImageToPhotosAlbum({
+      filePath: path,
+      success: function () { wx.showToast({ title: '已保存到相册', icon: 'success' }) },
+      fail: function (e) {
+        var msg = (e && e.errMsg) || ''
+        if (msg.indexOf('auth') >= 0) {
+          wx.showModal({
+            title: '需要相册权限',
+            content: '请在设置中允许保存到相册，即可保存海报',
+            confirmText: '去设置',
+            cancelText: '取消',
+            success: function (r) { if (r.confirm) wx.openSetting() }
+          })
+        } else {
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  drawPoster(ledger, title, recs) {
     var s = u.calcSummary(recs)
     var top3 = u.categoryStats(recs, 'expense').slice(0, 3)
     var mem = u.memberStats(recs, ledger.members).length
@@ -608,7 +639,7 @@ Page({
       ctx.fillStyle = '#4A3200'
       ctx.textAlign = 'left'
       ctx.font = '700 26px sans-serif'
-      ctx.fillText(year + ' 年度账单', 28, 58)
+      ctx.fillText(title + ' 账单', 28, 58)
       ctx.font = '14px sans-serif'
       ctx.fillStyle = 'rgba(74,50,0,0.66)'
       ctx.fillText(ledger.name + ' · ' + recs.length + ' 笔 · ' + mem + ' 人共记', 28, 86)
@@ -653,11 +684,11 @@ Page({
       wx.canvasToTempFilePath({
         canvas: canvas,
         success: function (r) {
-          self.setData({ posterShow: false })
-          wx.previewImage({ urls: [r.tempFilePath], current: r.tempFilePath })
+          // 生成成功：收起 loading，弹出预览（保存按钮此时可用）
+          self.setData({ posterPath: r.tempFilePath })
         },
         fail: function () {
-          self.setData({ posterShow: false })
+          self.setData({ posterShow: false, posterPath: '' })
           wx.showToast({ title: '生成失败', icon: 'none' })
         }
       })

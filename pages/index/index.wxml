@@ -19,23 +19,17 @@
     </view>
   </view>
 
-  <!-- 云同步状态（常驻细条；失败时点按重试） -->
-  <view class="sync-line {{account.tone}}" wx:if="{{cloudOn}}" bindtap="onSyncTap">
-    <text class="sync-dot"></text>
-    <text class="sync-text">{{account.tip}}<text wx:if="{{account.phase === 'ready'}}"> · {{syncText}}</text></text>
-    <text class="sync-retry" wx:if="{{account.phase === 'failed'}}">重试 ›</text>
-  </view>
-
   <!-- 首屏合并资料卡（非阻断，可关闭）：头像 + 昵称同一屏并排完成，昵称用 bindnickname 一键填入 -->
   <profile-fill wx:if="{{showOnboard}}" mode="onboard" bind:done="onOnboardDone" />
 
-  <!-- 本月汇总主卡：支出大数 + 月切换 + 收入/结余 + 内嵌预算进度 -->
-  <view class="hero" wx:if="{{ledger}}">
+  <!-- 本月汇总主卡：支出大数 + 月切换 + 收入/结余 + 内嵌预算进度；支持左右滑动翻月 -->
+  <view class="hero" wx:if="{{ledger}}" bindtouchstart="onHeroTouchStart" bindtouchend="onHeroTouchEnd">
     <view class="hero-head">
-      <text class="hero-label">{{monthShort}}支出（元）</text>
-      <view class="hero-step">
-        <text class="hero-step-btn" bindtap="prevMonth">‹</text>
-        <text class="hero-step-btn {{isCurrentMonth ? 'hero-month-disabled' : ''}}" bindtap="nextMonth">›</text>
+      <text class="hero-label">支出（元）</text>
+      <view class="month-pill">
+        <text class="mp-btn" bindtap="prevMonth">‹</text>
+        <text class="mp-label">{{monthShort}}</text>
+        <text class="mp-btn {{isCurrentMonth ? 'mp-off' : ''}}" bindtap="nextMonth">›</text>
       </view>
     </view>
 

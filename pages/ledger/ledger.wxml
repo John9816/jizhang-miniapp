@@ -1,35 +1,49 @@
-<view class="page">
-  <!-- 当前账本 -->
-  <view class="card current-card" wx:if="{{ledger}}">
-    <view class="current-head">
-      <view class="current-icon current-icon-img" wx:if="{{currentCover.kind === 'image'}}">
+<view class="page ledger-page">
+  <!-- 顶部一行：标题 + 吉祥物（与统计页一致的页头体系） -->
+  <view class="l-head">
+    <text class="l-title">账本</text>
+    <image class="l-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
+  </view>
+
+  <!-- 当前账本：金色主卡 + 大封面（皮卡丘签名样式，与首页 hero 一致） -->
+  <view class="ledger-hero" wx:if="{{ledger}}">
+    <view class="lh-coin c1"></view>
+    <view class="lh-coin c2"></view>
+    <view class="lh-top">
+      <view class="lh-cover lh-cover-img" wx:if="{{currentCover.kind === 'image'}}">
         <image src="{{currentCover.image}}" mode="aspectFill" />
       </view>
-      <view class="current-icon" wx:else style="background: {{currentCover.gradient}}">{{currentCover.emoji}}</view>
-      <view class="current-info">
-        <text class="current-name">{{ledger.name}}</text>
-        <text class="current-sub">{{memberCount}} 位成员 · {{stats.count}} 条记录</text>
+      <view class="lh-cover" wx:else style="background: {{currentCover.gradient}}">{{currentCover.emoji}}</view>
+      <view class="lh-info">
+        <view class="lh-name-row">
+          <text class="lh-name">{{ledger.name}}</text>
+          <text class="lh-badge">当前</text>
+        </view>
+        <text class="lh-sub">{{memberCount}} 位成员 · {{stats.count}} 条记录</text>
       </view>
     </view>
-    <view class="current-stats">
-      <view class="stat-col">
-        <text class="stat-label">累计收入</text>
-        <text class="stat-value text-income">¥{{stats.incomeText}}</text>
+    <view class="lh-stats">
+      <view class="lh-stat">
+        <text class="lh-stat-label">累计收入</text>
+        <text class="lh-stat-value text-income">¥{{stats.incomeText}}</text>
       </view>
-      <view class="stat-col">
-        <text class="stat-label">累计支出</text>
-        <text class="stat-value text-expense">¥{{stats.expenseText}}</text>
+      <view class="lh-stat">
+        <text class="lh-stat-label">累计支出</text>
+        <text class="lh-stat-value text-expense">¥{{stats.expenseText}}</text>
       </view>
-      <view class="stat-col">
-        <text class="stat-label">结余</text>
-        <text class="stat-value">¥{{stats.balanceText}}</text>
+      <view class="lh-stat">
+        <text class="lh-stat-label">结余</text>
+        <text class="lh-stat-value">¥{{stats.balanceText}}</text>
       </view>
     </view>
   </view>
 
   <!-- 共享账本 -->
   <view class="card">
-    <view class="section-title">共享账本</view>
+    <view class="card-head">
+      <text class="card-head-title">共享账本</text>
+      <text class="card-head-more">{{cloud ? '☁️ 实时同步中' : '📱 本地模式'}}</text>
+    </view>
     <block wx:if="{{cloud}}">
       <view class="share-actions">
         <view class="share-btn btn-primary" bindtap="copyInvite">复制邀请码</view>
@@ -68,22 +82,22 @@
   <!-- 我的账本 -->
   <view class="card">
     <view class="list-head">
-      <text class="section-title" style="margin-bottom: 0;">我的账本</text>
+      <text class="card-head-title">我的账本</text>
       <view class="create-link" bindtap="openCreate">＋ 新建</view>
     </view>
     <view class="ledger-row" wx:for="{{ledgers}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
-      <view class="ledger-radio {{item.isCurrent ? 'radio-on' : ''}}"></view>
+      <view class="ledger-check {{item.isCurrent ? 'check-on' : ''}}">✓</view>
       <view class="ledger-row-cover ledger-row-cover-img" wx:if="{{item.cover.kind === 'image'}}">
         <image src="{{item.cover.image}}" mode="aspectFill" />
       </view>
       <view class="ledger-row-cover" wx:else style="background: {{item.cover.gradient}}">{{item.cover.emoji}}</view>
       <view class="ledger-row-info">
         <text class="ledger-row-name">{{item.name}}</text>
-        <text class="ledger-row-sub">{{item.memberCount}} 位成员</text>
+        <text class="ledger-row-sub">{{item.memberCount}} 位成员{{item.isCurrent ? ' · 使用中' : ''}}</text>
       </view>
       <view class="ledger-row-ops">
-        <text class="op-link" catchtap="openRename" data-id="{{item.id}}" data-name="{{item.name}}">重命名</text>
-        <text class="op-link op-danger" catchtap="deleteLedger" data-id="{{item.id}}" data-name="{{item.name}}">删除</text>
+        <text class="op-pill" catchtap="openRename" data-id="{{item.id}}" data-name="{{item.name}}">重命名</text>
+        <text class="op-pill op-pill-danger" catchtap="deleteLedger" data-id="{{item.id}}" data-name="{{item.name}}">删除</text>
       </view>
     </view>
   </view>

@@ -1,20 +1,20 @@
 <view class="page stats-page">
   <view style="height:{{statusBar}}px"></view>
 
-  <!-- 标题 -->
+  <!-- 顶部一行：标题 + 周期切换（大字号）+ 吉祥物；原「标题行 + 周期行」两行合一，削减顶部空白 -->
   <view class="s-head">
     <text class="s-title">统计</text>
+    <block wx:if="{{period !== 'custom'}}">
+      <view class="s-period">
+        <text class="pn-btn" bindtap="prevPeriod">‹</text>
+        <text class="pn-label">{{periodLabel}}</text>
+        <text class="pn-btn" bindtap="nextPeriod">›</text>
+      </view>
+    </block>
+    <view class="s-period" wx:else>
+      <text class="pn-label pn-label-custom" bindtap="setPeriod" data-period="custom">{{periodLabel}} · 点击修改</text>
+    </view>
     <image class="s-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
-  </view>
-
-  <!-- 周期主行：翻期 + 当前周期（大字号，唯一一处周期标签） -->
-  <view class="pn-bar" wx:if="{{period !== 'custom'}}">
-    <text class="pn-btn" bindtap="prevPeriod">‹</text>
-    <text class="pn-label">{{periodLabel}}</text>
-    <text class="pn-btn" bindtap="nextPeriod">›</text>
-  </view>
-  <view class="pn-bar" wx:else>
-    <text class="pn-label pn-label-custom" bindtap="setPeriod" data-period="custom">{{periodLabel}} · 点击修改</text>
   </view>
 
   <!-- 口径行：支出/收入 切换 + 周期 选择，同一行 -->
@@ -105,6 +105,19 @@
       <view class="modal-actions">
         <view class="btn-plain" bindtap="cancelCustom">取消</view>
         <view class="btn-primary" bindtap="applyCustom">确定</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 海报预览弹层：生成后展示，可保存到相册 -->
+  <view class="poster-mask" wx:if="{{posterShow}}">
+    <view class="poster-modal">
+      <view class="poster-modal-title">{{periodLabel}} 海报</view>
+      <image class="poster-img" src="{{posterPath}}" mode="widthFix" wx:if="{{posterPath}}" />
+      <view class="poster-loading" wx:else>正在生成…</view>
+      <view class="poster-modal-actions">
+        <view class="btn-ghost" bindtap="closePoster">关闭</view>
+        <view class="btn-primary {{posterPath ? '' : 'btn-off'}}" bindtap="savePoster">保存到相册</view>
       </view>
     </view>
   </view>

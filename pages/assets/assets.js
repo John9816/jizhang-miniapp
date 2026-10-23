@@ -15,7 +15,8 @@ Page({
     editType: 'cash',
     editIsFixed: false,
     editInitial: '',
-    accountTypes: []
+    accountTypes: [],
+    defaultAccountId: ''
   },
 
   onLoad() {
@@ -69,7 +70,8 @@ Page({
       accounts: s.accounts,
       groups: s.groups,
       records: recs,
-      recordGroups: u.groupByDate(decorated)
+      recordGroups: u.groupByDate(decorated),
+      defaultAccountId: db.defaultAccountOf(ledger.id)
     })
   },
 
@@ -143,18 +145,37 @@ Page({
         }
       }
     } else {
+      var newId = u.genId('acc')
       raw.push({
-        id: u.genId('acc'),
+        id: newId,
         name: name.slice(0, 12),
         type: this.data.editType,
         initialBalance: initial,
         sortIndex: raw.length
       })
+      // 第一个账户自动设为默认：之后记账无需每次手动选账户
+      if (raw.length === 1 && !db.defaultAccountOf(ledger.id)) {
+        db.setDefaultAccount(ledger.id, newId)
+      }
     }
     db.saveAccounts(ledger.id, raw)
     this.setData({ showManage: false })
     this.refresh()
     wx.showToast({ title: '已保存', icon: 'success' })
+  },
+
+  /**
+   * 设为/取消默认记账账户。默认账户在「记一笔」新建记录时自动预选。
+   * 固定资产（房产/车产）不能设为默认——不参与日常记账选择。
+   */
+  toggleDefault(e) {
+    var id = e.currentTarget.dataset.id
+    var ledger = db.currentLedger()
+    if (!ledger || !id) return
+    var next = this.data.defaultAccountId === id ? '' : id
+    db.setDefaultAccount(ledger.id, next)
+    this.refresh()
+    wx.showToast({ title: next ? '已设为默认账户' : '已取消默认', icon: 'success' })
   },
 
   removeAccount(e) {
@@ -170,6 +191,8 @@ Page({
         if (!ledger) return
         var raw = db.accountsOf(ledger.id).filter(function (a) { return a.id !== id })
         db.saveAccounts(ledger.id, raw)
+        // 删除的正是默认账户时联动取消，避免预选失效账户
+        if (db.defaultAccountOf(ledger.id) === id) db.setDefaultAccount(ledger.id, '')
         self.setData({ showManage: false })
         self.refresh()
       }

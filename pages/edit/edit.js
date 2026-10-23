@@ -73,11 +73,15 @@ Page({
         }
         this.setData(d)
       }
-    } else if (options.mode === 'transfer') {
-      this.setData({ mode: 'transfer' })
-    } else if (options.category) {
-      // 首页常用分类快捷进入：预选分类（仅支出类型有快捷行）
-      this.setData({ type: 'expense', category: decodeURIComponent(options.category) })
+    } else {
+      // 新记录：预选账本默认记账账户（在「我的资产」页维护）
+      this.applyDefaultAccount()
+      if (options.mode === 'transfer') {
+        this.setData({ mode: 'transfer' })
+      } else if (options.category) {
+        // 首页常用分类快捷进入：预选分类（仅支出类型有快捷行）
+        this.setData({ type: 'expense', category: decodeURIComponent(options.category) })
+      }
     }
 
     this.syncCategories()
@@ -94,6 +98,23 @@ Page({
       var info = u.accountTypeInfo(a.type)
       return { id: a.id, name: a.name, type: a.type, icon: info.icon, initialBalance: a.initialBalance, isFixed: info.group === 'fixed' }
     }).filter(function (a) { return !a.isFixed || a.id === keepId })
+  },
+
+  /**
+   * 预选账本默认记账账户（在「我的资产」页「设为默认」维护）。
+   * 仅新建记录时调用；编辑历史记录保持原账户。
+   * 默认账户若是固定资产或已被删除，则回退「不指定」。
+   */
+  applyDefaultAccount() {
+    var defId = db.defaultAccountOf(this.data.ledgerId)
+    if (!defId) return
+    var accounts = this.data.accounts
+    for (var i = 0; i < accounts.length; i++) {
+      if (accounts[i].id === defId) {
+        this.setData({ accountId: defId, accountName: accounts[i].name })
+        return
+      }
+    }
   },
 
   /* ---------------- 类型 / 分类 ---------------- */

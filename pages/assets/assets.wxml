@@ -32,7 +32,10 @@
     <view class="acc-row" wx:for="{{group.accounts}}" wx:for-item="item" bindtap="editAccount" data-id="{{item.id}}">
       <view class="acc-icon">{{item.icon}}</view>
       <view class="acc-main">
-        <text class="acc-name">{{item.name}}</text>
+        <view class="acc-name-row">
+          <text class="acc-name">{{item.name}}</text>
+          <text class="acc-default" wx:if="{{item.id === defaultAccountId}}">默认</text>
+        </view>
         <text class="acc-type">{{item.typeName}} · {{item.isFixed ? '估值' : '余额'}}</text>
       </view>
       <text class="acc-balance {{item.balance < 0 ? 'text-expense' : 'text-income'}}">{{item.balance < 0 ? '-¥' : '¥'}}{{item.balanceText}}</text>
@@ -87,6 +90,14 @@
           <view class="type-chips">
             <view class="account-chip {{editType === item.key ? 'account-active' : ''}}" wx:for="{{accountTypes}}" wx:key="key" bindtap="setEditType" data-type="{{item.key}}">
               <text>{{item.icon}} {{item.name}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="modal-row" wx:if="{{editingId && !editIsFixed}}">
+          <text class="modal-label">默认账户</text>
+          <view class="type-chips">
+            <view class="account-chip {{defaultAccountId === editingId ? 'account-active' : ''}}" bindtap="toggleDefault" data-id="{{editingId}}">
+              <text>{{defaultAccountId === editingId ? '✓ 记一笔时预选' : '设为默认'}}</text>
             </view>
           </view>
         </view>

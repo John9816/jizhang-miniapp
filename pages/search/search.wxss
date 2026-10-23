@@ -11,6 +11,7 @@
   border-radius: 999rpx;
   padding: 18rpx 32rpx;
   font-size: 26rpx;
+  color: #2E2A22;
 }
 
 .search-btn {

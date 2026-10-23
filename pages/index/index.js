@@ -27,9 +27,6 @@ Page({
     challengeCount: 0,
     loading: true,
     showMore: false,
-    cloudOn: false,
-    syncText: '',
-    account: { phase: 'off', tone: 'idle', text: '本地模式', tip: '本地模式', logged: false, error: '' },
     // 首屏合并资料卡：未完善资料且未手动关闭时展示，关闭/完成后自动消失
     showOnboard: false,
     ledgerSheet: false,
@@ -58,20 +55,17 @@ Page({
     this.refresh()
     var self = this
     this._offChange = db.onChange(function () { self.refresh() })
-    // 注册/登录状态变化即时反馈（首次进入时尤其重要：不能让用户在黑盒里等）
-    this._offCloud = cloud.onChange(function (st) { self.onAccountChange(st) })
-    this.setData({ account: cloud.accountState() })
+    // 云同步状态不再在首页展示（按需求收敛到「我的」页），此处仅保留静默订阅：
+    // 登录成功时落 registeredAt 时间戳（会随云快照同步），不产生任何 UI
+    this._offCloud = cloud.onChange(function (st) {
+      if (st.phase === 'ready') db.markRegistered()
+    })
     this.updateOnboard()
   },
 
   onUnload() {
     if (this._offChange) this._offChange()
     if (this._offCloud) this._offCloud()
-  },
-
-  onAccountChange(st) {
-    this.setData({ account: st, syncText: st.text })
-    if (st.phase === 'ready') db.markRegistered()
   },
 
   /* ---------------- 首屏合并资料卡（非阻断） ---------------- */
@@ -93,21 +87,6 @@ Page({
   /** 资料卡关闭/完成：隐藏并标记已读 */
   onOnboardDone() {
     this.setData({ showOnboard: false })
-  },
-
-  /** 首页同步状态条：正常时点按立即同步，失败时点按重试登录 */
-  onSyncTap() {
-    var self = this
-    if (this.data.account.phase === 'failed') {
-      wx.showLoading({ title: '重试中', mask: true })
-      cloud.retry().then(function (res) {
-        wx.hideLoading()
-        self.setData({ account: cloud.accountState() })
-        if (!res.ok) wx.showToast({ title: (res.error || '仍失败').slice(0, 16), icon: 'none' })
-      })
-      return
-    }
-    cloud.sync()
   },
 
   onShow() {
@@ -137,7 +116,6 @@ Page({
   refresh() {
     var me = db.getMe()
     var ledger = db.currentLedger()
-    this.setData({ cloudOn: cloud.enabled(), syncText: cloud.statusText() })
     if (!ledger) {
       this.setData({
         me: me,
@@ -307,6 +285,26 @@ Page({
   },
 
   /* ---------------- 月份 / 筛选 / 视图 ---------------- */
+
+  /** 主卡左右滑动翻月：水平位移明显大于垂直时才判定，避免与页面滚动抢手势 */
+  onHeroTouchStart(e) {
+    var t = e.changedTouches[0]
+    this._heroX = t.clientX
+    this._heroY = t.clientY
+  },
+
+  onHeroTouchEnd(e) {
+    if (this._heroX == null) return
+    var t = e.changedTouches[0]
+    var dx = t.clientX - this._heroX
+    var dy = t.clientY - this._heroY
+    this._heroX = null
+    this._heroY = null
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+      if (dx < 0) this.nextMonth()
+      else this.prevMonth()
+    }
+  },
 
   prevMonth() {
     var key = u.shiftMonth(this.data.monthKey, -1)
