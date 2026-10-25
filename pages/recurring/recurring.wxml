@@ -1,12 +1,12 @@
-<view class="page">
+<view class="page motion-page">
   <!-- 快捷预设：居家固定开销一键创建周期规则 -->
-  <view class="card preset-card">
+  <view class="card preset-card motion-section">
     <view class="preset-head">
       <text class="preset-title">快捷预设</text>
       <text class="preset-sub">水电气物业话费，设一次每月自动入账</text>
     </view>
     <scroll-view scroll-x class="preset-row" enhanced="{{true}}" show-scrollbar="{{false}}">
-      <view class="preset-item" wx:for="{{presets}}" wx:key="key" bindtap="usePreset" data-idx="{{index}}">
+      <view class="preset-item" wx:for="{{presets}}" wx:key="key" bindtap="usePreset" data-idx="{{index}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="preset-icon">{{item.icon}}</view>
         <text class="preset-name">{{item.name}}</text>
       </view>
@@ -15,7 +15,7 @@
 
   <!-- 规则列表 -->
   <block wx:if="{{rules.length > 0}}">
-    <view class="card rule-card" wx:for="{{rules}}" wx:key="id">
+    <view class="card rule-card motion-section" wx:for="{{rules}}" wx:key="id">
       <view class="rule-head">
         <view class="rule-icon {{item.type === 'income' ? 'rule-income' : 'rule-expense'}}">{{item.categoryIcon}}</view>
         <view class="rule-main">
@@ -37,12 +37,12 @@
   <view class="empty" wx:else>
     <text class="empty-icon">🔁</text>
     <text class="empty-text">还没有周期记账规则。工资、房租、会员续费这类固定收支，设置一次就会自动入账</text>
-    <view class="btn-primary empty-btn" bindtap="openAdd">添加规则</view>
+    <view class="btn-primary empty-btn" bindtap="openAdd" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">添加规则</view>
   </view>
 
-  <view class="add-btn" bindtap="openAdd" wx:if="{{rules.length > 0}}">＋ 添加周期规则</view>
+  <view class="add-btn" bindtap="openAdd" wx:if="{{rules.length > 0}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋ 添加周期规则</view>
 
-  <view class="card notice-card">
+  <view class="card notice-card motion-section">
     <view class="notice-text">到期后，每次打开账本首页会自动入账（首页也会有「周期记账」提示条展示下次扣款；每台设备各自执行也不会重复，记录按规则 ID 去重）。暂停后不再自动记账。</view>
   </view>
 
@@ -53,8 +53,8 @@
         <view class="modal-title">添加周期记账</view>
         <view class="form-label">类型</view>
         <view class="form-types">
-          <view class="form-type {{formType === 'expense' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="expense">支出</view>
-          <view class="form-type {{formType === 'income' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="income">收入</view>
+          <view class="form-type {{formType === 'expense' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="expense" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">支出</view>
+          <view class="form-type {{formType === 'income' ? 'form-type-active' : ''}}" bindtap="setFormType" data-type="income" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">收入</view>
         </view>
         <view class="form-label">名称</view>
         <input class="modal-input" value="{{formName}}" placeholder="如：房租 / 工资 / 视频会员" maxlength="20" bindinput="onFormName" />
@@ -65,32 +65,32 @@
         </view>
         <view class="form-label">分类</view>
         <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
-          <view class="cat-chip {{formCategory === item.key ? 'cat-chip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setFormCategory" data-key="{{item.key}}">
+          <view class="cat-chip {{formCategory === item.key ? 'cat-chip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setFormCategory" data-key="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
             <text>{{item.icon}} {{item.name}}</text>
           </view>
         </scroll-view>
         <view class="form-label">账户（选填）</view>
         <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
-          <view class="cat-chip {{formAccount === '' ? 'cat-chip-active' : ''}}" bindtap="setFormAccount" data-id="">
+          <view class="cat-chip {{formAccount === '' ? 'cat-chip-active' : ''}}" bindtap="setFormAccount" data-id="" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
             <text>不计</text>
           </view>
-          <view class="cat-chip {{formAccount === item.id ? 'cat-chip-active' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setFormAccount" data-id="{{item.id}}">
+          <view class="cat-chip {{formAccount === item.id ? 'cat-chip-active' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setFormAccount" data-id="{{item.id}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
             <text>{{item.icon || '💳'}} {{item.name}}</text>
           </view>
         </scroll-view>
         <view class="form-label">周期</view>
         <scroll-view scroll-x class="cat-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
-          <view class="cat-chip {{formCycle === item.key ? 'cat-chip-active' : ''}}" wx:for="{{cycles}}" wx:key="key" bindtap="setFormCycle" data-key="{{item.key}}">
+          <view class="cat-chip {{formCycle === item.key ? 'cat-chip-active' : ''}}" wx:for="{{cycles}}" wx:key="key" bindtap="setFormCycle" data-key="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
             <text>{{item.name}}</text>
           </view>
         </scroll-view>
         <view class="form-label">下次执行日</view>
-        <picker mode="date" value="{{formDate}}" start="2020-01-01" end="2035-12-31" onchange="onFormDate">
+        <date-picker value="{{formDate}}" start="2020-01-01" end="2035-12-31" bindchange="onFormDate">
           <view class="form-value">{{formDate}}</view>
-        </picker>
+        </date-picker>
         <view class="modal-actions-modal">
-          <view class="btn-primary" bindtap="saveRule">保存规则</view>
-          <view class="btn-ghost" bindtap="closeAdd">取消</view>
+          <view class="btn-primary" bindtap="saveRule" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存规则</view>
+          <view class="btn-ghost" bindtap="closeAdd" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
         </view>
       </scroll-view>
     </view>

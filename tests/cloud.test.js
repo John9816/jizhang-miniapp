@@ -47,6 +47,8 @@ function remoteLedger(overrides) {
     ownerId: 'oid_owner',
     ownerName: '主人',
     createdAt: '2026-10-01T00:00:00.000Z',
+    // 与服务端返回一致，固定配置版本，避免缺省时间取当前毫秒造成偶发失败。
+    cfgAt: '2026-10-01T00:00:00.000Z',
     inviteCode: 'ABCD1234',
     members: [{ id: 'oid_owner', name: '主人', joinedAt: '2026-10-01T00:00:00.000Z' }]
   }

@@ -6,10 +6,13 @@
   </view>
 
   <view class="pf-main">
-    <button class="pf-av-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-      <image class="pf-av" src="{{localAvatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarErr" />
+    <view class="pf-avatar">
+      <view class="pf-avatar-frame">
+        <image class="pf-av" src="{{localAvatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarErr" />
+      </view>
+      <button class="pf-av-btn" size="mini" aria-label="更换头像" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"></button>
       <view class="pf-cam">📷</view>
-    </button>
+    </view>
 
     <view class="pf-fields">
       <input
@@ -18,7 +21,9 @@
         value="{{localName}}"
         placeholder="{{mode === 'onboard' ? '给自己起个名字' : '点击设置微信昵称'}}"
         maxlength="12"
+        cursor-spacing="24"
         bindnickname="onNicknamePick"
+        bindfocus="onNicknameFocus"
         bindinput="onNicknameInput"
         bindblur="onNicknameBlur"
       />

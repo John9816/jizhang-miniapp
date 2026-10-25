@@ -1,6 +1,7 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
+const motion = require('../../utils/motion.js')
 const profileFill = require('../../utils/profileFill.js')
 const vip = require('../../utils/vip.js')
 
@@ -17,7 +18,9 @@ function shortId(id) {
 Page({
   data: {
     statusBar: 20,
+    contentTop: 64,
     me: { id: '', name: '' },
+    nicknameDraft: '',
     uid: '00000000',
     ledgerName: '我的账本',
     netWorthText: '0.00',
@@ -33,12 +36,29 @@ Page({
     renameInput: '',
     showAbout: false,
     showHelp: false,
-    metaTip: '本地模式'
+    metaTip: '本地模式',
+    menuGroups: [
+      { title: '记账管理', items: [
+        { icon: '📒', text: '账本管理', action: 'goLedger' },
+        { icon: '🏷️', text: '分类管理', action: 'goCategories' },
+        { icon: '▤', text: '常用模板', action: 'goTemplates' },
+        { icon: '🔁', text: '周期记账', action: 'goRecurring' }
+      ] },
+      { title: '财务计划', items: [
+        { icon: '🎯', text: '预算管理', action: 'goBudget' },
+        { icon: '🏆', text: '存钱挑战', action: 'goChallenge' }
+      ] },
+      { title: '数据工具', items: [
+        { icon: '📥', text: '账单导入', extra: '微信 / 支付宝', action: 'goImport' },
+        { icon: '🧮', text: '对账与导出', action: 'goReconcile' },
+        { icon: '⚙', text: '同步与设置', action: 'goSettings' }
+      ] }
+    ]
   },
 
   onLoad() {
     var info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
-    this.setData({ statusBar: (info && info.statusBarHeight) || 20 })
+    this.setData({ statusBar: (info && info.statusBarHeight) || 20, contentTop: u.navigationTop(info) })
     this.refresh()
     var self = this
     this._offChange = db.onChange(function () { self.refresh() })
@@ -47,15 +67,23 @@ Page({
   },
 
   onUnload() {
+    motion.cleanup(this)
     if (this._offChange) this._offChange()
     if (this._offCloud) this._offCloud()
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 })
-    }
+    this._navigating = false
+    motion.reveal(this)
+    this.updateTabBar()
     this.refresh()
+  },
+
+  onHide() { motion.cleanup(this) },
+
+  updateTabBar() {
+    var tab = typeof this.getTabBar === 'function' && this.getTabBar()
+    if (tab) tab.setData({ selected: 3, hidden: motion.hasOverlay(this, ['showRename', 'showHelp', 'showAbout']) })
   },
 
   refresh() {
@@ -70,9 +98,9 @@ Page({
       cloudOn: cloud.enabled(),
       syncText: cloud.statusText(),
       account: account,
-      // 顶部状态行文案：失败时直接告诉用户「点此重试」，其余场景用云端提示
-      metaTip: account.phase === 'failed' ? '同步失败 · 点此重试' : account.tip
+      metaTip: account.phase === 'failed' ? '同步失败 · 查看设置' : account.tip
     }
+    if (!this._nicknameEditing) patch.nicknameDraft = me.name || ''
     if (ledger) {
       var sum = db.assetSummary(ledger.id)
       var assets = 0
@@ -99,32 +127,50 @@ Page({
 
   /* ---------------- 跳转 ---------------- */
 
+  navigate(url) {
+    if (this._navigating) return
+    this._navigating = true
+    wx.navigateTo({ url: url, fail: () => { this._navigating = false } })
+  },
+
+  onMenuTap(e) {
+    var action = e.currentTarget.dataset.action
+    var allowed = this.data.menuGroups.some(group => group.items.some(item => item.action === action))
+    if (allowed && typeof this[action] === 'function') this[action]()
+  },
+
   goChallenge() {
-    wx.navigateTo({ url: '/pages/challenge/challenge' })
+    this.navigate('/pages/challenge/challenge')
   },
 
   goBudget() {
-    wx.navigateTo({ url: '/pages/budget/budget' })
+    this.navigate('/pages/budget/budget')
   },
 
   goLedger() {
-    wx.navigateTo({ url: '/pages/ledger/ledger' })
+    this.navigate('/pages/ledger/ledger')
+  },
+
+  goSettings() {
+    this.navigate('/pages/settings/settings')
   },
 
   goCategories() {
-    wx.navigateTo({ url: '/pages/categories/categories' })
+    this.navigate('/pages/categories/categories')
   },
+  goTemplates() { this.navigate('/pages/templates/templates') },
+  goRecurring() { this.navigate('/pages/recurring/recurring') },
 
   goImport() {
-    wx.navigateTo({ url: '/pages/import/import' })
+    this.navigate('/pages/import/import')
   },
 
   goReconcile() {
-    wx.navigateTo({ url: '/pages/reconcile/reconcile' })
+    this.navigate('/pages/reconcile/reconcile')
   },
 
   goAssets() {
-    wx.navigateTo({ url: '/pages/assets/assets' })
+    this.navigate('/pages/assets/assets')
   },
 
   goStats() {
@@ -134,11 +180,11 @@ Page({
   /* ---------------- 弹层 ---------------- */
 
   openRename() {
-    this.setData({ showRename: true, renameInput: this.data.me.name || '' })
+    motion.open(this, 'showRename', { renameInput: this.data.me.name || '' })
   },
 
   closeRename() {
-    this.setData({ showRename: false })
+    motion.close(this, 'showRename')
   },
 
   onRenameInput(e) {
@@ -153,7 +199,7 @@ Page({
     }
     db.setMyName(name)
     cloud.updateProfile({ nickname: name })
-    this.setData({ showRename: false })
+    this.closeRename()
     this.refresh()
     wx.showToast({ title: '已更新', icon: 'success' })
   },
@@ -190,50 +236,51 @@ Page({
   onNicknamePick(e) {
     var v = (e.detail && e.detail.nickname) || ''
     if (profileFill.applyNickname(v)) {
+      this.setData({ nicknameDraft: v })
       this.refresh()
     }
   },
 
   onNicknameBlur(e) {
+    this._nicknameEditing = false
     var v = String((e.detail && e.detail.value) || '').trim()
     if (profileFill.applyNickname(v)) {
       this.refresh()
-    }
+    } else this.setData({ nicknameDraft: db.getProfile().name || '' })
   },
+
+  onNicknameFocus() { this._nicknameEditing = true },
+  onNicknameInput(e) { this.setData({ nicknameDraft: e.detail.value }) },
 
   /** 昵称输入框长按 → 手动改名（微信昵称授权失败时的兜底） */
   onNicknameLongPress() {
     this.openRename()
   },
 
-  /* ---------------- 顶部状态行点按：失败重试 / 正常手动同步 ---------------- */
+  /* ---------------- 顶部状态行：统一进入同步设置 ---------------- */
 
   /** 云端状态变化时同步刷新顶部状态行（文案 + 最近同步时间） */
   applyAccount(st) {
     this.setData({
       account: st,
-      metaTip: st.phase === 'failed' ? '同步失败 · 点此重试' : st.tip,
+      metaTip: st.phase === 'failed' ? '同步失败 · 查看设置' : st.tip,
       syncText: cloud.statusText()
     })
   },
 
   onStatusTap() {
-    if (this.data.account.phase === 'failed') {
-      this.retryAccount()
-      return
-    }
-    this.syncNow()
+    this.goSettings()
   },
 
   toast(e) {
     wx.showToast({ title: e.currentTarget.dataset.text || '暂未开放', icon: 'none' })
   },
 
-  openHelp() { this.setData({ showHelp: true }) },
-  closeHelp() { this.setData({ showHelp: false }) },
-  openAbout() { this.setData({ showAbout: true }) },
-  closeAbout() { this.setData({ showAbout: false }) },
-  goVip() { wx.navigateTo({ url: '/pages/vip/vip' }) },
+  openHelp() { motion.open(this, 'showHelp') },
+  closeHelp() { motion.close(this, 'showHelp') },
+  openAbout() { motion.open(this, 'showAbout') },
+  closeAbout() { motion.close(this, 'showAbout') },
+  goVip() { this.navigate('/pages/vip/vip') },
 
   copyApi() {
     wx.setClipboardData({ data: 'https://jizhang-api.751152.xyz' })

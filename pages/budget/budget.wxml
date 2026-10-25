@@ -1,13 +1,13 @@
-<view class="page">
+<view class="page motion-page">
   <!-- 当月总预算 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="section-title">{{monthLabel}}总预算</view>
     <view class="total-row">
       <text class="total-sign">¥</text>
-      <input class="total-input" type="digit" value="{{monthlyInput}}" placeholder="0.00，0 表示不限定" bindinput="onTotalInput" />
-      <view class="total-save btn-primary" bindtap="saveTotal">保存</view>
+      <input class="total-input" type="digit" value="{{monthlyInput}}" placeholder="0.00" bindinput="onTotalInput" />
+      <view class="total-save btn-primary" bindtap="saveTotal" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存</view>
     </view>
-    <view class="total-status" wx:if="{{totalPct > 0}}">
+    <view class="total-status" wx:if="{{limitText}}">
       <view class="total-bar">
         <view class="total-bar-inner {{totalOver ? 'bar-over' : ''}}" style="width: {{totalPct > 100 ? 100 : totalPct}}%"></view>
       </view>
@@ -19,14 +19,26 @@
     <view class="total-hint" wx:else>设置后，支出达到 80% 首页会提醒你</view>
   </view>
 
+  <view class="card budget-guide motion-section" wx:if="{{insight.enabled}}">
+    <view class="guide-head"><text>{{insight.remaining < 0 ? '本月已超支' : '本月还可用'}}</text><text class="guide-days">剩 {{insight.daysLeft}} 天 · 含今天</text></view>
+    <view class="guide-remaining num">¥{{insight.remainingText}}</view>
+    <view class="guide-metrics">
+      <view><text class="guide-label">日均可用</text><text class="guide-number num">¥{{insight.dailyText}}</text></view>
+      <view><text class="guide-label">月末支出估算</text><text class="guide-number num">¥{{insight.projectedText}}</text></view>
+    </view>
+    <view class="guide-status">{{insight.remaining < 0 ? '预算已用完，可以调整额度或减少后续支出。' : (insight.projectedOver ? '按目前消费节奏，月底可能超出预算。' : '按目前消费节奏，预计在预算范围内。')}}</view>
+    <view class="guide-method">估算＝截至今天的支出日均 × 本月天数＋未来已记支出。日均可用按剩余额度分摊，仅供规划参考。</view>
+    <text class="guide-future" wx:if="{{insight.futureExpense > 0}}">已预留未来日期支出 ¥{{insight.futureText}}</text>
+  </view>
+
   <!-- 分类预算 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="card-head">
       <view class="section-title">分类预算</view>
-      <view class="cat-add" bindtap="openCatPicker">＋ 设置</view>
+      <view class="cat-add" bindtap="openCatPicker" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋ 设置</view>
     </view>
     <block wx:if="{{categoryBudgets.length > 0}}">
-      <view class="cat-budget" wx:for="{{categoryBudgets}}" wx:key="key">
+      <view class="cat-budget" wx:for="{{categoryBudgets}}" wx:key="key" bindtap="editCategory" data-key="{{item.key}}" hover-class="press-soft">
         <view class="cat-budget-head">
           <text class="cat-budget-name">{{item.icon}} {{item.name}}</text>
           <text class="cat-budget-nums">¥{{item.usedText}} / ¥{{item.limitText}}</text>
@@ -36,7 +48,7 @@
           <view class="cat-bar-inner {{item.over ? 'bar-over' : ''}}" style="width: {{item.pct > 100 ? 100 : item.pct}}%"></view>
         </view>
         <view class="cat-budget-meta">
-          <text>{{item.pct}}%</text>
+          <text>{{item.pct}}% · 点按调整</text>
           <text class="{{item.over ? 'text-expense' : ''}}">{{item.over ? '已超支' : '剩余 ' + item.remainText + ' 元'}}</text>
         </view>
       </view>
@@ -48,12 +60,16 @@
   <view class="modal-mask" wx:if="{{showCatPicker}}">
     <view class="modal">
       <view class="modal-title">设置分类预算</view>
-      <view class="modal-sub" wx:if="{{expCategories.length === 0}}">本月还没有支出记录，先从下面分类里选一个</view>
-      <view class="modal-sub" wx:else>{{pickedCatName}} 的每月额度</view>
+      <scroll-view scroll-y class="budget-category-scroll">
+        <view class="budget-category-grid">
+          <view class="budget-category {{pickedCat === item.key ? 'budget-category-on' : ''}}" wx:for="{{expCategories}}" wx:key="key" bindtap="onPickCategory" data-key="{{item.key}}" hover-class="press-button">{{item.icon}} {{item.name}}</view>
+        </view>
+      </scroll-view>
+      <view class="modal-sub">{{pickedCatName}} 的每月额度</view>
       <input class="modal-input" type="digit" value="{{editLimit}}" placeholder="每月额度，如 1000" bindinput="onCatLimitInput" />
       <view class="modal-actions">
-        <view class="btn-ghost" bindtap="closePicker">取消</view>
-        <view class="btn-primary" bindtap="saveCatLimit">保存</view>
+        <view class="btn-ghost" bindtap="closePicker" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="saveCatLimit" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存</view>
       </view>
     </view>
   </view>

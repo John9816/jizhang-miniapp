@@ -2,16 +2,17 @@
   margin: 24rpx;
   padding: 40rpx 32rpx;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #F5B417, #E8A317);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--gold-deep), #E8A317);
+  color: var(--ink);
 }
 
 .net-positive {
-  background: linear-gradient(135deg, #F5B417, #E8A317);
+  background: linear-gradient(135deg, var(--gold-deep), #E8A317);
 }
 
 .net-negative {
-  background: linear-gradient(135deg, #B91C1C, #DC2626);
+  background: linear-gradient(135deg, var(--gold-soft), #F6D990);
+  border: 1rpx solid var(--line);
 }
 
 .net-label {
@@ -46,7 +47,7 @@
   text-align: center;
   padding: 18rpx 0;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.65);
   font-size: 26rpx;
 }
 
@@ -64,7 +65,7 @@
 }
 
 .sum-row + .sum-row {
-  border-top: 1rpx solid #F7F1E2;
+  border-top: 1rpx solid var(--surface-soft);
 }
 
 .sum-left {
@@ -75,19 +76,19 @@
 
 .sum-name {
   font-size: 26rpx;
-  color: #2E2A22;
+  color: var(--ink);
   font-weight: 500;
 }
 
 .sum-count {
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .sum-val {
   font-size: 28rpx;
   font-weight: 600;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 /* 账户列表 */
@@ -95,7 +96,7 @@
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F7F1E2;
+  border-bottom: 1rpx solid var(--surface-soft);
 }
 
 .acc-row:last-child {
@@ -106,7 +107,7 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 18rpx;
-  background: #F7F1E2;
+  background: var(--surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,6 +117,7 @@
 
 .acc-main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4rpx;
@@ -123,8 +125,9 @@
 
 .acc-name {
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
   font-weight: 500;
+  word-break: break-all;
 }
 
 .acc-name-row {
@@ -136,7 +139,7 @@
 .acc-default {
   font-size: 18rpx;
   color: #8A6D1F;
-  background: #FFE9A8;
+  background: var(--hero-light);
   border-radius: 8rpx;
   padding: 2rpx 12rpx;
   font-weight: 500;
@@ -145,18 +148,20 @@
 
 .acc-type {
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .acc-balance {
   font-size: 30rpx;
   font-weight: 600;
+  margin-left: 12rpx;
+  flex-shrink: 0;
 }
 
 .section-hint {
   display: block;
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
   font-weight: 400;
   margin-top: 6rpx;
 }
@@ -166,7 +171,7 @@
   justify-content: space-between;
   padding-top: 16rpx;
   font-size: 24rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   font-weight: 600;
 }
 
@@ -185,15 +190,17 @@
 .modal-label {
   width: 128rpx;
   font-size: 26rpx;
-  color: #6B6455;
+  color: var(--ink-2);
 }
 
 .modal-input-inline {
   flex: 1;
+  min-width: 0;
+  height: 88rpx;
   font-size: 28rpx;
-  color: #2E2A22;
-  border-bottom: 1rpx solid #F0E9D8;
-  padding: 8rpx 0;
+  color: var(--ink);
+  border-bottom: 1rpx solid var(--line);
+  padding: 0 8rpx;
 }
 
 .type-chips {
@@ -212,8 +219,10 @@
 
 .initial-sign {
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
 }
+.balance-sign-btn { flex: 0 0 76rpx; min-width: 0; max-width: 76rpx; margin: 0; padding: 0; width: 76rpx; line-height: 80rpx; font-size: 34rpx; color: var(--accent-ink); background: var(--gold-soft); border-radius: 16rpx; }
+.balance-sign-btn::after { border: 0; }
 
 .modal-actions-modal {
   display: flex;
@@ -233,13 +242,43 @@
 }
 
 .btn-danger-outline {
-  color: #E2543F;
-  border: 1rpx solid #E2543F;
+  color: var(--danger);
+  border: 1rpx solid var(--danger);
 }
 
 .manage-hint {
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
   text-align: center;
   padding: 16rpx 0 8rpx;
 }
+
+.account-chip { border: 1rpx solid var(--line); border-radius: 12rpx; padding: 12rpx 16rpx; font-size: 23rpx; line-height: 1.5; color: var(--ink-2); }
+.account-active { background: var(--gold-soft); border-color: var(--gold-deep); color: var(--accent-ink); }
+.flow-title { margin: 32rpx 32rpx 8rpx; font-size: 28rpx; font-weight: 600; color: var(--ink); }
+.group-card { padding: 0 24rpx; }
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; padding: 22rpx 0; border-bottom: 1rpx solid var(--line); }
+.group-date { font-size: 23rpx; color: var(--ink-2); }
+.group-sub { display: flex; gap: 12rpx; flex-shrink: 0; font-size: 21rpx; color: var(--ink-3); }
+.record-row { display: flex; align-items: center; gap: 16rpx; padding: 24rpx 0; border-bottom: 1rpx solid var(--line); }
+.record-row:last-child { border-bottom: 0; }
+.rec-icon { flex-shrink: 0; width: 68rpx; height: 68rpx; border-radius: 20rpx; background: var(--gold-soft); text-align: center; line-height: 68rpx; font-size: 30rpx; }
+.rec-main { flex: 1; min-width: 0; }
+.rec-title { display: flex; align-items: center; gap: 8rpx; font-size: 26rpx; color: var(--ink); }
+.rec-title > text:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-member { font-size: 19rpx; flex-shrink: 0; color: var(--ink-3); }
+.rec-note { display: block; margin-top: 6rpx; font-size: 22rpx; line-height: 1.5; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-amount { flex-shrink: 0; font-size: 28rpx; font-weight: 600; }
+.fab { position: fixed; right: 32rpx; bottom: calc(40rpx + env(safe-area-inset-bottom)); width: 100rpx; height: 100rpx; line-height: 96rpx; text-align: center; border-radius: 50%; background: var(--gold); color: var(--ink); font-size: 54rpx; box-shadow: var(--shadow); z-index: 20; }
+
+.asset-overview { display:flex; gap:16rpx; padding:12rpx 0 28rpx; }
+.asset-overview > view { flex:1; min-width:0; display:flex; flex-direction:column; gap:10rpx; font-size:22rpx; }
+.overview-value { font-size:27rpx; font-weight:700; word-break:break-all; }
+.acc-right { display:flex; flex-direction:column; align-items:flex-end; max-width:55%; }
+.acc-right .acc-balance { font-size:28rpx; word-break:break-all; }
+.acc-tools { display:flex; gap:10rpx; margin-top:8rpx; }
+.acc-tools > view { padding:14rpx 20rpx; border-radius:14rpx; background:var(--gold-soft); color:var(--accent-ink); font-size:22rpx; }
+.account-filter { width:100%; margin:0 0 20rpx; }
+.filter-items { display:flex; gap:12rpx; padding:0 24rpx; width:max-content; }
+.filter-chip { flex-shrink:0; padding:18rpx 26rpx; border-radius:999rpx; background:var(--surface); color:var(--ink-2); font-size:24rpx; }
+.filter-active { background:var(--gold); font-weight:700; color:var(--ink); }

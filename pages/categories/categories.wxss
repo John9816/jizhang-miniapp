@@ -10,13 +10,13 @@
   padding: 16rpx 0;
   border-radius: 16rpx;
   background: #FFFFFF;
-  color: #6B6455;
+  color: var(--ink-2);
   font-size: 28rpx;
 }
 
 .type-active {
-  background: #F5B417;
-  color: #FFFFFF;
+  background: var(--gold);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -25,14 +25,14 @@
   align-items: center;
   gap: 16rpx;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid #F7F1E2;
+  border-bottom: 1rpx solid var(--surface-soft);
 }
 
 .cat-icon-big {
   width: 64rpx;
   height: 64rpx;
   border-radius: 18rpx;
-  background: #F7F1E2;
+  background: var(--surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,8 +41,10 @@
 
 .cat-name-input {
   flex: 1;
+  min-width: 0;
+  height: 80rpx;
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 .cat-ops {
@@ -52,7 +54,7 @@
 
 .cat-op {
   font-size: 26rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   padding: 8rpx 12rpx;
 }
 
@@ -61,14 +63,14 @@
 }
 
 .cat-op-del {
-  color: #E2543F;
+  color: var(--danger);
 }
 
 .cat-add-row {
   text-align: center;
   padding: 24rpx 0 8rpx;
   font-size: 26rpx;
-  color: #F5B417;
+  color: var(--gold-deep);
 }
 
 .notice-card {
@@ -78,7 +80,7 @@
 .restore-link {
   text-align: center;
   font-size: 24rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
   padding: 24rpx 0 60rpx;
 }
 
@@ -95,7 +97,7 @@
   width: 64rpx;
   height: 64rpx;
   border-radius: 16rpx;
-  background: #F7F1E2;
+  background: var(--surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,6 +105,6 @@
 }
 
 .icon-active {
-  background: #FFF3D0;
-  border: 2rpx solid #F5B417;
+  background: var(--gold-soft);
+  border: 2rpx solid var(--gold-deep);
 }

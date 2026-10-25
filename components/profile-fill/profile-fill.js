@@ -26,7 +26,7 @@ Component({
         var q = db.getProfile()
         var next = {}
         if ((q.avatar || '') !== self.data.localAvatar) next.localAvatar = q.avatar || ''
-        if ((q.name || '') !== self.data.localName) next.localName = q.name || ''
+        if (!self._editingName && (q.name || '') !== self.data.localName) next.localName = q.name || ''
         if (Object.keys(next).length) self.setData(next)
       })
     },
@@ -66,13 +66,16 @@ Component({
       this.setData({ localName: e.detail.value })
     },
 
+    onNicknameFocus: function () { this._editingName = true },
+
     // 手动输入失焦时保存（微信昵称授权失败时的兜底）
     onNicknameBlur: function (e) {
+      this._editingName = false
       var v = (e.detail && e.detail.value) || ''
       if (profileFill.applyNickname(v)) {
         this.setData({ localName: v })
         this.triggerEvent('change', { name: v })
-      }
+      } else this.setData({ localName: db.getProfile().name || '' })
     },
 
     onAvatarErr: function () {

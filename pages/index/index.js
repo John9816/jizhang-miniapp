@@ -1,10 +1,14 @@
 const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
+const motion = require('../../utils/motion.js')
+const recordView = require('../../utils/record-view.js')
 
 Page({
+  goTemplates() { wx.navigateTo({ url: '/pages/templates/templates' }) },
   data: {
     statusBar: 20,
+    contentTop: 64,
     me: { id: '', name: '' },
     ledger: null,
     ledgerCover: null,
@@ -45,6 +49,7 @@ Page({
     var key = u.currentMonthKey()
     this.setData({
       statusBar: (info && info.statusBarHeight) || 20,
+      contentTop: u.navigationTop(info),
       me: me,
       selectedDay: u.dateStr(new Date()),
       greeting: u.greeting(),
@@ -69,6 +74,7 @@ Page({
   },
 
   onUnload() {
+    motion.cleanup(this)
     if (this._offChange) this._offChange()
     if (this._offCloud) this._offCloud()
   },
@@ -92,9 +98,8 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
-    }
+    motion.reveal(this)
+    this.updateTabBar()
     this.updateOnboard()
     var ledger = db.currentLedger()
     if (ledger) {
@@ -107,6 +112,8 @@ Page({
     if (this.data.loading) return
     this.refresh()
   },
+
+  onHide() { motion.cleanup(this) },
 
   onPullDownRefresh() {
     this.refresh()
@@ -158,6 +165,7 @@ Page({
 
     var decorated = filtered.map(function (r) {
       var isTransfer = r.type === 'transfer'
+      var category = recordView.categoryInfo(ledger.id, r.type, r.category)
       var catKey = isTransfer ? 'transfer' : r.category
       return {
         id: r.id,
@@ -167,11 +175,11 @@ Page({
         timeText: u.hmText(r.createdAt),
         type: r.type,
         amount: r.amount,
-        icon: isTransfer ? '🔁' : u.categoryIcon(r.type, r.category),
+        icon: isTransfer ? '↔' : category.icon,
         tint: u.categoryTint(catKey),
         categoryName: isTransfer
           ? ('转账至 ' + (r.transferToName || accMap[r.transferTo] || '其他账户'))
-          : u.categoryName(r.type, r.category),
+          : category.name,
         amountText: isTransfer
           ? u.formatCents(r.amount)
           : u.signedText(r.amount, r.type),
@@ -327,20 +335,30 @@ Page({
       memberFilter: 'all'
     })
     this.refresh()
+    motion.reveal(this, 'listMotion')
   },
 
   setMemberFilter(e) {
+    if (this.data.memberFilter === e.currentTarget.dataset.id) return
     this.setData({ memberFilter: e.currentTarget.dataset.id })
     this.refresh()
+    motion.reveal(this, 'listMotion')
   },
 
   selectDay(e) {
     this.setData({ selectedDay: e.currentTarget.dataset.day })
     this.refresh()
+    motion.reveal(this, 'listMotion')
   },
 
   toggleMore() {
-    this.setData({ showMore: !this.data.showMore })
+    if (this.data.showMore) motion.close(this, 'showMore')
+    else if (!this.data.showMoreLeaving) motion.open(this, 'showMore')
+  },
+
+  updateTabBar() {
+    var tab = typeof this.getTabBar === 'function' && this.getTabBar()
+    if (tab) tab.setData({ selected: 0, hidden: motion.hasOverlay(this, ['showMore', 'ledgerSheet']) })
   },
 
   /* ---------------- 账本切换（点顶部账本名） ---------------- */
@@ -356,14 +374,16 @@ Page({
       }
     })
     if (!options.length) return
-    this.setData({ ledgerOptions: options, ledgerSheet: true, showMore: false })
+    motion.cleanup(this)
+    motion.open(this, 'ledgerSheet', { ledgerOptions: options })
   },
 
   closeLedgerSheet() {
-    this.setData({ ledgerSheet: false })
+    motion.close(this, 'ledgerSheet')
   },
 
   switchLedger(e) {
+    if (!this.data.ledgerSheet) return
     var id = e.currentTarget.dataset.id
     if (!id || id === db.currentLedger().id) {
       this.closeLedgerSheet()
@@ -376,23 +396,25 @@ Page({
       monthKey: key,
       monthLabel: u.formatMonth(key),
       monthShort: parseInt(key.slice(5, 7), 10) + '月',
-      memberFilter: 'all',
-      ledgerSheet: false
+      memberFilter: 'all'
     })
+    this.closeLedgerSheet()
     this.refresh()
+    motion.reveal(this, 'listMotion')
     var name = db.currentLedger().name
     wx.showToast({ title: '已切换到「' + name + '」', icon: 'none' })
   },
 
   goLedgerFromSheet() {
-    this.setData({ ledgerSheet: false })
-    wx.navigateTo({ url: '/pages/ledger/ledger' })
+    motion.close(this, 'ledgerSheet', { after: function () { wx.navigateTo({ url: '/pages/ledger/ledger' }) } })
   },
 
   toggleCalendar() {
     var next = this.data.viewMode === 'list' ? 'calendar' : 'list'
     this.setData({ viewMode: next, showMore: false })
+    this.updateTabBar()
     this.refresh()
+    motion.reveal(this, 'listMotion')
     wx.showToast({ title: next === 'calendar' ? '日历视图' : '列表视图', icon: 'none' })
   },
 
@@ -400,29 +422,22 @@ Page({
 
   openSheetItem(e) {
     var key = e.currentTarget.dataset.key
-    var map = {
-      ledger: '/pages/ledger/ledger',
-      members: '/pages/members/members',
-      categories: '/pages/categories/categories',
-      recurring: '/pages/recurring/recurring',
-      search: '/pages/search/search',
-      assets: '/pages/assets/assets',
-      budget: '/pages/budget/budget',
-      transfer: '/pages/edit/edit?mode=transfer'
-    }
-    this.setData({ showMore: false })
-    if (key === 'calendar') return this.toggleCalendar()
-    if (key === 'challenge') return this.goChallenge()
-    if (map[key]) wx.navigateTo({ url: map[key] })
+    motion.close(this, 'showMore', { after: () => {
+      if (key === 'calendar') return this.toggleCalendar()
+      if (key === 'manage') return this.goProfile()
+      if (key === 'search') wx.navigateTo({ url: '/pages/search/search' })
+    } })
   },
 
   goEdit() {
+    wx.vibrateShort && wx.vibrateShort({ type: 'light' })
     wx.navigateTo({ url: '/pages/edit/edit' })
   },
 
   /** 常用分类快捷记账：带上分类直接进记一笔 */
   goEditWithCategory(e) {
     var key = e.currentTarget.dataset.key
+    wx.vibrateShort && wx.vibrateShort({ type: 'light' })
     wx.navigateTo({ url: '/pages/edit/edit?category=' + encodeURIComponent(key) })
   },
 
@@ -441,6 +456,7 @@ Page({
   /** 周期记账提示条 / 更多面板入口：进入周期记账管理页 */
   goRecurring() {
     this.setData({ showMore: false })
+    this.updateTabBar()
     wx.navigateTo({ url: '/pages/recurring/recurring' })
   },
 
@@ -449,7 +465,10 @@ Page({
   },
 
   goSearch() {
-    wx.navigateTo({ url: '/pages/search/search' })
+    var month = this.data.monthKey || u.currentMonthKey()
+    var end = u.dateStr(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0))
+    var member = this.data.memberFilter === 'all' ? '' : this.data.memberFilter
+    wx.navigateTo({ url: '/pages/search/search?start=' + month + '-01&end=' + end + '&memberId=' + encodeURIComponent(member || '') })
   },
 
   goChallenge() {
@@ -458,27 +477,6 @@ Page({
 
   onRecordTap(e) {
     var id = e.currentTarget.dataset.id
-    var self = this
-    wx.showActionSheet({
-      itemList: ['编辑这条记录', '删除这条记录'],
-      success(res) {
-        if (res.tapIndex === 0) {
-          wx.navigateTo({ url: '/pages/edit/edit?id=' + id })
-        } else if (res.tapIndex === 1) {
-          wx.showModal({
-            title: '删除记录',
-            content: '删除后不可恢复，确定删除这条记录吗？',
-            confirmColor: '#E2543F',
-            success(r) {
-              if (r.confirm) {
-                db.deleteRecord(id)
-                wx.showToast({ title: '已删除', icon: 'success' })
-                self.refresh()
-              }
-            }
-          })
-        }
-      }
-    })
+    wx.navigateTo({ url: '/pages/detail/detail?id=' + encodeURIComponent(id) })
   },
 })

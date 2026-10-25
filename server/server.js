@@ -412,6 +412,8 @@ function initSchema(d) {
  * SQLite ALTER TABLE ADD COLUMN 幂等（按 pragma 判断），对既有数据零影响。
  */
 function migrateSchema(d) {
+  // 账号级移除标记独立保存；共享成员的数据和访问不受影响。
+  d.exec('CREATE TABLE IF NOT EXISTS removed_ledgers (openid TEXT NOT NULL, ledger_id TEXT NOT NULL, removed_at TEXT NOT NULL, PRIMARY KEY (openid, ledger_id))')
   function columns(table) {
     return d.prepare('PRAGMA table_info(' + table + ')').all().map(function (r) { return r.name })
   }
@@ -420,6 +422,7 @@ function migrateSchema(d) {
     ['accounts_json', "ALTER TABLE ledgers ADD COLUMN accounts_json TEXT NOT NULL DEFAULT '[]'"],
     ['budget_json', "ALTER TABLE ledgers ADD COLUMN budget_json TEXT NOT NULL DEFAULT '{\"monthlyTotal\":0,\"categoryBudgets\":{}}'"],
     ['recurring_json', "ALTER TABLE ledgers ADD COLUMN recurring_json TEXT NOT NULL DEFAULT '[]'"],
+    ['templates_json', "ALTER TABLE ledgers ADD COLUMN templates_json TEXT NOT NULL DEFAULT '[]'"],
     ['categories_json', "ALTER TABLE ledgers ADD COLUMN categories_json TEXT NOT NULL DEFAULT '[]'"],
     ['challenges_json', "ALTER TABLE ledgers ADD COLUMN challenges_json TEXT NOT NULL DEFAULT '[]'"],
     ['cover_json', "ALTER TABLE ledgers ADD COLUMN cover_json TEXT NOT NULL DEFAULT '{\"kind\":\"preset\",\"key\":\"default\"}'"],
@@ -430,6 +433,8 @@ function migrateSchema(d) {
   })
   var recordCols = columns('records')
   var recordAdd = [
+    ['external_at', "ALTER TABLE records ADD COLUMN external_at TEXT NOT NULL DEFAULT ''"],
+    ['external_json', "ALTER TABLE records ADD COLUMN external_json TEXT NOT NULL DEFAULT 'null'"],
     ['account_id', "ALTER TABLE records ADD COLUMN account_id TEXT NOT NULL DEFAULT ''"],
     ['transfer_to', "ALTER TABLE records ADD COLUMN transfer_to TEXT NOT NULL DEFAULT ''"],
     ['transfer_to_name', "ALTER TABLE records ADD COLUMN transfer_to_name TEXT NOT NULL DEFAULT ''"]
@@ -546,6 +551,18 @@ function requireAuth(req, res) {
 
 /* ---------------- 快照组装 ---------------- */
 
+/** 导入快照只做边界清洗；去重指纹由客户端统一生成。保持后端可独立部署。 */
+function normalizeExternal(value) {
+  if (!value || typeof value !== 'object' || !str(value.src, 16)) return null
+  const out = {
+    src: str(value.src, 16), txn: str(value.txn, 128), party: str(value.party, 200),
+    date: str(value.date, 10), time: str(value.time, 19), type: str(value.type, 16),
+    amount: Math.round(Number(value.amount) || 0), note: str(value.note, 500), channel: str(value.channel, 100)
+  }
+  if (out.date && out.type && out.amount > 0) out.version = 2
+  return out
+}
+
 function toClientRecord(r) {
   return {
     id: r.id,
@@ -560,6 +577,7 @@ function toClientRecord(r) {
     transferToName: r.transfer_to_name || '',
     date: r.date,
     note: r.note,
+    external: normalizeExternal(jsonColumn(r.external_json, null)),
     deleted: !!r.deleted,
     createdAt: r.created_at,
     updatedAt: r.updated_at
@@ -568,11 +586,12 @@ function toClientRecord(r) {
 
 function snapshot(openid, since) {
   const out = { ledgers: [], members: [], records: [], me: userProfile(openid) }
+  out.removedLedgerIds = db.prepare('SELECT ledger_id FROM removed_ledgers WHERE openid = ?').all(openid).map(r => r.ledger_id)
   const ledgers = db.prepare(
     'SELECT l.id, l.name, l.owner_openid, l.invite_code, l.created_at,'
-    + ' l.accounts_json, l.budget_json, l.recurring_json, l.categories_json, l.challenges_json, l.cover_json, l.cfg_at'
+    + ' l.accounts_json, l.budget_json, l.recurring_json, l.templates_json, l.categories_json, l.challenges_json, l.cover_json, l.cfg_at'
     + ' FROM ledgers l JOIN members m ON m.ledger_id = l.id'
-    + ' WHERE m.openid = ? ORDER BY l.created_at'
+    + ' WHERE m.openid = ? AND NOT EXISTS (SELECT 1 FROM removed_ledgers x WHERE x.openid = m.openid AND x.ledger_id = l.id) ORDER BY l.created_at'
   ).all(openid)
   const ids = ledgers.map(function (l) { return l.id })
   if (!ids.length) return out
@@ -584,7 +603,7 @@ function snapshot(openid, since) {
   if (since) {
     // >= 而非 >：推送与拉取可能落在同一毫秒（seen serverTime 竞态）。
     // 客户端按记录 ID + LWW 去重，重复推送无害。
-    recRows = db.prepare(recBase + ' AND updated_at >= ? ORDER BY updated_at').all(...ids, since)
+    recRows = db.prepare(recBase + ' AND (updated_at >= ? OR external_at >= ?) ORDER BY updated_at').all(...ids, since, since)
   } else {
     recRows = db.prepare(recBase + ' ORDER BY updated_at').all(...ids)
   }
@@ -611,6 +630,7 @@ function snapshot(openid, since) {
       accounts: jsonColumn(l.accounts_json, []),
       budget: jsonColumn(l.budget_json, { monthlyTotal: 0, categoryBudgets: {} }),
       recurring: jsonColumn(l.recurring_json, []),
+      templates: jsonColumn(l.templates_json, []),
       categories: jsonColumn(l.categories_json, []),
       challenges: jsonColumn(l.challenges_json, []),
       cover: jsonColumn(l.cover_json, { kind: 'preset', key: 'default' }),
@@ -631,12 +651,15 @@ function snapshot(openid, since) {
 /* ---------------- 推送应用 ---------------- */
 
 function applyLedgerPush(openid, l) {
+  if (!l || typeof l !== 'object') return
   const id = str(l.id, 64)
   if (!id) return
+  if (db.prepare('SELECT 1 FROM removed_ledgers WHERE openid = ? AND ledger_id = ?').get(openid, id)) return
   const name = str(l.name, 20)
   const accountsJson = toJsonColumn(l.accounts, [], 200 * 1024)
   const budgetJson = toJsonColumn(l.budget, { monthlyTotal: 0, categoryBudgets: {} }, 64 * 1024)
   const recurringJson = toJsonColumn(l.recurring, [], 128 * 1024)
+  const templatesJson = toJsonColumn(Array.isArray(l.templates) ? l.templates.slice(0, 50) : [], [], 128 * 1024)
   const categoriesJson = toJsonColumn(l.categories, [], 128 * 1024)
   const challengesJson = toJsonColumn(l.challenges, [], 128 * 1024)
   const coverJson = toJsonColumn(sanitizeCover(l.cover), { kind: 'preset', key: 'default' }, COVER_MAX + 200)
@@ -650,17 +673,18 @@ function applyLedgerPush(openid, l) {
     if (cfgAt && cfgAt > row.cfg_at) {
       db.prepare([
         'UPDATE ledgers SET accounts_json = ?, budget_json = ?, recurring_json = ?,',
-        '  categories_json = ?, challenges_json = ?, cover_json = ?, cfg_at = ? WHERE id = ?'
-      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson, cfgAt, id)
+        '  categories_json = ?, challenges_json = ?, cover_json = ?, templates_json = ?, cfg_at = ? WHERE id = ?'
+      ].join(' ')).run(accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson,
+        Array.isArray(l.templates) ? templatesJson : row.templates_json, cfgAt, id)
     }
   } else {
     db.prepare([
       'INSERT INTO ledgers (id, name, owner_openid, invite_code, created_at,',
-      '  accounts_json, budget_json, recurring_json, categories_json, challenges_json, cover_json, cfg_at)',
-      'VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
+      '  accounts_json, budget_json, recurring_json, categories_json, challenges_json, cover_json, templates_json, cfg_at)',
+      'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
     ].join(' '))
       .run(id, name || '共享账本', openid, genInviteCode(), isoOr(l.createdAt),
-        accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson, cfgAt || nowIso())
+        accountsJson, budgetJson, recurringJson, categoriesJson, challengesJson, coverJson, templatesJson, cfgAt || nowIso())
     row = db.prepare('SELECT * FROM ledgers WHERE id = ?').get(id)
   }
   const membersIn = Array.isArray(l.members) ? l.members.slice(0, 200) : []
@@ -681,9 +705,11 @@ function applyLedgerPush(openid, l) {
 }
 
 function applyRecordPush(openid, r) {
+  if (!r || typeof r !== 'object') return
   const id = str(r.id, 64)
   const ledgerId = str(r.ledgerId, 64)
   if (!id || !ledgerId) return
+  if (db.prepare('SELECT 1 FROM removed_ledgers WHERE openid = ? AND ledger_id = ?').get(openid, ledgerId)) return
   const memberOk = !!db.prepare('SELECT 1 FROM members WHERE ledger_id = ? AND openid = ?').get(ledgerId, openid)
   if (!memberOk) return
   const type = r.type === 'income' ? 'income' : (r.type === 'transfer' ? 'transfer' : 'expense')
@@ -704,20 +730,28 @@ function applyRecordPush(openid, r) {
   const memberName = str(r.memberName, 24)
   const note = str(r.note, 200)
   const category = type === 'transfer' ? 'transfer' : str(r.category, 32)
-  const existing = db.prepare('SELECT updated_at FROM records WHERE id = ?').get(id)
+  const external = JSON.stringify(normalizeExternal(r.external))
+  const existing = db.prepare('SELECT updated_at, ledger_id, external_json FROM records WHERE id = ?').get(id)
+  if (existing && existing.ledger_id !== ledgerId) return
+  // 旧设备只补传交易身份，不修改金额、删除标记或财务版本。
+  if (existing && external !== 'null' && (!existing.external_json || existing.external_json === 'null')) {
+    db.prepare('UPDATE records SET external_json = ?, external_at = ? WHERE id = ?').run(external, nowIso(), id)
+  }
+  if (r.identityOnly) return
   if (existing && existing.updated_at >= updatedAt) return
   db.prepare([
-    'INSERT INTO records (id, ledger_id, openid, member_name, type, amount, category, date, note, deleted, account_id, transfer_to, transfer_to_name, created_at, updated_at)',
-    'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+    'INSERT INTO records (id, ledger_id, openid, member_name, type, amount, category, date, note, deleted, account_id, transfer_to, transfer_to_name, created_at, updated_at, external_json)',
+    'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     'ON CONFLICT(id) DO UPDATE SET',
     '  openid=excluded.openid, member_name=excluded.member_name, type=excluded.type,',
     '  amount=excluded.amount, category=excluded.category, date=excluded.date,',
     '  note=excluded.note, deleted=excluded.deleted, created_at=excluded.created_at,',
     '  account_id=excluded.account_id, transfer_to=excluded.transfer_to,',
     '  transfer_to_name=excluded.transfer_to_name,',
+    "  external_json=CASE WHEN excluded.external_json = 'null' THEN records.external_json ELSE excluded.external_json END,",
     '  updated_at=excluded.updated_at',
     'WHERE excluded.updated_at > records.updated_at'
-  ].join('\n')).run(id, ledgerId, openid, memberName, type, amount, category, date, note, deleted, accountId, transferTo, transferToName, createdAt, updatedAt)
+  ].join('\n')).run(id, ledgerId, openid, memberName, type, amount, category, date, note, deleted, accountId, transferTo, transferToName, createdAt, updatedAt, external)
 }
 
 /* ---------------- 路由处理 ---------------- */
@@ -765,8 +799,13 @@ async function handleSyncPost(req, res) {
   const body = await readBody(req)
   const ledgersIn = Array.isArray(body.ledgers) ? body.ledgers.slice(0, 100) : []
   const recordsIn = Array.isArray(body.records) ? body.records.slice(0, 2000) : []
+  const removed = Array.isArray(body.removedLedgerIds) ? body.removedLedgerIds.slice(0, 1000) : []
   db.exec('BEGIN IMMEDIATE')
   try {
+    const remove = db.prepare('INSERT OR IGNORE INTO removed_ledgers (openid, ledger_id, removed_at) VALUES (?,?,?)')
+    for (const id of removed) {
+      if (typeof id === 'string' && id.trim()) remove.run(openid, str(id, 64), nowIso())
+    }
     for (const l of ledgersIn) applyLedgerPush(openid, l)
     for (const r of recordsIn) applyRecordPush(openid, r)
     db.exec('COMMIT')
@@ -789,6 +828,7 @@ async function handleJoin(req, res) {
   const nickname = str(body.nickname, 12) || userNickname(openid) || '成员'
   db.prepare('INSERT OR IGNORE INTO members (ledger_id, openid, nickname, joined_at) VALUES (?,?,?,?)')
     .run(ledger.id, openid, nickname, nowIso())
+  db.prepare('DELETE FROM removed_ledgers WHERE openid = ? AND ledger_id = ?').run(openid, ledger.id)
   sendJson(res, 200, Object.assign({ ok: true, ledgerId: ledger.id, serverTime: nowIso() }, snapshot(openid, '')))
 }
 

@@ -25,7 +25,7 @@
   margin: 16rpx 24rpx 0;
   padding: 32rpx 30rpx 26rpx;
   border-radius: 32rpx;
-  background: linear-gradient(135deg, #FFEDA0 0%, #FFD75E 46%, #FFC93C 100%);
+  background: linear-gradient(135deg, var(--hero-light) 0%, var(--gold) 46%, var(--gold-deep) 100%);
   box-shadow: 0 14rpx 34rpx rgba(240, 180, 23, 0.28);
   overflow: hidden;
 }
@@ -149,13 +149,13 @@
 .share-tip-line {
   display: block;
   font-size: 22rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   line-height: 1.9;
 }
 .wx-share-btn {
   margin-top: 24rpx;
-  background: #F7F1E2;
-  color: #6B6455;
+  background: var(--surface-soft);
+  color: var(--ink-2);
   font-size: 26rpx;
   border-radius: 16rpx;
   padding: 18rpx 0;
@@ -205,8 +205,8 @@
   line-height: 1;
 }
 .check-on {
-  border-color: #F5B417;
-  background: #FFD64F;
+  border-color: var(--gold-deep);
+  background: var(--gold);
   color: #4A3200;
   font-weight: 700;
 }
@@ -252,8 +252,8 @@
 /* 操作改为小药丸，和整体圆角语言一致 */
 .op-pill {
   font-size: 22rpx;
-  color: #6B6455;
-  background: #F7F1E2;
+  color: var(--ink-2);
+  background: var(--surface-soft);
   border-radius: 999rpx;
   padding: 8rpx 20rpx;
   line-height: 1.4;
@@ -298,7 +298,7 @@
   margin-top: 20rpx;
   padding: 24rpx;
   border-radius: 16rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border: 1rpx solid var(--line);
 }
 .export-row:active { background: var(--gold-soft); }

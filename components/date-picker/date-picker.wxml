@@ -1,0 +1,22 @@
+<view bindtap="open" role="button" aria-label="选择日期"><slot></slot></view>
+<root-portal wx:if="{{opened}}">
+  <!-- 使用与页面一致的可访问触控控件，避免原生 button 默认宽度挤压七列日历。 -->
+  <view class="calendar-mask" catchtap="close" catchtouchmove="noop">
+    <view class="calendar-sheet" catchtap="noop" role="dialog" aria-label="选择日期">
+      <view class="calendar-top"><text class="calendar-title">选择日期</text><view role="button" class="calendar-button close" bindtap="close" aria-label="关闭日历">×</view></view>
+      <view class="calendar-selected">{{draft}}</view>
+      <view class="calendar-nav">
+        <view role="button" class="calendar-button arrow" data-delta="-1" bindtap="move" aria-label="上一页">‹</view>
+        <view role="button" class="calendar-button month-title" bindtap="toggleMonths">{{monthMode ? year + '年 · 选择月份' : monthLabel + ' ▾'}}</view>
+        <view role="button" class="calendar-button arrow" data-delta="1" bindtap="move" aria-label="下一页">›</view>
+      </view>
+      <view class="months" wx:if="{{monthMode}}"><view role="button" wx:for="{{months}}" wx:key="key" class="calendar-button month-cell {{item.disabled ? 'disabled' : ''}}" data-month="{{item.key}}" bindtap="selectMonth">{{item.label}}</view></view>
+      <block wx:else>
+        <view class="weekdays"><text class="weekday" wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
+        <view class="days"><view role="button" wx:for="{{cells}}" wx:key="date" class="calendar-button day {{item.inMonth ? '' : 'outside'}} {{item.today ? 'today' : ''}} {{item.selected ? 'selected' : ''}} {{item.disabled ? 'disabled' : ''}}" data-date="{{item.date}}" bindtap="selectDay" aria-label="{{item.date}}">{{item.day}}</view></view>
+      </block>
+      <view class="shortcuts"><view role="button" class="calendar-button shortcut" wx:for="{{shortcuts}}" wx:key="date" bindtap="selectDay" data-date="{{item.date}}">{{item.name}}</view><view role="button" class="calendar-button shortcut" wx:if="{{clearable}}" bindtap="clear">不设日期</view></view>
+      <view class="calendar-actions"><view role="button" class="calendar-button action-button cancel" bindtap="close">取消</view><view role="button" class="calendar-button action-button confirm" bindtap="confirm">确定日期</view></view>
+    </view>
+  </view>
+</root-portal>

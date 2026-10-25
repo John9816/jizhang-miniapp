@@ -1,18 +1,18 @@
-<view class="page rec-page">
+<view class="page rec-page motion-page">
   <!-- 输入账单 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="card-head">
       <text class="card-head-title">选择要对账的账单</text>
       <text class="card-head-more" bindtap="explain">怎么对账？</text>
     </view>
 
     <view class="mode-tabs">
-      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode">选择文件</view>
-      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode">粘贴文本</view>
+      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">选择文件</view>
+      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">粘贴文本</view>
     </view>
 
     <view wx:if="{{mode === 'file'}}">
-      <view class="drop" bindtap="chooseFile">
+      <view class="drop" bindtap="chooseFile" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <text class="drop-icon">🧾</text>
         <text class="drop-title">点击选择账单文件</text>
         <text class="drop-sub">{{sourceLabel || '微信支付 / 支付宝 CSV 均可'}}</text>
@@ -26,12 +26,12 @@
         maxlength="200000"
         bindinput="onRawInput"
       />
-      <view class="btn-primary parse-btn" bindtap="parsePasted">开始对账</view>
+      <view class="btn-primary parse-btn" bindtap="parsePasted" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">开始对账</view>
     </view>
   </view>
 
   <!-- 空引导 -->
-  <view class="card" wx:if="{{!rec}}">
+  <view class="card motion-section" wx:if="{{!rec}}">
     <view class="empty">
       <text class="empty-icon">🧮</text>
       <text class="empty-text">
@@ -46,7 +46,7 @@
 
   <!-- 对账结果 -->
   <block wx:if="{{rec}}">
-    <view class="card">
+    <view class="card motion-section">
       <view class="card-head">
         <text class="card-head-title">对账结果</text>
         <text class="badge badge-dark">{{sourceLabel}}</text>
@@ -69,13 +69,13 @@
       </view>
 
       <view class="rec-actions" wx:if="{{rec.missing > 0}}">
-        <view class="btn-primary act" bindtap="importMissing">一键补记 {{rec.missing}} 笔</view>
+        <view class="btn-primary act" bindtap="importMissing" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">一键补记 {{rec.missing}} 笔</view>
       </view>
       <view class="import-note" wx:if="{{importNote}}">{{importNote}}</view>
     </view>
 
     <!-- 缺失明细 -->
-    <view class="card" wx:if="{{rec.missingRows.length > 0}}">
+    <view class="card motion-section" wx:if="{{rec.missingRows.length > 0}}">
       <view class="card-head">
         <text class="card-head-title rec-miss">账单有，账本没记（{{rec.missing}}）</text>
       </view>
@@ -93,7 +93,7 @@
     </view>
 
     <!-- 账本多出 -->
-    <view class="card" wx:if="{{rec.extraRows.length > 0}}">
+    <view class="card motion-section" wx:if="{{rec.extraRows.length > 0}}">
       <view class="card-head">
         <text class="card-head-title rec-extra">账本多出的记录（{{rec.extraCount}}）</text>
       </view>
@@ -111,7 +111,7 @@
     </view>
 
     <!-- 已匹配 -->
-    <view class="card" wx:if="{{rec.matchedRows.length > 0}}">
+    <view class="card motion-section" wx:if="{{rec.matchedRows.length > 0}}">
       <view class="card-head">
         <text class="card-head-title rec-ok">两边一致（{{rec.matched}}）</text>
         <text class="card-head-more" bindtap="exportCSV">导出对账 CSV</text>
@@ -131,13 +131,13 @@
   </block>
 
   <!-- 底部导出 -->
-  <view class="card" wx:if="{{localCount > 0}}">
+  <view class="card motion-section" wx:if="{{localCount > 0}}">
     <view class="set-row">
       <view class="row-main">
         <view class="row-title-line"><text class="set-label">导出对账 CSV</text></view>
         <text class="row-sub">日期,摘要,收/支,金额,来源 —— 可直接发给表格软件</text>
       </view>
-      <view class="btn-ghost act" bindtap="exportCSV">导出</view>
+      <view class="btn-ghost act" bindtap="exportCSV" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">导出</view>
     </view>
   </view>
 </view>

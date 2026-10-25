@@ -1,8 +1,8 @@
-<view class="page stats-page">
-  <view style="height:{{statusBar}}px"></view>
+<view class="page stats-page motion-page {{pageMotion}}">
+  <view style="height:{{contentTop}}px"></view>
 
   <!-- 顶部一行：标题 + 周期切换（大字号）+ 吉祥物；原「标题行 + 周期行」两行合一，削减顶部空白 -->
-  <view class="s-head">
+  <view class="s-head motion-section">
     <text class="s-title">统计</text>
     <block wx:if="{{period !== 'custom'}}">
       <view class="s-period">
@@ -18,18 +18,18 @@
   </view>
 
   <!-- 口径行：支出/收入 切换 + 周期 选择，同一行 -->
-  <view class="scope-bar">
+  <view class="scope-bar motion-section">
     <view class="type-seg">
-      <view class="type-item {{pieType === 'expense' ? 'type-on' : ''}}" bindtap="setPieType" data-type="expense">支出</view>
-      <view class="type-item {{pieType === 'income' ? 'type-on' : ''}}" bindtap="setPieType" data-type="income">收入</view>
+      <view class="type-item {{pieType === 'expense' ? 'type-on' : ''}}" bindtap="setPieType" data-type="expense" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">支出</view>
+      <view class="type-item {{pieType === 'income' ? 'type-on' : ''}}" bindtap="setPieType" data-type="income" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">收入</view>
     </view>
     <view class="period-bar">
-      <view class="period-item {{period === item.key ? 'period-on' : ''}}" wx:for="{{periods}}" wx:key="key" bindtap="setPeriod" data-period="{{item.key}}">{{item.name}}</view>
+      <view class="period-item {{period === item.key ? 'period-on' : ''}}" wx:for="{{periods}}" wx:key="key" bindtap="setPeriod" data-period="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{item.name}}</view>
     </view>
   </view>
 
   <!-- 总览 + 折线图 -->
-  <view class="card sum-card">
+  <view class="card sum-card {{chartMotion || 'motion-a'}}">
     <view class="sum-line">
       <text class="sum-label">{{mainLabel}}</text>
       <text class="sum-mom {{momUp ? 'mom-up' : 'mom-down'}}" wx:if="{{hasData}}">较上期 {{momText}}</text>
@@ -37,28 +37,69 @@
     <text class="sum-amount num">{{mainTotal}}</text>
     <text class="sum-daily">日均{{pieType === 'income' ? '收入' : '支出'}} {{dailyText}}</text>
 
-    <view class="chart-wrap">
-      <canvas type="2d" id="lineCanvas" class="line-canvas" bindtouchstart="onChartTouch"></canvas>
-      <view class="chart-tip" wx:if="{{tip}}" style="left:{{tip.left}}px; top:{{tip.top}}px">
+    <view class="chart-wrap chart-reveal">
+      <view wx:if="{{hasData}}" id="lineChart" class="line-chart" bindtouchstart="onChartTouch">
+        <image wx:if="{{lineChartPath}}" class="chart-image" src="{{lineChartPath}}" mode="scaleToFill" />
+        <view wx:else class="chart-placeholder" bindtap="drawCharts">{{chartError ? '图表加载失败，点击重试' : '图表加载中…'}}</view>
+      </view>
+      <view class="chart-tip" wx:if="{{hasData && tip}}" style="left:{{tip.left}}px; top:{{tip.top}}px">
         <text class="tip-date">{{tip.date}}</text>
         <text class="tip-val">{{tip.label}} {{tip.value}}</text>
       </view>
       <view class="chart-empty" wx:if="{{!hasData}}">
-        <text class="chart-empty-text">这个周期还没有记录</text>
+        <view class="chart-empty-icon">＋</view>
+        <text class="chart-empty-text">这个周期还没有{{pieType === 'income' ? '收入' : '支出'}}记录</text>
+        <text class="chart-empty-hint">记下每一笔，收支趋势更清晰</text>
+        <view class="chart-empty-add" bindtap="goAdd" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">记一笔</view>
       </view>
     </view>
   </view>
 
+  <view class="card advanced-card">
+    <view class="card-head"><text class="card-head-title">深度分析</text><text class="card-head-more">{{periodLabel}}</text></view>
+    <view class="analysis-tabs"><view wx:for="{{analysisTabs}}" wx:key="key" role="button" aria-label="切换到{{item.name}}" class="analysis-tab {{analysisTab === item.key ? 'analysis-on' : ''}}" data-tab="{{item.key}}" bindtap="setAnalysisTab">{{item.name}}</view></view>
+    <view class="analysis-body {{analysisMotion}}">
+      <block wx:if="{{analysisTab === 'compare'}}">
+        <view class="analysis-empty" wx:if="{{!analysis.comparison.count}}">本期没有可分析的收入或支出记录</view>
+        <block wx:else>
+        <view class="compare-metrics"><view><text>本期结余</text><text class="metric-value">¥{{analysis.comparison.balanceText}}</text></view><view><text>结余率</text><text class="metric-value">{{analysis.comparison.savingsText}}</text></view></view>
+        <view class="compare-row"><view class="compare-label"><text>收入</text><text>¥{{analysis.comparison.incomeText}}</text></view><view class="compare-track"><view class="compare-fill income-fill" style="width:{{analysis.comparison.incomeWidth}}%"></view></view></view>
+        <view class="compare-row"><view class="compare-label"><text>支出</text><text>¥{{analysis.comparison.expenseText}}</text></view><view class="compare-track"><view class="compare-fill expense-fill" style="width:{{analysis.comparison.expenseWidth}}%"></view></view></view>
+        <view class="series-key"><text><text class="key-dot income-fill"></text>收入</text><text><text class="key-dot expense-fill"></text>支出</text><text>{{analysis.seriesUnit}} · 左右滑动，点击查看金额</text></view>
+        <scroll-view class="comparison-scroll" scroll-x><view class="comparison-series"><view wx:for="{{analysis.series}}" wx:key="key" class="series-col" data-key="{{item.key}}" bindtap="selectComparison"><view class="series-bars"><view class="series-bar income-fill" style="height:{{item.incomeHeight}}%"></view><view class="series-bar expense-fill" style="height:{{item.expenseHeight}}%"></view></view><text>{{item.label}}</text></view></view></scroll-view>
+        <view class="series-tip" wx:if="{{comparisonTip}}">{{comparisonTip.key}} · 收入 ¥{{comparisonTip.incomeText}} / 支出 ¥{{comparisonTip.expenseText}}</view>
+        <text class="analysis-note">结余 = 收入 − 支出；转账与余额校准不计入收支。</text>
+        </block>
+      </block>
+      <block wx:elif="{{analysisTab === 'ranking'}}">
+        <block wx:for="{{analysis.ranking}}" wx:key="key">
+          <view class="rank-row" wx:if="{{showAllRanks || index < 5}}" role="button" aria-label="查看{{item.name}}明细" data-category="{{item.key}}" bindtap="viewAnalysisRecords" hover-class="press-soft"><text class="rank-index">{{item.rank}}</text><view class="rank-main"><view class="rank-line"><text class="rank-name">{{item.icon}} {{item.name}}</text><text>¥{{item.amountText}}</text></view><view class="rank-track"><view style="width:{{item.width}}%"></view></view><view class="rank-sub"><text>{{item.count}} 笔 · 点击查看明细</text><text>{{item.pct}}%</text></view></view></view>
+        </block>
+        <view class="analysis-empty" wx:if="{{!analysis.ranking.length}}">本期暂无{{pieType === 'income' ? '收入' : '支出'}}分类记录</view>
+        <view class="rank-more" wx:if="{{analysis.ranking.length > 5}}" bindtap="toggleRanks">{{showAllRanks ? '收起排行' : '查看全部 ' + analysis.ranking.length + ' 个分类'}} ›</view>
+      </block>
+      <block wx:else>
+        <view class="heat-nav"><view class="heat-arrow {{analysis.calendarPrev ? '' : 'heat-disabled'}}" data-delta="-1" bindtap="changeCalendarMonth">‹</view><text>{{analysis.calendarLabel}} · {{pieType === 'income' ? '收入' : '支出'}}</text><view class="heat-arrow {{analysis.calendarNext ? '' : 'heat-disabled'}}" data-delta="1" bindtap="changeCalendarMonth">›</view></view>
+        <view class="heat-week"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
+        <view class="heat-grid"><view wx:for="{{analysis.calendar}}" wx:key="date" class="heat-day heat-{{item.level}} {{!item.inMonth || item.disabled ? 'heat-outside' : ''}} {{selectedDay.date === item.date ? 'heat-selected' : ''}}" data-date="{{item.date}}" bindtap="selectCalendarDay">{{item.day}}</view></view>
+        <view class="heat-legend"><text>少</text><view class="heat-0"></view><view class="heat-1"></view><view class="heat-2"></view><view class="heat-3"></view><view class="heat-4"></view><text>多</text></view>
+        <view class="day-detail" wx:if="{{selectedDay}}" bindtap="viewAnalysisRecords"><view><text>{{selectedDay.date}}</text><text>{{selectedDay.count}} 笔 · {{pieType === 'income' ? '收入' : '支出'}} ¥{{selectedDay.amountText}}</text></view><text>明细 ›</text></view>
+        <text class="analysis-note" wx:else>点击日期查看当天金额和明细，灰色日期不在统计范围内。</text>
+      </block>
+    </view>
+  </view>
+
   <!-- 占比 -->
-  <view class="card pie-card">
+  <view class="card pie-card {{chartMotion || 'motion-a'}}">
     <view class="card-head">
       <text class="card-head-title">{{pieType === 'income' ? '收入' : '支出'}}占比</text>
       <text class="card-head-more">{{pieItems.length}} 个分类</text>
     </view>
 
     <view class="pie-row" wx:if="{{pieItems.length > 0}}">
-      <view class="pie-left">
-        <canvas type="2d" id="pieCanvas" class="pie-canvas"></canvas>
+      <view id="pieChart" class="pie-left">
+        <image wx:if="{{pieChartPath}}" class="chart-image" src="{{pieChartPath}}" mode="scaleToFill" />
+        <view wx:else class="chart-placeholder" bindtap="drawCharts">{{chartError ? '图表加载失败，点击重试' : '图表加载中…'}}</view>
       </view>
       <view class="legend">
         <view class="legend-item" wx:for="{{pieItems}}" wx:key="key">
@@ -76,52 +117,58 @@
   </view>
 
   <!-- 近 12 个月 -->
-  <view class="card bar-card">
+  <view class="card bar-card motion-section motion-delay-2">
     <view class="card-head">
       <text class="card-head-title">近 12 个月支出</text>
     </view>
-    <canvas type="2d" id="barCanvas" class="bar-canvas"></canvas>
+    <view id="barChart" class="bar-chart">
+      <image wx:if="{{barChartPath}}" class="chart-image" src="{{barChartPath}}" mode="scaleToFill" />
+      <view wx:else class="chart-placeholder" bindtap="drawCharts">{{chartError ? '图表加载失败，点击重试' : '图表加载中…'}}</view>
+    </view>
   </view>
 
-  <view class="poster-btn btn-ghost" bindtap="makePoster">生成 {{periodLabel}} 海报</view>
+  <view class="poster-btn btn-ghost" bindtap="makePoster" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">生成 {{periodLabel}} 海报</view>
 
   <!-- 自定义区间 -->
-  <view class="modal-mask" wx:if="{{showCustom}}">
+  <view class="modal-mask {{showCustomLeaving ? 'motion-leaving' : ''}}" wx:if="{{showCustom || showCustomLeaving}}">
     <view class="modal">
       <view class="modal-title">选择日期范围</view>
       <view class="modal-sub">最多统计 1 年内的记录</view>
-      <picker mode="date" value="{{customStart}}" start="2020-01-01" end="2035-12-31" bindchange="onCustomStart">
+      <date-picker value="{{customStart}}" start="2020-01-01" end="2035-12-31" bindchange="onCustomStart">
         <view class="date-row">
           <text class="date-row-label">开始</text>
           <text class="date-row-value">{{customStart}}</text>
         </view>
-      </picker>
-      <picker mode="date" value="{{customEnd}}" start="2020-01-01" end="2035-12-31" bindchange="onCustomEnd">
+      </date-picker>
+      <date-picker value="{{customEnd}}" start="2020-01-01" end="2035-12-31" bindchange="onCustomEnd">
         <view class="date-row">
           <text class="date-row-label">结束</text>
           <text class="date-row-value">{{customEnd}}</text>
         </view>
-      </picker>
+      </date-picker>
       <view class="modal-actions">
-        <view class="btn-plain" bindtap="cancelCustom">取消</view>
-        <view class="btn-primary" bindtap="applyCustom">确定</view>
+        <view class="btn-plain" bindtap="cancelCustom" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="applyCustom" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">确定</view>
       </view>
     </view>
   </view>
 
   <!-- 海报预览弹层：生成后展示，可保存到相册 -->
-  <view class="poster-mask" wx:if="{{posterShow}}">
+  <view class="poster-mask {{posterShowLeaving ? 'motion-leaving' : ''}}" wx:if="{{posterShow || posterShowLeaving}}">
     <view class="poster-modal">
       <view class="poster-modal-title">{{periodLabel}} 海报</view>
       <image class="poster-img" src="{{posterPath}}" mode="widthFix" wx:if="{{posterPath}}" />
       <view class="poster-loading" wx:else>正在生成…</view>
       <view class="poster-modal-actions">
-        <view class="btn-ghost" bindtap="closePoster">关闭</view>
-        <view class="btn-primary {{posterPath ? '' : 'btn-off'}}" bindtap="savePoster">保存到相册</view>
+        <view class="btn-ghost" bindtap="closePoster" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">关闭</view>
+        <view class="btn-primary {{posterPath ? '' : 'btn-off'}}" bindtap="savePoster" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存到相册</view>
       </view>
     </view>
   </view>
 
-  <!-- 海报离屏画布 -->
+  <!-- 原生画布仅用于离屏绘制；页面展示普通图片，避免盖住导航和弹层。 -->
+  <canvas type="2d" id="lineCanvas" class="chart-render-canvas"></canvas>
+  <canvas type="2d" id="pieCanvas" class="chart-render-canvas"></canvas>
+  <canvas type="2d" id="barCanvas" class="chart-render-canvas"></canvas>
   <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
 </view>

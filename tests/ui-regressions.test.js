@@ -1,0 +1,20 @@
+var assert = require('assert')
+var fs = require('fs')
+var path = require('path')
+
+var root = path.join(__dirname, '..')
+var tabWxml = fs.readFileSync(path.join(root, 'custom-tab-bar/index.wxml'), 'utf8')
+var tabWxss = fs.readFileSync(path.join(root, 'custom-tab-bar/index.wxss'), 'utf8')
+var profileWxml = fs.readFileSync(path.join(root, 'pages/profile/profile.wxml'), 'utf8')
+var profileWxss = fs.readFileSync(path.join(root, 'pages/profile/profile.wxss'), 'utf8')
+
+assert.ok(/^<view class="tabbar"/.test(tabWxml), '底部导航使用同层 view，避免透明原生覆盖层吞掉点击')
+assert.ok(tabWxml.indexOf('<view class="tabbar-surface"></view>') >= 0, '底部导航需要独立的白色底板，避免凸起按钮被覆盖层裁切')
+assert.ok(tabWxml.indexOf('class="tab-icon"') >= 0, '底部导航使用统一的本地图标')
+assert.ok(tabWxml.indexOf('class="add-icon"') >= 0, '记一笔按钮必须保留可见的加号图标')
+assert.ok(tabWxss.indexOf('background: #FFFFFF') >= 0, '底部导航背景必须完全不透明')
+assert.ok(profileWxml.indexOf('<view class="avatar-frame">') >= 0, '头像必须有独立裁切容器')
+assert.ok(profileWxml.indexOf('mode="aspectFill"') >= 0, '头像应使用 aspectFill 填充圆形容器')
+assert.ok(profileWxss.indexOf('overflow: hidden') >= 0, '头像容器必须裁切溢出内容')
+
+console.log('PASS  UI 回归：底部导航可见结构、头像圆形裁切')

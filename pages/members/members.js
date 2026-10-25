@@ -71,7 +71,7 @@ Page({
     var self = this
     wx.showModal({
       title: '退出账本',
-      content: '只是删除本机上的这份账本副本，好友手机上的记录不受影响。确定退出吗？',
+      content: '将从你的账本列表移除，同账号其他设备会同步移除；其他成员的记录不受影响。确定退出吗？',
       confirmText: '退出',
       confirmColor: '#F04646',
       success(r) {

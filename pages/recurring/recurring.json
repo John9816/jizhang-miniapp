@@ -1,5 +1,8 @@
 {
   "navigationBarTitleText": "周期记账",
-  "navigationBarBackgroundColor": "#F6F7F9",
-  "navigationBarTextStyle": "black"
+  "navigationBarBackgroundColor": "#FFF9EE",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "date-picker": "/components/date-picker/date-picker"
+  }
 }

@@ -30,19 +30,19 @@ var INCOME_CATEGORIES = [
   { key: 'other_in', name: '其他', icon: '✨' }
 ]
 
-/** 分类图标底色：浅色系，与奶油黄主题协调 */
+/** 分类图标底色：统一暖黄阶，图标与名称区分分类。 */
 var CATEGORY_TINTS = {
-  food: '#FFEFD2', shopping: '#FDE6DC', transport: '#E3EEFF', home: '#EAF4E2',
-  water: '#DDEFF6', electric: '#FFF0BE', gas: '#FFE1CC', property: '#E3E8F6',
-  phonebill: '#E0F1E5',
-  fun: '#FBE6F1', phone: '#E7F0FF', social: '#FFE6E2', study: '#EFE9FF',
-  medical: '#FFE8E6', other_out: '#F0EDE3',
-  salary: '#FFEFC8', invest: '#E4F6E9', parttime: '#E8EFFF', redpacket: '#FFE6E2',
-  reimburse: '#E9F0FF', other_in: '#F0EDE3', transfer: '#EDEAE0'
+  food: '#FFF0C2', shopping: '#FFE9A8', transport: '#FFF4D8', home: '#F9E9BB',
+  water: '#FFF5DC', electric: '#FFE7A1', gas: '#FFEBC0', property: '#F6E8C2',
+  phonebill: '#FFEFCD',
+  fun: '#FFE9A8', phone: '#FFF4D8', social: '#FFF0C2', study: '#F9E9BB',
+  medical: '#FFF5DC', other_out: '#F6EDD9',
+  salary: '#FFE9A8', invest: '#F9E9BB', parttime: '#FFF4D8', redpacket: '#FFE7A1',
+  reimburse: '#FFEFCD', other_in: '#F6EDD9', transfer: '#F6E8C2'
 }
 
 function categoryTint(key) {
-  return CATEGORY_TINTS[key] || '#F3EFE4'
+  return CATEGORY_TINTS[key] || '#FFF6E4'
 }
 
 /** 时段问候 */
@@ -626,14 +626,14 @@ function dueRecurring(rules, today) {
  * key 会落库，新增预设只能往后加，别改已有 key（老用户的封面不能变）。
  */
 var LEDGER_COVERS = [
-  { key: 'default', name: '默认', emoji: '📒', gradient: 'linear-gradient(135deg, #F7E8C3, #EFD49B)' },
-  { key: 'piggy', name: '存钱', emoji: '🐷', gradient: 'linear-gradient(135deg, #FFE3EC, #FFC4D8)' },
-  { key: 'home', name: '家庭', emoji: '🏠', gradient: 'linear-gradient(135deg, #E3EEFF, #C4DAFF)' },
-  { key: 'travel', name: '旅行', emoji: '✈️', gradient: 'linear-gradient(135deg, #DFF3F1, #B5E5DD)' },
-  { key: 'business', name: '生意', emoji: '💼', gradient: 'linear-gradient(135deg, #EFE9FF, #D6C8FF)' },
-  { key: 'love', name: '恋爱', emoji: '💕', gradient: 'linear-gradient(135deg, #FFE8E2, #FFC9B8)' },
-  { key: 'coffee', name: '小确幸', emoji: '☕', gradient: 'linear-gradient(135deg, #F3E7D6, #E2C6A6)' },
-  { key: 'star', name: '目标', emoji: '⭐', gradient: 'linear-gradient(135deg, #FFF3C4, #FFE083)' }
+  { key: 'default', name: '默认', emoji: '📒', gradient: 'linear-gradient(135deg, #FFF0C2, #F6C95B)' },
+  { key: 'piggy', name: '存钱', emoji: '🐷', gradient: 'linear-gradient(135deg, #FFF4D8, #E8A72D)' },
+  { key: 'home', name: '家庭', emoji: '🏠', gradient: 'linear-gradient(135deg, #FFF5DC, #F6C95B)' },
+  { key: 'travel', name: '旅行', emoji: '✈️', gradient: 'linear-gradient(135deg, #FFF0C2, #D9B56B)' },
+  { key: 'business', name: '生意', emoji: '💼', gradient: 'linear-gradient(135deg, #F9E9BB, #D9B56B)' },
+  { key: 'love', name: '恋爱', emoji: '💕', gradient: 'linear-gradient(135deg, #FFEBC0, #F6C95B)' },
+  { key: 'coffee', name: '小确幸', emoji: '☕', gradient: 'linear-gradient(135deg, #F6EDD9, #D9B56B)' },
+  { key: 'star', name: '目标', emoji: '⭐', gradient: 'linear-gradient(135deg, #FFF0C2, #F6C95B)' }
 ]
 
 /**
@@ -688,7 +688,7 @@ function recordsToCSV(records, ledgerName) {
     lines.push([
       r.date,
       typeName,
-      r.type === 'transfer' ? ('转账至 ' + (r.transferToName || r.transferTo || '')) : categoryName(r.type, r.category),
+      r.type === 'transfer' ? ('转账至 ' + (r.transferToName || r.transferTo || '')) : (r.categoryName || categoryName(r.type, r.category)),
       sign + (r.amount / 100).toFixed(2),
       r.accountName || '',
       r.note || '',
@@ -785,7 +785,39 @@ function decodeSharePayload(text) {
   }
 }
 
+/** 自定义页面的内容从微信胶囊下方开始，兼容无胶囊数据的环境。 */
+function navigationTop(info) {
+  var status = Math.max(0, Number(info && info.statusBarHeight) || 20)
+  var fallback = status + 44
+  try {
+    var rect = wx.getMenuButtonBoundingClientRect && wx.getMenuButtonBoundingClientRect()
+    if (rect && rect.top >= status && rect.bottom > rect.top) {
+      return Math.max(fallback, rect.bottom + 8)
+    }
+  } catch (e) { /* 旧版基础库或桌面环境回退到标准导航高度。 */ }
+  return fallback
+}
+
+/** 账务单位为分；生成 1/2/5 阶梯纵轴与不重复的人民币标签。 */
+function chartAxis(maxCents) {
+  var value = Math.max(1, Number(maxCents) || 1)
+  var raw = value * 1.1 / 3
+  var power = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10))
+  var fraction = raw / power
+  var step = Math.max(1, (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * power)
+  var labels = []
+  for (var i = 3; i >= 0; i--) {
+    var yuan = Math.round(step * i) / 100
+    var text = yuan >= 10000 ? (yuan / 10000).toFixed(2).replace(/\.?0+$/, '') + '万'
+      : yuan.toFixed(2).replace(/\.?0+$/, '')
+    labels.push('¥' + text)
+  }
+  return { max: step * 3, step: step, labels: labels }
+}
+
 module.exports = {
+  navigationTop: navigationTop,
+  chartAxis: chartAxis,
   EXPENSE_CATEGORIES: EXPENSE_CATEGORIES,
   INCOME_CATEGORIES: INCOME_CATEGORIES,
   categoriesFor: categoriesFor,

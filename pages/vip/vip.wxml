@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page motion-page">
   <view class="hero {{vip ? 'hero-vip' : ''}}">
     <view class="hero-badge">{{vip ? 'VIP' : '会员'}}</view>
     <view class="hero-title">{{vip ? '您已是永久会员' : '记账本会员'}}</view>
@@ -16,7 +16,7 @@
     </view>
   </view>
 
-  <view class="card" wx:if="{{!vip && vipOn && product}}">
+  <view class="card motion-section" wx:if="{{!vip && vipOn && product}}">
     <view class="price-row">
       <text class="price">¥{{product.priceYuan}}</text>
       <text class="price-tag">{{product.tag}}</text>
@@ -28,11 +28,11 @@
     <view class="pay-note">由微信官方虚拟支付保障 · 安卓费率 1% / iOS 12%</view>
   </view>
 
-  <view class="card vip-card" wx:if="{{vip}}">
+  <view class="card vip-card motion-section" wx:if="{{vip}}">
     <view class="vip-tip">已享受去广告、多账本、导出、高级图表、导入对账等全部权益</view>
   </view>
 
-  <view class="card vip-card" wx:if="{{!vip && !vipOn}}">
+  <view class="card vip-card motion-section" wx:if="{{!vip && !vipOn}}">
     <view class="vip-tip">会员功能即将开放，敬请期待</view>
   </view>
 

@@ -1,24 +1,9 @@
 .profile-page { padding-bottom: calc(190rpx + env(safe-area-inset-bottom)); }
 
 /* ============ 顶部资料卡（暖金渐变单卡，收拢头像/昵称/同步状态） ============ */
-.p-head {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  margin: 20rpx 24rpx 0;
-  padding: 36rpx 32rpx;
-  border-radius: 32rpx;
-  background: linear-gradient(135deg, #FFE9A8 0%, #FFD24A 55%, #F5B417 100%);
-  box-shadow: 0 12rpx 32rpx rgba(196, 158, 54, 0.22);
-  overflow: hidden;
-}
+
 /* 装饰圆：与首页主卡同一套语言（低透明度白圆）；替代此前生硬的白色大光斑 */
-.p-coin {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.20);
-}
+
 .p-coin.c1 { width: 170rpx; height: 170rpx; right: -40rpx; top: -60rpx; }
 .p-coin.c2 { width: 84rpx; height: 84rpx; right: 110rpx; bottom: -28rpx; opacity: 0.55; }
 .p-user {
@@ -33,51 +18,30 @@
 .avatar-box {
   position: relative;
   flex-shrink: 0;
+  width: 112rpx;
+  height: 112rpx;
 }
-.p-avatar {
+.avatar-frame {
   width: 112rpx;
   height: 112rpx;
   border-radius: 50%;
-  background: #FFF3D0;
+  overflow: hidden;
+  background: var(--gold-soft);
   border: 6rpx solid rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8rpx 20rpx rgba(160, 120, 30, 0.18);
+  box-shadow: 0 8rpx 20rpx rgba(86, 54, 14, 0.18);
+  box-sizing: border-box;
 }
-.avatar-cam {
-  position: absolute;
-  right: -4rpx;
-  bottom: -4rpx;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 50%;
-  background: #FFFFFF;
-  border: 2rpx solid #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20rpx;
-  padding: 0;
-  line-height: 1;
-  box-shadow: 0 4rpx 12rpx rgba(196, 158, 54, 0.26);
-}
+
 .p-info {
   flex: 1;
   min-width: 0;
 }
-.p-name-input {
-  font-size: 34rpx;
-  font-weight: 800;
-  color: #2E2A22;
-  width: 100%;
-  height: 50rpx;
-  line-height: 50rpx;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.p-name-ph { color: rgba(74, 50, 0, 0.42); font-weight: 500; }
-/* 状态行：点按 = 失败重试 / 手动同步 */
+
+/* 状态行与列表中的设置入口保持相同行为 */
 .p-meta {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 8rpx;
   align-items: center;
   margin-top: 10rpx;
   min-width: 0;
@@ -89,17 +53,12 @@
   border-radius: 50%;
   margin-right: 10rpx;
   flex-shrink: 0;
-  background: #B9B2A3;
+  background: var(--ink-3);
 }
-.p-dot.ok { background: #3FA34D; }
+.p-dot.ok { background: var(--income); }
 .p-dot.busy { background: #E9A825; }
 .p-dot.bad { background: #D9534F; }
-.p-meta-text {
-  font-size: 23rpx;
-  color: #574E3E;
-  font-weight: 600;
-  flex-shrink: 0;
-}
+
 .p-meta-sync {
   font-size: 21rpx;
   color: #7A6F58;
@@ -113,55 +72,14 @@
   padding-left: 16rpx;
   white-space: nowrap;
 }
-.p-icon {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26rpx;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
+
 .p-icon:active { opacity: 0.6; }
 
 /* ============ 会员卡 ============ */
-.vip-card {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin: 20rpx 24rpx 0;
-  padding: 24rpx 26rpx;
-  border-radius: 26rpx;
-  background: linear-gradient(135deg, #3B3529 0%, #2A251C 100%);
-  box-shadow: 0 10rpx 26rpx rgba(46, 42, 34, 0.20);
-}
+
 .vip-l { flex: 1; min-width: 0; }
 .vip-title-line { display: flex; align-items: center; gap: 10rpx; }
 .vip-crown { font-size: 26rpx; }
-.vip-title {
-  font-size: 27rpx;
-  font-weight: 700;
-  color: #FFE3A0;
-}
-.vip-sub {
-  display: block;
-  font-size: 21rpx;
-  color: rgba(255, 227, 160, 0.62);
-  margin-top: 8rpx;
-}
-.vip-btn {
-  padding: 12rpx 28rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(135deg, #FFE58A, #F5B417);
-  color: #4A3200;
-  font-size: 23rpx;
-  font-weight: 700;
-  flex-shrink: 0;
-}
 
 /* ============ 资产卡 ============ */
 .asset-card {
@@ -174,16 +92,12 @@
   align-items: center;
   justify-content: space-between;
 }
-.asset-title {
-  font-size: 26rpx;
-  color: #6B6455;
-}
-.asset-link { font-size: 22rpx; color: #C0A160; }
+
 .asset-total {
   display: block;
   font-size: 58rpx;
   font-weight: 800;
-  color: #2E2A22;
+  color: var(--ink);
   margin-top: 8rpx;
   letter-spacing: -1rpx;
   padding-right: 150rpx;   /* 右侧留给吉祥物 */
@@ -200,18 +114,14 @@
   padding-right: 150rpx;   /* 右侧留给吉祥物 */
 }
 .asset-col { display: flex; flex-direction: column; }
-.asset-label { font-size: 21rpx; color: #A79E8B; }
+
 .asset-val {
   font-size: 27rpx;
   font-weight: 600;
-  color: #2E2A22;
+  color: var(--ink);
   margin-top: 4rpx;
 }
-.asset-divider {
-  width: 1rpx;
-  height: 36rpx;
-  background: #F0E9D8;
-}
+
 .asset-mascot {
   position: absolute;
   right: -6rpx;
@@ -223,46 +133,196 @@
 
 /* ============ 菜单 ============ */
 .menu { padding: 6rpx 28rpx; }
+.menu-group-title { margin: 28rpx 36rpx 10rpx; color: var(--ink-3); font-size: 24rpx; font-weight: 600; }
+.menu-group .menu { margin-top: 0; }
+.p-meta-arrow { margin-left: 10rpx; color: var(--accent-ink); font-size: 28rpx; }
+.support-links { display: flex; align-items: center; justify-content: center; gap: 16rpx; margin-top: 24rpx; color: var(--ink-3); font-size: 24rpx; }
+.support-link { padding: 20rpx 12rpx; min-height: 88rpx; box-sizing: border-box; display: flex; align-items: center; }
+.support-divider { color: var(--ink-3); }
+
+.menu-row:last-child { border-bottom: none; }
+.menu-icon { font-size: 30rpx; width: 40rpx; text-align: center; }
+
+/* ============ 帮助列表 ============ */
+.help-list { margin-top: 24rpx; }
+
+/* ============ 我的主题 ============ */
+.p-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 36rpx 32rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--hero-light) 0%, var(--gold) 62%, var(--gold-deep) 100%);
+  box-shadow: 0 16rpx 30rpx rgba(232, 167, 45, 0.22);
+}
+.p-coin {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+.p-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+  border: 0;
+  box-shadow: none;
+  transform: scale(1.01);
+  background: var(--gold-soft);
+  border-color: rgba(255, 255, 255, 0.88);
+}
+/* 覆盖 style v2 的 button[size=mini] 默认内边距与行高。 */
+button.avatar-cam[size='mini'] {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  width: 44rpx;
+  height: 44rpx;
+  min-width: 44rpx;
+  margin: 0;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2rpx solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  padding: 0;
+  overflow: hidden;
+  line-height: 1;
+  box-sizing: border-box;
+  box-shadow: 0 6rpx 14rpx rgba(86, 54, 14, 0.16);
+}
+.p-name-input {
+  font-size: 34rpx;
+  font-weight: 800;
+  width: 100%;
+  height: 64rpx;
+  line-height: normal;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.p-name-ph {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.p-meta-text {
+  font-size: 23rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.p-meta-sync,
+.p-meta-id { color: var(--ink); }
+.p-icon {
+  width: 80rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--accent-ink);
+}
+.settings-icon { width: 40rpx; height: 40rpx; }
+.vip-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 20rpx 24rpx 0;
+  padding: 24rpx 26rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 100%);
+  box-shadow: 0 12rpx 26rpx rgba(86, 54, 14, 0.18);
+}
+.vip-title {
+  font-size: 27rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.vip-sub {
+  display: block;
+  font-size: 21rpx;
+  margin-top: 8rpx;
+  color: var(--ink-2);
+}
+.vip-btn {
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--ink);
+  color: var(--gold-soft);
+}
+.asset-title {
+  font-size: 26rpx;
+  color: var(--ink-2);
+}
+.asset-link {
+  font-size: 22rpx;
+  color: var(--gold-deep);
+}
+.asset-total,
+.asset-val { color: var(--ink); }
+.asset-label {
+  font-size: 21rpx;
+  color: var(--ink-3);
+}
+.asset-divider {
+  width: 1rpx;
+  height: 36rpx;
+  background: var(--line);
+}
 .menu-row {
   display: flex;
   align-items: center;
   gap: 18rpx;
   padding: 26rpx 0;
-  border-bottom: 1rpx solid #F4EEDF;
+  border-bottom: 1rpx solid var(--line);
+  border-bottom-color: var(--line);
 }
-.menu-row:last-child { border-bottom: none; }
-.menu-icon { font-size: 30rpx; width: 40rpx; text-align: center; }
 .menu-text {
   flex: 1;
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
 }
 .menu-extra {
   font-size: 22rpx;
-  color: #B9B2A3;
+  color: var(--ink-3);
 }
-.menu-arrow { font-size: 28rpx; color: #D5CCB8; }
-
+.menu-arrow {
+  font-size: 28rpx;
+  color: #CDBD9A;
+}
 .p-footer {
   text-align: center;
   font-size: 21rpx;
-  color: #C7BEAA;
   padding: 30rpx 0 10rpx;
+  color: #B4A58B;
 }
-
-/* ============ 帮助列表 ============ */
-.help-list { margin-top: 24rpx; }
 .help-item {
   font-size: 24rpx;
-  color: #6B6455;
   line-height: 1.8;
+  color: var(--ink-2);
 }
 .help-api {
   margin: 18rpx 0 4rpx;
   padding: 18rpx 20rpx;
-  background: #FAF7EC;
   border-radius: 14rpx;
   font-size: 22rpx;
-  color: #A8811C;
   word-break: break-all;
+  background: var(--surface-soft);
+  color: var(--accent-ink);
 }

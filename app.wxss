@@ -1,35 +1,25 @@
-/* ===========================================================
-   设计令牌（奶油黄 · 存钱罐）
-   =========================================================== */
-page {
-  --bg: #FAF5E8;
-  --bg-deep: #F5EEDC;
-  --card: #FFFFFF;
-  --ink: #2E2A22;
-  --ink-2: #6B6455;
-  --ink-3: #A79E8B;
-  --line: #F0E9D8;
-  --gold: #FFD64F;
-  --gold-deep: #F5B417;
-  --gold-soft: #FFF3D0;
-  --gold-track: #F3E7C6;
-  --income: #E2543F;
-  --expense: #2E2A22;
-  --danger: #E2543F;
+@import './motion.wxss';
 
-  background: var(--bg);
-  color: var(--ink);
-  font-size: 28rpx;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+/* ===========================================================
+   设计令牌（统一暖黄 · 纸白 · 深棕）
+   =========================================================== */
 
 view, text, scroll-view, input, textarea { box-sizing: border-box; }
+
+/* 微信 input 默认高度不会随 padding 撑开，单行控件统一显式高度。 */
+input {
+  height: 88rpx;
+  min-width: 0;
+  line-height: normal;
+  padding: 0;
+  color: var(--ink);
+}
+textarea { line-height: 1.6; }
 
 /* ===========================================================
    文本
    =========================================================== */
-.text-income { color: var(--income); }
+
 .text-expense { color: var(--expense); }
 .muted { color: var(--ink-3); }
 .num { font-variant-numeric: tabular-nums; letter-spacing: -0.5rpx; }
@@ -51,10 +41,10 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
    =========================================================== */
 .card {
   background: var(--card);
-  border-radius: 28rpx;
+  border-radius: 24rpx;
   margin: 20rpx 24rpx;
   padding: 28rpx;
-  box-shadow: 0 6rpx 24rpx rgba(196, 158, 54, 0.07);
+  box-shadow: var(--shadow);
 }
 .card-flat { box-shadow: none; border: 1rpx solid var(--line); }
 .card-tight { padding: 22rpx 24rpx; }
@@ -90,26 +80,26 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
    按钮
    =========================================================== */
 .btn-primary {
-  background: linear-gradient(135deg, #FFDE6B 0%, #FFC93C 100%);
-  color: #4A3200;
-  border-radius: 999rpx;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: #3B2A18;
+  border-radius: 16rpx;
   text-align: center;
   font-weight: 700;
-  box-shadow: 0 6rpx 18rpx rgba(245, 180, 23, 0.28);
+  box-shadow: 0 8rpx 18rpx rgba(217, 150, 55, 0.24);
 }
 .btn-primary:active { transform: scale(0.985); opacity: 0.92; }
 
 .btn-ghost {
   background: var(--gold-soft);
-  color: #8A6410;
-  border-radius: 999rpx;
+  color: #9B681E;
+  border-radius: 14rpx;
   text-align: center;
   font-weight: 600;
 }
 .btn-ghost:active { opacity: 0.85; }
 
 .btn-danger {
-  background: #FDEEEB;
+  background: #FBECE9;
   color: var(--danger);
   border-radius: 999rpx;
   text-align: center;
@@ -120,7 +110,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   background: #FFFFFF;
   border: 1rpx solid var(--line);
   color: var(--ink-2);
-  border-radius: 999rpx;
+  border-radius: 14rpx;
   text-align: center;
   font-weight: 500;
 }
@@ -143,7 +133,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
 .chip-active {
   background: var(--gold);
   border-color: var(--gold);
-  color: #4A3200;
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -172,7 +162,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
 .progress-bar {
   height: 100%;
   border-radius: 999rpx;
-  background: linear-gradient(90deg, #FFDE6B, #F5B417);
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep));
 }
 .progress-bar-plain { background: linear-gradient(90deg, #E7DFCB, #C9BE9F); }
 
@@ -221,7 +211,7 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
 .modal-mask {
   position: fixed;
   left: 0; right: 0; top: 0; bottom: 0;
-  background: rgba(46, 42, 34, 0.42);
+  background: rgba(59, 42, 24, 0.46);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -232,6 +222,8 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   background: #FFFFFF;
   border-radius: 32rpx;
   padding: 40rpx 36rpx;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 .modal-title {
   font-size: 32rpx;
@@ -247,59 +239,115 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   line-height: 1.5;
 }
 .modal-input {
+  width: 100%;
+  height: 96rpx;
   margin-top: 32rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
-  padding: 22rpx 24rpx;
+  padding: 0 24rpx;
+  border: 2rpx solid var(--line);
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
 }
+.modal-input:focus { border-color: var(--gold-deep); }
 .modal-textarea {
   margin-top: 32rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
   font-size: 24rpx;
-  color: #2E2A22;
+  color: var(--ink);
   width: 100%;
   height: 160rpx;
   line-height: 1.5;
 }
+
+/* ============ 公共交互样式 ============ */
+page {
+  --bg: #FFF9EE;
+  --bg-deep: #FFF3D7;
+  --card: #FFFFFF;
+  --ink: #3B2A18;
+  --ink-2: #7A6A53;
+  --ink-3: #9A896D;
+  --line: #EFE3C7;
+  --gold: #F6C95B;
+  --gold-deep: #E8A72D;
+  --gold-soft: #FFF0C2;
+  --gold-track: #F3E4B8;
+  --income: #946515;
+  --expense: #3B2A18;
+  --danger: #D65A45;
+  --success: #946515;
+  --accent-ink: #8C641E;
+  --surface-soft: #FFF6E4;
+  --hero-light: #FFE9A8;
+  --chart-strong: #B78024;
+  --shadow: 0 12rpx 28rpx rgba(86, 54, 14, 0.09);
+  color: var(--ink);
+  font-size: 28rpx;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+}
+
+button::after { border: 0; }
+
+.card,
+.modal,
+.sheet {
+  border: 1rpx solid rgba(239, 227, 199, 0.88);
+}
+
+.row:active,
+.menu-row:active,
+.bill-row:active,
+.more-item:active,
+.icon-btn:active,
+.card-head-more:active {
+  background: var(--surface-soft);
+  opacity: 0.9;
+}
+
+.section-title,
+.card-head-more {
+  letter-spacing: 0.3rpx;
+}
+
 .modal-actions {
   margin-top: 36rpx;
   display: flex;
   gap: 20rpx;
 }
 .modal-actions .btn-primary,
-.modal-actions .btn-ghost {
+.modal-actions .btn-ghost,
+.modal-actions .btn-plain {
   flex: 1;
+  min-width: 0;
+  min-height: 88rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 22rpx 0;
   font-size: 28rpx;
 }
 
 /* 底部弹出层 */
-.sheet-mask {
-  position: fixed;
-  left: 0; right: 0; top: 0; bottom: 0;
-  background: rgba(46, 42, 34, 0.42);
-  z-index: 120;
-}
+
 .sheet {
+  box-shadow: 0 -12rpx 34rpx rgba(86, 54, 14, 0.14);
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: #FFFFFF;
   border-radius: 36rpx 36rpx 0 0;
   padding: 20rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));
   z-index: 121;
   max-height: 76vh;
 }
-.sheet-handle {
-  width: 72rpx;
-  height: 8rpx;
-  border-radius: 999rpx;
-  background: #EDE5D2;
-  margin: 6rpx auto 22rpx;
-}
+
 .sheet-title {
   font-size: 32rpx;
   font-weight: 700;
@@ -321,4 +369,29 @@ view, text, scroll-view, input, textarea { box-sizing: border-box; }
   text-align: center;
   color: var(--ink-3);
   border-top: 12rpx solid var(--bg);
+}
+
+/* 弹层遮罩与投影 */
+.sheet,
+.modal { box-shadow: 0 -12rpx 34rpx rgba(86, 54, 14, 0.16); }
+.sheet-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  margin: 6rpx auto 22rpx;
+  background: #E7D7AE;
+}
+.sheet-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 120;
+  background: rgba(59, 42, 24, 0.46);
+}
+
+/* 收入金额即使与页面金额类并用，也保持统一的深金色。 */
+.text-income {
+  color: var(--income) !important;
 }

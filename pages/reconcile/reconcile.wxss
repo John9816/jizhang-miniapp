@@ -5,7 +5,7 @@
 .mode-tabs {
   display: flex;
   gap: 12rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 999rpx;
   padding: 8rpx;
   margin-bottom: 24rpx;
@@ -44,7 +44,7 @@
 .raw {
   width: 100%;
   height: 320rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
   font-size: 24rpx;
@@ -59,7 +59,7 @@
 .sum-value { font-size: 34rpx; font-weight: 700; color: var(--ink); }
 .sum-divider { width: 1rpx; height: 52rpx; background: var(--line); }
 
-.rec-ok { color: #1E7A38; }
+.rec-ok { color: var(--income); }
 .rec-miss { color: #B4761A; }
 .rec-extra { color: var(--ink-3); }
 
@@ -68,7 +68,7 @@
 .import-note {
   margin-top: 16rpx;
   font-size: 24rpx;
-  color: #1E7A38;
+  color: var(--income);
   text-align: center;
 }
 
@@ -117,7 +117,7 @@
   flex-shrink: 0;
   font-weight: 600;
 }
-.rec-tag-ok { background: #EAF6EC; color: #1E7A38; }
+.rec-tag-ok { background: var(--gold-soft); color: var(--income); }
 .rec-tag-miss { background: #FBF0DC; color: #B4761A; }
 .rec-tag-extra { background: #F0EDE3; color: var(--ink-3); }
 

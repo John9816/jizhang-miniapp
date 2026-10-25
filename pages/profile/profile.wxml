@@ -1,14 +1,16 @@
-<view class="page profile-page">
-  <view style="height:{{statusBar}}px"></view>
+<view class="page profile-page motion-page {{pageMotion}}">
+  <view style="height:{{contentTop}}px"></view>
 
   <!-- 顶部资料卡：一张暖金渐变卡片收拢头像/昵称/同步状态，去掉此前的多条堆叠 -->
-  <view class="p-head">
+  <view class="p-head motion-section">
     <view class="p-coin c1"></view>
     <view class="p-coin c2"></view>
     <view class="p-user">
       <view class="avatar-box">
-        <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFit" binderror="onAvatarError" />
-        <button class="avatar-cam" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">📷</button>
+        <view class="avatar-frame">
+          <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
+        </view>
+        <button class="avatar-cam" size="mini" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">📷</button>
       </view>
       <view class="p-info">
         <input
@@ -16,24 +18,28 @@
           type="nickname"
           placeholder="点击设置微信昵称"
           placeholder-class="p-name-ph"
-          value="{{me.name}}"
+          value="{{nicknameDraft}}"
           maxlength="12"
           bindnickname="onNicknamePick"
+          bindfocus="onNicknameFocus"
+          bindinput="onNicknameInput"
           bindblur="onNicknameBlur"
           bindlongpress="onNicknameLongPress"
         />
-        <view class="p-meta" bindtap="onStatusTap">
+        <view class="p-meta" bindtap="onStatusTap" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
           <text class="p-dot {{account.tone}}"></text>
           <text class="p-meta-text">{{metaTip}}</text>
           <text class="p-meta-sync" wx:if="{{account.logged && syncText}}">· {{syncText}}</text>
-          <text class="p-meta-id">ID {{uid}}</text>
+          <text class="p-meta-arrow">›</text>
         </view>
       </view>
     </view>
-    <view class="p-icon" bindtap="goLedger">⚙️</view>
+    <view class="p-icon" bindtap="goSettings" aria-label="设置" role="button" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
+      <image class="settings-icon" src="/images/ui/settings.png" mode="aspectFit" />
+    </view>
   </view>
 
-  <view class="vip-card {{vip ? 'vip-card-on' : ''}}" bindtap="goVip" wx:if="{{vipOn}}">
+  <view class="vip-card {{vip ? 'vip-card-on' : ''}}" bindtap="goVip" wx:if="{{vipOn}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
     <view class="vip-l">
       <view class="vip-title-line">
         <text class="vip-crown">👑</text>
@@ -45,10 +51,10 @@
   </view>
 
   <!-- 我的资产 -->
-  <view class="card asset-card" bindtap="goAssets">
+  <view class="card asset-card motion-section" bindtap="goAssets" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
     <view class="asset-head">
       <text class="asset-title">我的资产（元）</text>
-      <text class="asset-link">明细 ›</text>
+      <text class="asset-link">资产管理 ›</text>
     </view>
     <text class="asset-total num">{{netWorthText}}</text>
 
@@ -67,76 +73,41 @@
     <image class="asset-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
   </view>
 
-  <!-- 功能列表 -->
-  <view class="card menu">
-    <view class="menu-row" bindtap="goChallenge">
-      <text class="menu-icon">🏆</text>
-      <text class="menu-text">存钱挑战</text>
-      <text class="menu-extra">{{challengeCount > 0 ? '进行中 ' + challengeCount : '未开始'}}</text>
-      <text class="menu-arrow">›</text>
+  <!-- 管理功能按任务分组；箭头行统一打开页面 -->
+  <view class="menu-group motion-section" wx:for="{{menuGroups}}" wx:for-item="group" wx:key="title">
+    <view class="menu-group-title">{{group.title}}</view>
+    <view class="card menu">
+      <view class="menu-row" wx:for="{{group.items}}" wx:key="action" data-action="{{item.action}}" bindtap="onMenuTap" role="button" aria-label="打开{{item.text}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
+        <text class="menu-icon">{{item.icon}}</text>
+        <text class="menu-text">{{item.text}}</text>
+        <text class="menu-extra" wx:if="{{item.extra}}">{{item.extra}}</text>
+        <text class="menu-arrow">›</text>
+      </view>
     </view>
-    <view class="menu-row" bindtap="goBudget">
-      <text class="menu-icon">🎯</text>
-      <text class="menu-text">预算管理</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="goLedger">
-      <text class="menu-icon">📒</text>
-      <text class="menu-text">账本管理</text>
-      <text class="menu-extra">{{memberCount}} 人</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="goCategories">
-      <text class="menu-icon">🏷️</text>
-      <text class="menu-text">分类管理</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="goImport">
-      <text class="menu-icon">📥</text>
-      <text class="menu-text">账单导入</text>
-      <text class="menu-extra">微信 / 支付宝</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="goReconcile">
-      <text class="menu-icon">🧮</text>
-      <text class="menu-text">对账与导出</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="syncNow">
-      <text class="menu-icon">☁️</text>
-      <text class="menu-text">云同步</text>
-      <text class="menu-extra">{{cloudOn ? syncText : '未开启'}}</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="openHelp">
-      <text class="menu-icon">💬</text>
-      <text class="menu-text">帮助与反馈</text>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-row" bindtap="openAbout">
-      <text class="menu-icon">ℹ️</text>
-      <text class="menu-text">关于我们</text>
-      <text class="menu-arrow">›</text>
-    </view>
+  </view>
+  <view class="support-links">
+    <view class="support-link" bindtap="openHelp" role="button" hover-class="press-soft">帮助与反馈</view>
+    <text class="support-divider">·</text>
+    <view class="support-link" bindtap="openAbout" role="button" hover-class="press-soft">关于我们</view>
   </view>
 
   <view class="p-footer">记账本 · 存钱罐主题 v1.1.3</view>
 
   <!-- 改昵称（昵称授权失败时的手动兜底） -->
-  <view class="modal-mask" wx:if="{{showRename}}">
+  <view class="modal-mask {{showRenameLeaving ? 'motion-leaving' : ''}}" wx:if="{{showRename || showRenameLeaving}}">
     <view class="modal">
       <view class="modal-title">修改昵称</view>
       <view class="modal-sub">共享账本时好友会看到这个名字</view>
       <input class="modal-input" value="{{renameInput}}" placeholder="输入昵称" maxlength="12" bindinput="onRenameInput" />
       <view class="modal-actions">
-        <view class="btn-plain" bindtap="closeRename">取消</view>
-        <view class="btn-primary" bindtap="confirmRename">保存</view>
+        <view class="btn-plain" bindtap="closeRename" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="confirmRename" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存</view>
       </view>
     </view>
   </view>
 
   <!-- 帮助 -->
-  <view class="modal-mask" wx:if="{{showHelp}}">
+  <view class="modal-mask {{showHelpLeaving ? 'motion-leaving' : ''}}" wx:if="{{showHelp || showHelpLeaving}}">
     <view class="modal">
       <view class="modal-title">帮助与反馈</view>
       <view class="help-list">
@@ -145,17 +116,17 @@
         <view class="help-item">3. 存钱挑战只记录进度，不计入收支统计。</view>
         <view class="help-item">4. 微信 / 支付宝账单可在「我的 → 账单导入」粘贴或从聊天文件导入，对账页逐笔核对、可导出对账 CSV。</view>
         <view class="help-item">5. 头像、昵称都在本页设置：点 📷 从微信头像里选，昵称聚焦后点键盘顶部的微信昵称一键填入。</view>
-        <view class="help-item">6. 同步异常时可核对服务器地址：</view>
+        <view class="help-item">6. 账本、分类、常用模板和周期记账在「记账管理」集中管理，成员管理在账本页。</view>
+        <view class="help-item">7. 同步异常时进入「同步与设置」查看状态并重试；误删账单也可在设置中的回收站恢复。</view>
       </view>
-      <view class="help-api" bindtap="copyApi">https://jizhang-api.751152.xyz</view>
       <view class="modal-actions">
-        <view class="btn-primary" bindtap="closeHelp">关闭</view>
+        <view class="btn-primary" bindtap="closeHelp" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">关闭</view>
       </view>
     </view>
   </view>
 
   <!-- 关于 -->
-  <view class="modal-mask" wx:if="{{showAbout}}">
+  <view class="modal-mask {{showAboutLeaving ? 'motion-leaving' : ''}}" wx:if="{{showAbout || showAboutLeaving}}">
     <view class="modal">
       <view class="modal-title">关于我们</view>
       <view class="help-list">
@@ -165,7 +136,7 @@
         <view class="help-item">无广告、无支付、无金融业务。</view>
       </view>
       <view class="modal-actions">
-        <view class="btn-primary" bindtap="closeAbout">关闭</view>
+        <view class="btn-primary" bindtap="closeAbout" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">关闭</view>
       </view>
     </view>
   </view>

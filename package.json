@@ -4,7 +4,9 @@
   "private": true,
   "description": "日常收支记账微信小程序（本地模式 + 自部署云端同步）",
   "scripts": {
-    "test": "node tests/util.test.js && node tests/cloud.test.js && node tests/server.test.js",
+    "test": "node tests/util.test.js && node tests/cloud.test.js && node tests/sync-lifecycle.test.js && node tests/reliability.test.js && node tests/export-file.test.js && node tests/billParser.test.js && node tests/import-dedup.test.js && node tests/server.test.js",
+    "test:ui": "node tests/ui-behavior.test.js && node tests/ui-regressions.test.js && node tests/search-experience.test.js && node tests/edit-experience.test.js && node tests/motion.test.js && node tests/product-flows.test.js && node tests/chart-rendering.test.js && node tests/finance-upgrades.test.js && node tests/recycle.test.js && node tests/templates.test.js && node tests/interaction-habits.test.js",
+    "test:compile": "node tests/compile-ui.js",
     "start": "node server/server.js"
   },
   "engines": {

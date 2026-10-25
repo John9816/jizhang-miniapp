@@ -48,7 +48,10 @@ Page({
     categoryIndex: 0,
     accountOptions: [],
     accountIndex: 0,
-    importResult: null
+    importResult: null,
+    duplicateCount: 0,
+    importCount: 0,
+    limitNote: ''
   },
 
   onLoad() {
@@ -66,6 +69,7 @@ Page({
   },
 
   refresh() {
+    if (this._importing) return
     var ledger = db.currentLedger()
     var categoryOptions = [{ key: 'auto', name: '自动识别（按交易信息推荐）' }]
     u.categoriesFor('expense').forEach(function (c) { categoryOptions.push({ key: c.key, name: '支出｜' + c.icon + c.name }) })
@@ -80,6 +84,7 @@ Page({
       categoryOptions: categoryOptions,
       accountOptions: accountOptions
     })
+    this.updatePreview()
   },
 
   /* ---------------- 输入 ---------------- */
@@ -123,7 +128,6 @@ Page({
   },
 
   applyResult(result, fromName) {
-    var self = this
     if (!result.src) {
       this.setData({
         result: result,
@@ -139,18 +143,34 @@ Page({
     this.setData({
       result: result,
       sourceLabel: bill.SOURCE_LABELS[result.src] || result.src,
-      viewRows: decorateRows(result),
-      summary: {
-        count: result.rows.length,
-        incomeText: u.formatCents(result.stats.incomeCents),
-        expenseText: u.formatCents(result.stats.expenseCents),
-        range: (result.stats.firstDate || '-') + ' ~ ' + (result.stats.lastDate || '-')
-      },
-      skipNote: skipText(result.stats.skipped),
       extraNote: fromName ? '来源：' + fromName : '',
       importResult: null
     })
-    wx.showToast({ title: '识别到 ' + result.rows.length + ' 笔', icon: 'success' })
+    this.updatePreview()
+    wx.showToast({ title: '待导入 ' + this.data.summary.count + ' 笔', icon: 'none' })
+  },
+
+  updatePreview() {
+    var result = this.data.result
+    if (!result || !result.src) return
+    var preview = db.previewImportRows(this.data.ledger && this.data.ledger.id, result.rows)
+    var rows = preview.rows
+    var income = 0, expense = 0, first = '', last = ''
+    rows.forEach(function (r) {
+      if (r.type === 'income') income += Math.round(Number(r.amount))
+      else expense += Math.round(Number(r.amount))
+      if (!first || r.date < first) first = r.date
+      if (r.date > last) last = r.date
+    })
+    var limited = vip.featureEnabled() && !db.isVip() && rows.length > 50
+    this.setData({
+      viewRows: decorateRows({ rows: rows }),
+      summary: { count: rows.length, incomeText: u.formatCents(income), expenseText: u.formatCents(expense), range: first ? first + ' ~ ' + last : '无新增账单' },
+      duplicateCount: preview.dupes + (result.stats.skipped.dup || 0),
+      skipNote: skipText(result.stats.skipped),
+      importCount: limited ? 50 : rows.length,
+      limitNote: limited ? '免费版单次导入 50 笔，其余新增账单保留，可继续导入。' : ''
+    })
   },
 
   reInput() {
@@ -170,26 +190,30 @@ Page({
   doImport() {
     var result = this.data.result
     var ledger = this.data.ledger
-    if (!result || !result.rows.length || !ledger) return
-    var rows = result.rows
-    // 免费版单次导入上限 50 笔；会员不限（会员功能关闭时也放行，避免无意义的截断）
-    if (vip.featureEnabled() && !db.isVip() && rows.length > 50) {
-      rows = rows.slice(0, 50)
-      wx.showToast({ title: '免费版单次上限 50 笔，已截断', icon: 'none' })
+    if (this._importing || !result || !result.rows.length || !ledger) return
+    this.updatePreview()
+    if (!this.data.importCount) return
+    this._importing = true
+    try {
+      var catOpt = this.data.categoryOptions[this.data.categoryIndex]
+      var accOpt = this.data.accountOptions[this.data.accountIndex]
+      var opts = { accountId: accOpt ? accOpt.id : '' }
+      if (catOpt && catOpt.key !== 'auto') opts.category = catOpt.key
+      if (vip.featureEnabled() && !db.isVip()) opts.limit = 50
+      var res = db.importRows(ledger.id, result.rows, opts)
+      this.setData({
+        importResult: {
+          added: res.added.length,
+          dupes: res.dupes + (result.stats.skipped.dup || 0),
+          skipped: res.skipped - res.dupes,
+          remaining: res.remaining || 0
+        }
+      })
+      wx.showToast({ title: res.added.length ? '已导入 ' + res.added.length + ' 笔' : '没有新增账单', icon: res.added.length ? 'success' : 'none' })
+    } finally {
+      this._importing = false
+      this.updatePreview()
     }
-    var catOpt = this.data.categoryOptions[this.data.categoryIndex]
-    var accOpt = this.data.accountOptions[this.data.accountIndex]
-    var opts = { accountId: accOpt ? accOpt.id : '' }
-    if (catOpt && catOpt.key !== 'auto') opts.category = catOpt.key
-    var res = db.importRows(ledger.id, rows, opts)
-    this.setData({
-      importResult: {
-        added: res.added.length,
-        dupes: res.dupes,
-        skipped: res.skipped - res.dupes
-      }
-    })
-    wx.showToast({ title: '已导入 ' + res.added.length + ' 笔', icon: 'success' })
   },
 
   goReconcile() {

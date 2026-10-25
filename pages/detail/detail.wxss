@@ -1,0 +1,26 @@
+.detail-page { padding-bottom: calc(48rpx + env(safe-area-inset-bottom)); }
+.detail-hero {
+  margin: 24rpx; padding: 40rpx 32rpx; border: 1rpx solid var(--line);
+  border-radius: 28rpx; background: linear-gradient(145deg, var(--gold-soft), #FFFDF7);
+  display: flex; flex-direction: column; align-items: center;
+}
+.detail-category { display: flex; align-items: center; gap: 14rpx; font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.detail-icon { width: 64rpx; height: 64rpx; border-radius: 20rpx; background: #FFFFFF; text-align: center; line-height: 64rpx; }
+.detail-kind { margin-top: 28rpx; font-size: 22rpx; color: var(--ink-2); }
+.detail-amount { display: flex; align-items: baseline; gap: 8rpx; font-size: 64rpx; font-weight: 750; color: var(--ink); max-width: 100%; word-break: break-all; }
+.detail-sign { font-size: 36rpx; }
+.detail-sync { margin-top: 18rpx; font-size: 22rpx; color: var(--accent-ink); }
+.detail-transfer { margin-top: 16rpx; font-size: 22rpx; color: var(--ink-3); text-align: center; }
+.detail-info { padding: 8rpx 28rpx; }
+.detail-row { display: flex; align-items: flex-start; gap: 24rpx; padding: 24rpx 0; border-bottom: 1rpx solid var(--line); font-size: 27rpx; line-height: 1.6; }
+.detail-row:last-child { border-bottom: 0; }
+.detail-label { flex-shrink: 0; width: 124rpx; color: var(--ink-3); }
+.detail-value { flex: 1; min-width: 0; text-align: right; color: var(--ink); word-break: break-all; white-space: pre-wrap; }
+.detail-note .detail-value { text-align: left; }
+.detail-meta { display: flex; flex-direction: column; gap: 8rpx; margin: 28rpx 36rpx; color: var(--ink-3); font-size: 21rpx; }
+.detail-actions { display: flex; gap: 20rpx; margin: 36rpx 24rpx 12rpx; }
+.detail-actions button { flex: 1; margin: 0; min-width: 0; padding: 0 12rpx; font-size: 28rpx; line-height: 96rpx; }
+.detail-actions button::after { border: 0; }
+.detail-actions .detail-more { flex: 0 0 30%; }
+.detail-empty { display: flex; flex-direction: column; gap: 18rpx; padding: 56rpx 32rpx; text-align: center; color: var(--ink-3); font-size: 27rpx; line-height: 1.7; }
+.detail-empty-title { color: var(--ink); font-size: 34rpx; font-weight: 600; }

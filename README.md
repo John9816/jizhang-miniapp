@@ -22,7 +22,8 @@
 
 **4. 搜索与导出**
 - 组合搜索：关键词（备注/分类/记录人）、类型、成员、分类、日期区间、金额区间
-- 结果按日分组 + 汇总；账本页**导出 CSV**（带 BOM，Excel 直接打开不乱码）
+- 快捷选择本月、近三个月、今年；日期与金额区间校验，编辑返回后保留条件并刷新结果
+- 结果按日分组 + 汇总；账本和对账页支持**导出 CSV 文件**或复制内容（带 BOM，保留自定义分类与多行备注）
 
 **5. 资产账户**
 - 现金 / 储蓄卡 / 信用卡 / 支付宝 / 微信钱包等账户，记录时可关联
@@ -144,6 +145,9 @@ node tests/local-second-device.js --dump                       # 只看服务端
 ## 运行测试
 
 ```bash
+npm test                      # 核心功能、同步生命周期、账务可靠性、文件导出、后端
+npm run test:ui               # 页面行为、搜索筛选、编辑保护与样式结构回归
+npm run test:compile          # 使用微信开发者工具自带 wcc/wcsc 验证全部模板与样式
 node tests/util.test.js         # 数据层 / 纯函数（12 用例）
 node tests/stats.test.js        # 统计/预算/账户/周期/CSV 纯函数（11 用例）
 node tests/cloud.test.js        # 云端适配层（9 用例）
@@ -152,7 +156,9 @@ node tests/server.test.js       # 后端端到端（13 用例，含老库自动�
 node tests/local-e2e.js         # 本机双设备全链路（14 用例，需先起本机后端）
 ```
 
-合计 **70 个用例**。调试技巧：`JZ_DEBUG=1 node tests/local-e2e.js` 会打印每次同步请求的 `since` 与返回记录。
+默认测试不读写真实账务数据。`local-e2e.js` 需要单独启动隔离的本机后端；调试时可用 `JZ_DEBUG=1` 查看同步请求。
+
+`test:compile` 默认使用 macOS 已安装的微信开发者工具；其他安装位置可用 `WECHAT_COMPILER_DIR` 指向包含 `wcc` 和 `wcsc` 的目录。界面动效遵循系统“减少动态效果”，主要弹层保留退出阶段遮罩，避免点击穿透。
 
 ## 数据与后续升级
 

@@ -3,7 +3,11 @@
     "pages/index/index",
     "pages/stats/stats",
     "pages/profile/profile",
+    "pages/settings/settings",
+    "pages/recycle/recycle",
+    "pages/templates/templates",
     "pages/edit/edit",
+    "pages/detail/detail",
     "pages/ledger/ledger",
     "pages/members/members",
     "pages/budget/budget",
@@ -17,16 +21,16 @@
     "pages/vip/vip"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#FAF5E8",
+    "navigationBarBackgroundColor": "#FFF9EE",
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "记账本",
-    "backgroundColor": "#FAF5E8",
+    "backgroundColor": "#FFF9EE",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#B9B2A3",
-    "selectedColor": "#2E2A22",
+    "color": "#9A896D",
+    "selectedColor": "#3B2A18",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [

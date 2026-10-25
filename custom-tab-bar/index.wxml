@@ -1,23 +1,31 @@
-<view class="tabbar">
-  <view class="tab" bindtap="onTab" data-path="/pages/index/index">
-    <image class="tab-icon" src="/images/{{selected === 0 ? 'tab-home-on' : 'tab-home'}}.png" mode="aspectFit" />
-    <text class="tab-text {{selected === 0 ? 'tab-text-on' : ''}}">首页</text>
-  </view>
+<view class="tabbar" wx:if="{{!hidden}}">
+  <view class="tabbar-surface"></view>
 
-  <view class="tab-add" bindtap="onAdd">
-    <view class="add-btn">
-      <image class="add-icon" src="/images/tab-plus.png" mode="aspectFit" />
+  <view class="tab tab-left" bindtap="onTab" data-path="/pages/index/index" role="button" aria-label="首页" aria-selected="{{selected === 0}}" hover-class="tab-pressed" hover-start-time="0" hover-stay-time="70">
+    <view class="tab-icon-wrap {{selected === 0 ? 'tab-icon-active' : ''}}">
+      <image class="tab-icon" src="/images/ui/home{{selected === 0 ? '-active' : ''}}.png" mode="aspectFit" />
     </view>
-    <text class="add-text">记一笔</text>
+    <view class="tab-text {{selected === 0 ? 'tab-text-on' : ''}}">首页</view>
   </view>
 
-  <view class="tab" bindtap="onTab" data-path="/pages/stats/stats">
-    <image class="tab-icon" src="/images/{{selected === 2 ? 'tab-stats-on' : 'tab-stats'}}.png" mode="aspectFit" />
-    <text class="tab-text {{selected === 2 ? 'tab-text-on' : ''}}">统计</text>
+  <view class="tab tab-stats" bindtap="onTab" data-path="/pages/stats/stats" role="button" aria-label="统计" aria-selected="{{selected === 2}}" hover-class="tab-pressed" hover-start-time="0" hover-stay-time="70">
+    <view class="tab-icon-wrap {{selected === 2 ? 'tab-icon-active' : ''}}">
+      <image class="tab-icon" src="/images/ui/stats{{selected === 2 ? '-active' : ''}}.png" mode="aspectFit" />
+    </view>
+    <view class="tab-text {{selected === 2 ? 'tab-text-on' : ''}}">统计</view>
   </view>
 
-  <view class="tab" bindtap="onTab" data-path="/pages/profile/profile">
-    <image class="tab-icon" src="/images/{{selected === 3 ? 'tab-me-on' : 'tab-me'}}.png" mode="aspectFit" />
-    <text class="tab-text {{selected === 3 ? 'tab-text-on' : ''}}">我的</text>
+  <view class="tab tab-profile" bindtap="onTab" data-path="/pages/profile/profile" role="button" aria-label="我的" aria-selected="{{selected === 3}}" hover-class="tab-pressed" hover-start-time="0" hover-stay-time="70">
+    <view class="tab-icon-wrap {{selected === 3 ? 'tab-icon-active' : ''}}">
+      <image class="tab-icon" src="/images/ui/profile{{selected === 3 ? '-active' : ''}}.png" mode="aspectFit" />
+    </view>
+    <view class="tab-text {{selected === 3 ? 'tab-text-on' : ''}}">我的</view>
+  </view>
+
+  <view class="tab-add" bindtap="onAdd" role="button" aria-label="记一笔" hover-class="tab-pressed" hover-start-time="0" hover-stay-time="70">
+    <view class="add-btn">
+      <image class="add-icon" src="/images/ui/plus.png" mode="aspectFit" />
+    </view>
+    <view class="add-text">记一笔</view>
   </view>
 </view>

@@ -95,14 +95,14 @@ test('guessCategory：居家缴费五件套（水电气物业话费）', functio
   assert.strictEqual(p.guessCategory('expense', '房东', '房租'), 'home')
 })
 
-test('rowKey：有单号用单号，无单号走日期+金额+对方', function () {
+test('rowKey：有单号用单号，无单号保留完整交易身份', function () {
   var a = { src: 'wechat', txn: '4200001', date: '2026-09-01', amount: 3500, party: '星巴克' }
   var b = { src: 'wechat', txn: '4200001', date: '2026-09-01', amount: 3500, party: '星巴克' }
   var c = { src: 'wechat', txn: '', date: '2026-09-01', amount: 3500, party: '星巴克' }
   assert.strictEqual(p.rowKey(a), 'wechat#4200001')
   assert.strictEqual(p.rowKey(a), p.rowKey(b))
-  assert.strictEqual(p.rowKey(a) !== p.rowKey(c).indexOf('wechat#2026-09-01'), true)
-  assert.strictEqual(p.rowKey(c), 'wechat#2026-09-01#3500#星巴克')
+  assert.notStrictEqual(p.rowKey(a), p.rowKey(c))
+  assert.strictEqual(p.rowKey(c), 'v2#["wechat","2026-09-01","","",3500,"星巴克","",""]')
 })
 
 /* ---------------- 微信账单（GBK） ---------------- */
@@ -302,6 +302,27 @@ test('集成：同步到新设备后重复导入仍全部判重（含旧版冗�
   var r3 = db.importRows(l.id, parsed.rows)
   assert.strictEqual(r3.added.length, 0)
   assert.strictEqual(r3.dupes, 9)
+})
+
+test('去重边界：按账本隔离，已移入回收站的外部流水仍不会再次导入', function () {
+  var parsed = p.parseBytes(readFix('wechat-sample.csv'))
+  var dbp = path.resolve(__dirname, '../utils/db.js')
+  Object.keys(store).forEach(function (k) { delete store[k] })
+  delete require.cache[dbp]
+  var db = require(dbp)
+  var first = db.createLedger('主账本')
+  var second = db.createLedger('副账本')
+  var a = db.importRows(first.id, parsed.rows)
+  assert.strictEqual(a.added.length, 9)
+
+  // 同一份微信账单可以分别导入不同账本，但同一账本不能重复生成。
+  var b = db.importRows(second.id, parsed.rows)
+  assert.strictEqual(b.added.length, 9, '去重键不能污染其他账本')
+  var deletedId = a.added[0]
+  assert.strictEqual(db.deleteRecord(deletedId), true)
+  var c = db.importRows(first.id, parsed.rows)
+  assert.strictEqual(c.added.length, 0, '回收站中的原流水也应继续作为重复项')
+  assert.strictEqual(c.dupes, 9)
 })
 
 console.log('\n通过 ' + passed + ' 项')

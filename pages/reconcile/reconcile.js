@@ -2,6 +2,7 @@ const db = require('../../utils/db.js')
 const bill = require('../../utils/billParser.js')
 const u = require('../../utils/util.js')
 const vip = require('../../utils/vip.js')
+const csvExport = require('../../utils/csvExport.js')
 
 Page({
   data: {
@@ -179,22 +180,8 @@ Page({
       return
     }
     var csv = db.exportReconcileCSV(ledger.id)
-    if (!csv || csv.split('\n').length < 3) {
-      wx.showToast({ title: '没有可导出的记录', icon: 'none' })
-      return
-    }
-    var count = csv.split('\n').length - 2
-    wx.showActionSheet({
-      itemList: ['复制对账 CSV（可粘贴到表格）', '复制备用（发到文件传输助手）'],
-      success(res) {
-        wx.setClipboardData({
-          data: csv,
-          success() {
-            wx.showToast({ title: '已复制 ' + count + ' 条', icon: 'success' })
-          }
-        })
-      }
-    })
+    var count = db.recordsOf(ledger.id).filter(function (r) { return r.type === 'income' || r.type === 'expense' }).length
+    return csvExport.show({ csv: csv, name: ledger.name + '_对账', count: count })
   },
 
   explain() {

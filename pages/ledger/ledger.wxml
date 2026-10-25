@@ -1,12 +1,12 @@
-<view class="page ledger-page">
+<view class="page ledger-page motion-page">
   <!-- 顶部一行：标题 + 吉祥物（与统计页一致的页头体系） -->
-  <view class="l-head">
+  <view class="l-head motion-section">
     <text class="l-title">账本</text>
     <image class="l-mascot" src="/images/mascot-sm.png" mode="aspectFit" />
   </view>
 
   <!-- 当前账本：金色主卡 + 大封面（皮卡丘签名样式，与首页 hero 一致） -->
-  <view class="ledger-hero" wx:if="{{ledger}}">
+  <view class="ledger-hero motion-section" wx:if="{{ledger}}">
     <view class="lh-coin c1"></view>
     <view class="lh-coin c2"></view>
     <view class="lh-top">
@@ -39,15 +39,20 @@
   </view>
 
   <!-- 共享账本 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="card-head">
       <text class="card-head-title">共享账本</text>
       <text class="card-head-more">{{cloud ? '☁️ 实时同步中' : '📱 本地模式'}}</text>
     </view>
+    <view class="export-row" bindtap="goMembers" role="button" aria-label="打开成员管理" hover-class="press-soft">
+      <text class="export-icon">👥</text>
+      <view class="export-main"><text class="export-title">成员管理</text><text class="export-sub">查看与管理当前账本的 {{memberCount}} 位成员</text></view>
+      <text class="export-arrow">›</text>
+    </view>
     <block wx:if="{{cloud}}">
       <view class="share-actions">
-        <view class="share-btn btn-primary" bindtap="copyInvite">复制邀请码</view>
-        <view class="share-btn btn-ghost" bindtap="openImport">输入邀请码</view>
+        <view class="share-btn btn-primary" bindtap="copyInvite" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">复制邀请码</view>
+        <view class="share-btn btn-ghost" bindtap="openImport" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">输入邀请码</view>
       </view>
       <view class="share-tip">
         <text class="share-tip-line">1. 点「复制邀请码」，通过微信发给好友；</text>
@@ -58,8 +63,8 @@
     </block>
     <block wx:else>
       <view class="share-actions">
-        <view class="share-btn btn-primary" bindtap="copySharePackage">复制分享包</view>
-        <view class="share-btn btn-ghost" bindtap="openImport">加入账本</view>
+        <view class="share-btn btn-primary" bindtap="copySharePackage" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">复制分享包</view>
+        <view class="share-btn btn-ghost" bindtap="openImport" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">加入账本</view>
       </view>
       <view class="share-tip">
         <text class="share-tip-line">1. 点「复制分享包」，通过微信等发送给好友；</text>
@@ -69,23 +74,23 @@
       </view>
     </block>
     <button class="wx-share-btn" open-type="share">把小程序分享给微信好友</button>
-    <view class="export-row" bindtap="exportCSV">
+    <view class="export-row" bindtap="exportCSV" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
       <text class="export-icon">📤</text>
       <view class="export-main">
         <text class="export-title">导出账本 CSV</text>
-        <text class="export-sub">复制全部记录，可粘贴到 Excel / 手机表格</text>
+        <text class="export-sub">生成 CSV 文件或复制内容，用表格查看</text>
       </view>
       <text class="export-arrow">›</text>
     </view>
   </view>
 
   <!-- 我的账本 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="list-head">
       <text class="card-head-title">我的账本</text>
-      <view class="create-link" bindtap="openCreate">＋ 新建</view>
+      <view class="create-link" bindtap="openCreate" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋ 新建</view>
     </view>
-    <view class="ledger-row" wx:for="{{ledgers}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
+    <view class="ledger-row" wx:for="{{ledgers}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
       <view class="ledger-check {{item.isCurrent ? 'check-on' : ''}}">✓</view>
       <view class="ledger-row-cover ledger-row-cover-img" wx:if="{{item.cover.kind === 'image'}}">
         <image src="{{item.cover.image}}" mode="aspectFill" />
@@ -103,7 +108,7 @@
   </view>
 
   <!-- 模式说明 -->
-  <view class="card notice-card">
+  <view class="card notice-card motion-section">
     <view class="notice-title">{{cloud ? '☁️ 云端账本已开启' : '📱 当前为本地存储模式'}}</view>
     <view class="notice-text">{{cloud ? '记录实时同步到你自己的服务器，更换设备后重新进入小程序即可恢复全部账目。' : '数据保存在本机，卸载小程序或更换设备前请先复制分享包备份。需要多人实时同步时，可以在后续升级为云端账本。'}}</view>
   </view>
@@ -115,8 +120,8 @@
       <input class="modal-input" value="{{newName}}" placeholder="例如：家庭账本、旅行基金" maxlength="20" bindinput="onNewNameInput" />
       <ledger-cover-picker cover="{{newCover}}" title="封面" bindcoverchange="onCreateCoverChange" />
       <view class="modal-actions">
-        <view class="btn-ghost" bindtap="closeCreate">取消</view>
-        <view class="btn-primary" bindtap="confirmCreate">创建</view>
+        <view class="btn-ghost" bindtap="closeCreate" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="confirmCreate" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">创建</view>
       </view>
     </view>
   </view>
@@ -127,11 +132,12 @@
       <view class="modal-title">加入账本</view>
       <view class="modal-sub" wx:if="{{cloud}}">输入好友的邀请码，实时共享同一份账本</view>
       <view class="modal-sub" wx:else>粘贴好友发送的分享包，合并他账本里的全部记录</view>
-      <textarea class="modal-textarea" value="{{importText}}" placeholder="{{cloud ? '输入 8 位邀请码' : '在此粘贴分享包（JZ1. 开头的一长串字符）'}}" bindinput="onImportInput" />
-      <view class="paste-link" wx:if="{{!cloud}}" bindtap="pasteImport">从剪贴板粘贴</view>
+      <input wx:if="{{cloud}}" class="modal-input" value="{{importText}}" placeholder="输入 8 位邀请码" maxlength="8" bindinput="onImportInput" />
+      <textarea wx:else class="modal-textarea" value="{{importText}}" placeholder="在此粘贴分享包（JZ1. 开头的一长串字符）" maxlength="-1" bindinput="onImportInput" />
+      <view class="paste-link" wx:if="{{!cloud}}" bindtap="pasteImport" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">从剪贴板粘贴</view>
       <view class="modal-actions">
-        <view class="btn-ghost" bindtap="closeImport">取消</view>
-        <view class="btn-primary" bindtap="confirmImport">{{cloud ? '加入' : '导入'}}</view>
+        <view class="btn-ghost" bindtap="closeImport" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="confirmImport" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{cloud ? '加入' : '导入'}}</view>
       </view>
     </view>
   </view>
@@ -143,8 +149,8 @@
       <input class="modal-input" value="{{renameText}}" placeholder="账本名称" maxlength="20" bindinput="onRenameInput" />
       <ledger-cover-picker cover="{{renameCover}}" title="封面" bindcoverchange="onRenameCoverChange" />
       <view class="modal-actions">
-        <view class="btn-ghost" bindtap="closeRename">取消</view>
-        <view class="btn-primary" bindtap="confirmRename">保存</view>
+        <view class="btn-ghost" bindtap="closeRename" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
+        <view class="btn-primary" bindtap="confirmRename" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存</view>
       </view>
     </view>
   </view>

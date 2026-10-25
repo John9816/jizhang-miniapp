@@ -1,8 +1,13 @@
 const db = require('../../utils/db.js')
 const u = require('../../utils/util.js')
+const motion = require('../../utils/motion.js')
 const vip = require('../../utils/vip.js')
+const analytics = require('../../utils/advanced-stats.js')
+const recordView = require('../../utils/record-view.js')
+const calendar = require('../../utils/date-calendar.js')
 
-var PALETTE = ['#FFD24A', '#FFAE63', '#F08A7E', '#86C7A8', '#8CB6EE', '#B49BE8', '#D9CDB0']
+// 金黄到深棕的明度差区分类别；图例始终提供名称、金额与占比。
+var PALETTE = ['#E8A72D', '#8C641E', '#F6C95B', '#B78024', '#FFE2A0', '#D9B56B', '#6F4D18']
 
 /** 年视图按月聚合 */
 function monthlySeries(records, start, end) {
@@ -33,6 +38,7 @@ function daysInclusive(start, end) {
 Page({
   data: {
     statusBar: 20,
+    contentTop: 64,
     pieType: 'expense',
     period: 'month',
     periods: [
@@ -54,11 +60,18 @@ Page({
     trend: [],
     hasData: false,
     tip: null,
+    lineChartPath: '',
+    pieChartPath: '',
+    barChartPath: '',
+    chartError: false,
     showCustom: false,
     customStart: '',
     customEnd: '',
     posterShow: false,
-    posterPath: ''
+    posterPath: '',
+    analysisTab: 'compare', analysisTabs: [{key:'compare',name:'收支对比'},{key:'ranking',name:'分类排行'},{key:'calendar',name:'收支日历'}],
+    analysis: { ranking: [], calendar: [], comparison: {} }, calendarMonth: '', selectedDay: null, comparisonTip: null, showAllRanks: false,
+    weekdays: ['一','二','三','四','五','六','日']
   },
 
   onLoad() {
@@ -66,6 +79,7 @@ Page({
     var today = u.dateStr(new Date())
     this.setData({
       statusBar: (info && info.statusBarHeight) || 20,
+      contentTop: u.navigationTop(info),
       customStart: today.slice(0, 8) + '01',
       customEnd: today
     })
@@ -73,11 +87,26 @@ Page({
   },
 
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
-    }
+    this._chartHidden = false
+    motion.reveal(this)
+    this.updateTabBar()
     if (this._loaded) this.loadData()
     this._loaded = true
+  },
+
+  onHide() { this.stopRendering(); motion.cleanup(this) },
+  onUnload() { this.stopRendering(); motion.cleanup(this) },
+
+  stopRendering() {
+    this._chartHidden = true
+    this._chartVersion = (this._chartVersion || 0) + 1
+    clearTimeout(this._chartTimer)
+    clearTimeout(this._posterTimer)
+  },
+
+  updateTabBar() {
+    var tab = typeof this.getTabBar === 'function' && this.getTabBar()
+    if (tab) tab.setData({ selected: 2, hidden: motion.hasOverlay(this, ['showCustom', 'posterShow']) })
   },
 
   /* ---------------- 条件切换 ---------------- */
@@ -85,9 +114,12 @@ Page({
   setPeriod(e) {
     var period = e.currentTarget.dataset.period
     if (period === 'custom') {
-      this.setData({ period: period, showCustom: true })
+      if (this.data.showCustom) return
+      this._customBefore = { start: this.data.customStart, end: this.data.customEnd }
+      motion.open(this, 'showCustom')
       return
     }
+    if (this.data.period === period) return
     this.setData({ period: period, refKey: '', tip: null })
     this.loadData()
   },
@@ -110,17 +142,31 @@ Page({
   applyCustom() {
     var s = this.data.customStart
     var en = this.data.customEnd
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '') || !/^\d{4}-\d{2}-\d{2}$/.test(en || '') || s > en) {
+    if (!calendar.valid(s) || !calendar.valid(en) || s > en) {
       wx.showToast({ title: '请选择有效日期范围', icon: 'none' })
       return
     }
-    this.setData({ showCustom: false, period: 'custom', tip: null })
+    if (daysInclusive(s, en) > 366) { wx.showToast({title:'日期范围最多为 366 天',icon:'none'}); return }
+    if (!this.data.showCustom) return
+    motion.close(this, 'showCustom', { patch: { period: 'custom', tip: null } })
+    this._customBefore = null
+    this.updateTabBar()
     this.loadData()
   },
 
   cancelCustom() {
-    this.setData({ showCustom: false, period: 'month' })
-    this.loadData()
+    var patch = {}
+    if (this._customBefore) {
+      patch.customStart = this._customBefore.start
+      patch.customEnd = this._customBefore.end
+    }
+    motion.close(this, 'showCustom', { patch: patch })
+    this._customBefore = null
+    this.updateTabBar()
+  },
+
+  goAdd() {
+    wx.navigateTo({ url: '/pages/edit/edit' })
   },
 
   prevPeriod() {
@@ -147,7 +193,40 @@ Page({
 
   /* ---------------- 数据 ---------------- */
 
+  setAnalysisTab(e) { this.setData({analysisTab:e.currentTarget.dataset.tab}); motion.reveal(this,'analysisMotion') },
+  toggleRanks() { this.setData({showAllRanks:!this.data.showAllRanks}) },
+  selectComparison(e) { this.setData({comparisonTip:this.data.analysis.series.find(function(p){return p.key===e.currentTarget.dataset.key})||null}) },
+  changeCalendarMonth(e) {
+    var month=calendar.shiftMonth(this.data.analysis.calendarMonth,Number(e.currentTarget.dataset.delta))
+    if(month<this._analysisStart.slice(0,7)||month>this._analysisEnd.slice(0,7))return
+    this.setData({calendarMonth:month,selectedDay:null});this.loadAnalysis()
+  },
+  loadAnalysis() {
+    var ledger=db.currentLedger();if(!ledger||!this._analysisStart)return
+    var type=this.data.pieType
+    var result=analytics.build(db.recordsOf(ledger.id),this._analysisStart,this._analysisEnd,type,function(key){return recordView.categoryInfo(ledger.id,type,key)},this.data.calendarMonth)
+    this.setData({analysis:result,calendarMonth:result.calendarMonth})
+    return result
+  },
+  selectCalendarDay(e) {
+    var day=this.data.analysis.calendar.find(function(d){return d.date===e.currentTarget.dataset.date})
+    if(!day||day.disabled||!day.inMonth)return
+    this.setData({selectedDay:day})
+  },
+  viewAnalysisRecords(e) {
+    var day=this.data.selectedDay,category=e.currentTarget.dataset.category||''
+    var start=category?this._analysisStart:(day&&day.date),end=category?this._analysisEnd:(day&&day.date)
+    if(!start)return
+    wx.navigateTo({url:'/pages/search/search?type='+this.data.pieType+'&start='+start+'&end='+end+'&category='+encodeURIComponent(category)})
+  },
+
   loadData() {
+    // 条件变化时立即使旧导出失效，不能等下一次绘制才切换版本。
+    this._chartVersion = (this._chartVersion || 0) + 1
+    this._geom = null
+    this._lineNode = null
+    clearTimeout(this._chartTimer)
+    this.setData({ lineChartPath: '', pieChartPath: '', barChartPath: '', chartError: false, tip: null })
     var ledger = db.currentLedger()
     if (!ledger) {
       this.setData({ hasData: false, periodLabel: '暂无账本' })
@@ -157,6 +236,9 @@ Page({
     var p = u.periodOf(period, this.refDate(), { start: this.data.customStart, end: this.data.customEnd })
     var recs = db.recordsOf(ledger.id)
     var all = recs.filter(function (r) { return r.date >= p.start && r.date <= p.end })
+    this._analysisStart=p.start;this._analysisEnd=p.end
+    this.setData({selectedDay:null,showAllRanks:false,comparisonTip:null})
+    var advanced=this.loadAnalysis()
 
     var s = u.calcSummary(all)
 
@@ -179,7 +261,7 @@ Page({
     var mainTotal = this.data.pieType === 'income' ? s.income : s.expense
 
     // 占比
-    var cats = u.categoryStats(all, this.data.pieType)
+    var cats = advanced.ranking
     var pieItems = cats.map(function (c, i) {
       return {
         key: c.key,
@@ -196,7 +278,7 @@ Page({
       var restPct = 0
       for (var i = 0; i < rest.length; i++) restPct += rest[i].pct
       pieItems = pieItems.slice(0, 5)
-      pieItems.push({ key: '__rest', name: '其他 ' + rest.length + ' 项', icon: '✨', pct: Math.round(restPct * 10) / 10, amountText: '', color: '#D9CDB0' })
+      pieItems.push({ key: '__rest', name: '其他 ' + rest.length + ' 项', icon: '✨', pct: Math.round(restPct * 10) / 10, amountText: '', color: PALETTE[6] })
     }
 
     // 趋势
@@ -206,7 +288,7 @@ Page({
 
     this.setData({
       periodLabel: p.label,
-      hasData: all.length > 0,
+      hasData: mainTotal > 0,
       mainLabel: this.data.pieType === 'income' ? '总收入' : '总支出',
       mainTotal: u.formatCents(mainTotal),
       momText: (momPct > 0 ? '+' : '') + momPct + '%',
@@ -224,14 +306,22 @@ Page({
       },
       trend: trend
     })
+    motion.reveal(this, 'chartMotion')
 
     var self = this
-    setTimeout(function () { self.drawCharts() }, 40)
+    clearTimeout(this._chartTimer)
+    this._chartTimer = setTimeout(function () {
+      self._chartTimer = null
+      if (!self._chartHidden) self.drawCharts()
+    }, 40)
   },
 
   /* ---------------- 绘制 ---------------- */
 
   drawCharts() {
+    if (this._chartHidden) return
+    var version = this._chartVersion = (this._chartVersion || 0) + 1
+    this.setData({ chartError: false })
     var sys = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     var dpr = sys.pixelRatio || 2
     var self = this
@@ -239,14 +329,47 @@ Page({
     query.select('#lineCanvas').fields({ node: true, size: true })
     query.select('#pieCanvas').fields({ node: true, size: true })
     query.select('#barCanvas').fields({ node: true, size: true })
+    query.select('#lineChart').boundingClientRect()
+    query.select('#pieChart').boundingClientRect()
+    query.select('#barChart').boundingClientRect()
     query.exec(function (res) {
+      if (self._chartHidden || self._chartVersion !== version) return
       if (!res || !res.length) return
-      self._lineNode = res[0]
       self._dpr = dpr
-      self.drawLine(res[0], dpr)
-      self.drawPie(res[1], dpr)
-      self.drawBar(res[2], dpr)
+      var nodes = res.slice(0, 3).map(function (info, i) {
+        var rect = res[i + 3]
+        return info && info.node && rect && rect.width > 0 && rect.height > 0
+          ? { node: info.node, width: rect.width, height: rect.height } : null
+      })
+      self._lineNode = nodes[0]
+      self.drawLine(nodes[0], dpr)
+      self.drawPie(nodes[1], dpr)
+      self.drawBar(nodes[2], dpr)
     })
+  },
+
+  exportChart(kind, canvas) {
+    var self = this
+    var version = this._chartVersion
+    var pending = this._chartExports || (this._chartExports = {})
+    var id = pending[kind] = (pending[kind] || 0) + 1
+    function current() {
+      return !self._chartHidden && self._chartVersion === version && pending[kind] === id
+    }
+    function fail() { if (current()) self.setData({ chartError: true }) }
+    try {
+      wx.canvasToTempFilePath({
+        canvas: canvas,
+        fileType: 'png',
+        success: function (res) {
+          if (!current()) return
+          var patch = {}
+          patch[kind + 'ChartPath'] = res.tempFilePath
+          self.setData(patch)
+        },
+        fail: fail
+      })
+    } catch (e) { fail() }
   },
 
   drawLine(nodeInfo, dpr) {
@@ -272,17 +395,19 @@ Page({
     var max = 0
     var i
     for (i = 0; i < series.length; i++) max = Math.max(max, series[i][key])
-    if (max === 0) max = 100
-    max = max * 1.2
+    var axis = u.chartAxis(max)
+    max = axis.max
+    ctx.font = '10px sans-serif'
+    if (ctx.measureText) left = Math.max(left, ctx.measureText(axis.labels[0]).width + 12)
 
     var stepX = series.length > 1 ? (right - left) / (series.length - 1) : 0
     this._geom = { left: left, right: right, top: top, bottom: bottom, stepX: stepX, max: max, w: w, h: h }
 
     // 网格与纵轴
-    ctx.strokeStyle = '#F3EBD8'
+    ctx.strokeStyle = '#EFE3C7'
     ctx.lineWidth = 1
     ctx.font = '10px sans-serif'
-    ctx.fillStyle = '#B9B2A3'
+    ctx.fillStyle = '#8C7959'
     ctx.textAlign = 'right'
     for (i = 0; i <= 3; i++) {
       var gy = top + (bottom - top) * i / 3
@@ -290,14 +415,13 @@ Page({
       ctx.moveTo(left, gy)
       ctx.lineTo(right, gy)
       ctx.stroke()
-      var v = max * (3 - i) / 3
-      ctx.fillText('¥' + (v >= 10000 ? (v / 10000).toFixed(1) + 'w' : Math.round(v / 100)), left - 6, gy + 3)
+      ctx.fillText(axis.labels[i], left - 6, gy + 3)
     }
 
     // 面积
     var grad = ctx.createLinearGradient(0, top, 0, bottom)
-    grad.addColorStop(0, 'rgba(255, 201, 60, 0.36)')
-    grad.addColorStop(1, 'rgba(255, 201, 60, 0.02)')
+    grad.addColorStop(0, 'rgba(246, 201, 91, 0.36)')
+    grad.addColorStop(1, 'rgba(246, 201, 91, 0.02)')
     ctx.beginPath()
     ctx.moveTo(left, bottom)
     for (i = 0; i < series.length; i++) {
@@ -329,13 +453,13 @@ Page({
         ctx.bezierCurveTo(mX, pY, mX, ly, lx, ly)
       }
     }
-    ctx.strokeStyle = '#F0AE18'
+    ctx.strokeStyle = '#B78024'
     ctx.lineWidth = 2.4
     ctx.lineJoin = 'round'
     ctx.stroke()
 
     // 横轴标签
-    ctx.fillStyle = '#B9B2A3'
+    ctx.fillStyle = '#8C7959'
     ctx.font = '10px sans-serif'
     ctx.textAlign = 'left'
     ctx.fillText(series[0].label, left, h - 6)
@@ -353,7 +477,7 @@ Page({
       var tx = left + stepX * tip.index
       var tv = series[tip.index][key]
       var ty = bottom - (tv / max) * (bottom - top)
-      ctx.strokeStyle = '#E9C56A'
+      ctx.strokeStyle = '#D9B56B'
       ctx.setLineDash([3, 4])
       ctx.beginPath()
       ctx.moveTo(tx, top)
@@ -365,7 +489,7 @@ Page({
       ctx.fillStyle = '#FFFFFF'
       ctx.fill()
       ctx.lineWidth = 2.6
-      ctx.strokeStyle = '#F0AE18'
+      ctx.strokeStyle = '#B78024'
       ctx.stroke()
     } else if (series.length) {
       // 末点高亮
@@ -373,9 +497,10 @@ Page({
       var ey = bottom - (series[series.length - 1][key] / max) * (bottom - top)
       ctx.beginPath()
       ctx.arc(ex, ey, 4, 0, Math.PI * 2)
-      ctx.fillStyle = '#F0AE18'
+      ctx.fillStyle = '#B78024'
       ctx.fill()
     }
+    this.exportChart('line', canvas)
   },
 
   drawPie(nodeInfo, dpr) {
@@ -399,7 +524,7 @@ Page({
     if (!items.length) {
       ctx.beginPath()
       ctx.arc(cx, cy, (r + inner) / 2, 0, Math.PI * 2)
-      ctx.strokeStyle = '#F1E9D6'
+      ctx.strokeStyle = '#F3E4B8'
       ctx.lineWidth = r - inner
       ctx.stroke()
     } else {
@@ -423,12 +548,13 @@ Page({
 
     // 圆心文字
     ctx.textAlign = 'center'
-    ctx.fillStyle = '#2E2A22'
+    ctx.fillStyle = '#3B2A18'
     ctx.font = '600 ' + Math.max(12, Math.round(w * 0.108)) + 'px sans-serif'
     ctx.fillText(this.data.pieTotalText, cx, cy + 1)
-    ctx.fillStyle = '#A79E8B'
+    ctx.fillStyle = '#8C7959'
     ctx.font = Math.round(w * 0.068) + 'px sans-serif'
     ctx.fillText(this.data.pieType === 'income' ? '总收入' : '总支出', cx, cy + Math.round(w * 0.115))
+    this.exportChart('pie', canvas)
   },
 
   drawBar(nodeInfo, dpr) {
@@ -473,16 +599,17 @@ Page({
       var bh = max > 0 ? (m.value / max) * (bottom - top) : 0
       var x = padL + i * bw + bw * 0.22
       var y = bottom - bh
-      ctx.fillStyle = m.value === 0 ? '#F0E8D5' : (i === months.length - 1 ? '#F5B417' : '#FFDD82')
+      ctx.fillStyle = m.value === 0 ? '#F3E4B8' : (i === months.length - 1 ? '#E8A72D' : '#F6C95B')
       this.roundRect(ctx, x, y, bw * 0.56, Math.max(bh, 3), 3)
       ctx.fill()
       if (i % 2 === 0 || i === months.length - 1) {
-        ctx.fillStyle = '#B9B2A3'
+        ctx.fillStyle = '#8C7959'
         ctx.font = '9px sans-serif'
         ctx.textAlign = 'center'
         ctx.fillText(parseInt(m.key.slice(5, 7), 10) + '月', x + bw * 0.28, h - 6)
       }
     }
+    this.exportChart('bar', canvas)
   },
 
   roundRect(ctx, x, y, w, h, r) {
@@ -499,16 +626,24 @@ Page({
   /* ---------------- 点选某天 ---------------- */
 
   onChartTouch(e) {
+    if (!this.data.hasData) return
     var g = this._geom
     var series = this.data.trend
     if (!g || !series || !series.length) return
     var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0])
     if (!t) return
-    var x = t.x != null ? t.x : t.clientX
-    var idx = Math.round((x - g.left) / (g.stepX || 1))
-    if (idx < 0) idx = 0
-    if (idx > series.length - 1) idx = series.length - 1
-    this.selectPoint(idx)
+    var clientX = t.clientX != null ? t.clientX : t.x
+    if (typeof clientX !== 'number') return
+    var self = this
+    var version = this._chartVersion
+    // 普通 view/image 的触点是页面坐标，滚动后仍须以当前容器位置换算。
+    wx.createSelectorQuery().select('#lineChart').boundingClientRect(function (rect) {
+      if (!rect || self._chartHidden || self._chartVersion !== version) return
+      var x = clientX - rect.left
+      var idx = Math.round((x - g.left) / (g.stepX || 1))
+      idx = Math.max(0, Math.min(series.length - 1, idx))
+      self.selectPoint(idx)
+    }).exec()
   },
 
   selectPoint(idx) {
@@ -571,13 +706,15 @@ Page({
       return
     }
     var self = this
-    this.setData({ posterShow: true, posterPath: '' }, function () {
-      setTimeout(function () { self.drawPoster(ledger, self.data.periodLabel, recs) }, 80)
+    motion.open(this, 'posterShow', { posterPath: '' })
+    this.setData({}, function () {
+      clearTimeout(self._posterTimer)
+      self._posterTimer = setTimeout(function () { if (self.data.posterShow) self.drawPoster(ledger, self.data.periodLabel, recs) }, 80)
     })
   },
 
   closePoster() {
-    this.setData({ posterShow: false, posterPath: '' })
+    motion.close(this, 'posterShow', { after: () => { this.setData({ posterPath: '' }) } })
   },
 
   /** 保存海报到相册；被拒时引导去设置打开权限 */
@@ -622,9 +759,9 @@ Page({
       ctx.scale(dpr, dpr)
 
       var grad = ctx.createLinearGradient(0, 0, w, h)
-      grad.addColorStop(0, '#FFE58A')
-      grad.addColorStop(0.55, '#FFCE4A')
-      grad.addColorStop(1, '#F2A912')
+      grad.addColorStop(0, '#FFE9A8')
+      grad.addColorStop(0.55, '#F6C95B')
+      grad.addColorStop(1, '#E8A72D')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, w, h)
 
@@ -636,7 +773,7 @@ Page({
       ctx.arc(w - 96, h - 30, 60, 0, Math.PI * 2)
       ctx.fill()
 
-      ctx.fillStyle = '#4A3200'
+      ctx.fillStyle = '#3B2A18'
       ctx.textAlign = 'left'
       ctx.font = '700 26px sans-serif'
       ctx.fillText(title + ' 账单', 28, 58)
@@ -656,7 +793,7 @@ Page({
         ctx.fillStyle = 'rgba(74,50,0,0.6)'
         ctx.font = '13px sans-serif'
         ctx.fillText(cols[i].label, x, 136)
-        ctx.fillStyle = '#4A3200'
+        ctx.fillStyle = '#3B2A18'
         ctx.font = '700 21px sans-serif'
         ctx.fillText('¥' + cols[i].value, x, 168)
       }
@@ -670,7 +807,7 @@ Page({
         ctx.fillStyle = 'rgba(255,255,255,0.5)'
         this.roundRect(ctx, 28, y - 20, w - 56, 32, 10)
         ctx.fill()
-        ctx.fillStyle = '#4A3200'
+        ctx.fillStyle = '#3B2A18'
         ctx.font = '16px sans-serif'
         ctx.fillText(top3[i].icon + ' ' + top3[i].name, 42, y + 2)
         ctx.textAlign = 'right'
@@ -688,7 +825,7 @@ Page({
           self.setData({ posterPath: r.tempFilePath })
         },
         fail: function () {
-          self.setData({ posterShow: false, posterPath: '' })
+          self.closePoster()
           wx.showToast({ title: '生成失败', icon: 'none' })
         }
       })

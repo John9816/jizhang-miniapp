@@ -1,18 +1,18 @@
-<view class="page imp-page">
+<view class="page imp-page motion-page">
   <!-- 第一步：输入账单 -->
-  <view class="card">
+  <view class="card motion-section">
     <view class="card-head">
       <text class="card-head-title">导入账单</text>
       <text class="card-head-more">自动识别 GBK 编码</text>
     </view>
 
     <view class="mode-tabs">
-      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode">选择文件</view>
-      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode">粘贴文本</view>
+      <view class="mode-tab {{mode === 'file' ? 'mode-tab-active' : ''}}" data-mode="file" bindtap="switchMode" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">选择文件</view>
+      <view class="mode-tab {{mode === 'paste' ? 'mode-tab-active' : ''}}" data-mode="paste" bindtap="switchMode" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">粘贴文本</view>
     </view>
 
     <block wx:if="{{mode === 'file'}}">
-      <view class="drop" bindtap="chooseFile">
+      <view class="drop" bindtap="chooseFile" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <text class="drop-icon">📄</text>
         <text class="drop-title">点击选择账单文件</text>
         <text class="drop-sub">支持微信支付 / 支付宝导出的 CSV</text>
@@ -32,12 +32,12 @@
         maxlength="200000"
         bindinput="onRawInput"
       />
-      <view class="btn-primary parse-btn" bindtap="parsePasted">解析账单</view>
+      <view class="btn-primary parse-btn" bindtap="parsePasted" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">解析账单</view>
     </block>
   </view>
 
   <!-- 无法识别 -->
-  <view class="card" wx:if="{{result && !result.src}}">
+  <view class="card motion-section" wx:if="{{result && !result.src}}">
     <view class="empty">
       <text class="empty-icon">🤔</text>
       <text class="empty-text">
@@ -45,13 +45,13 @@
         请确认粘贴的是完整 CSV（需含「交易时间」「收/支」开头的数据行）。\n
         账单明细通常要翻到文件中部，前面几行是说明信息。
       </text>
-      <view class="empty-btn btn-ghost" bindtap="reInput">重新输入</view>
+      <view class="empty-btn btn-ghost" bindtap="reInput" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">重新输入</view>
     </view>
   </view>
 
   <!-- 第二步：识别结果 -->
   <block wx:if="{{result && result.src}}">
-    <view class="card">
+    <view class="card motion-section">
       <view class="card-head">
         <text class="card-head-title">识别结果</text>
         <text class="badge badge-dark">{{sourceLabel}}</text>
@@ -75,11 +75,13 @@
       <view class="range-line">
         <text class="range">时间范围：{{summary.range}}</text>
       </view>
-      <view class="skip-note">已自动跳过：{{skipNote}}</view>
+      <view class="dedup-note">已排除重复 {{duplicateCount}} 笔 · 仅导入当前账本中未入账的流水</view>
+      <view class="skip-note">文件解析跳过：{{skipNote}}</view>
+      <view class="skip-note">优先按平台交易单号去重；无单号时综合交易时间、收支、金额、对方与商品判断。回收站中的流水也不会重复入账。</view>
       <view class="skip-note muted" wx:if="{{extraNote}}">{{extraNote}}</view>
     </view>
 
-    <view class="card">
+    <view class="card motion-section">
       <view class="card-head">
         <text class="card-head-title">明细预览</text>
         <text class="card-head-more" bindtap="reInput">重新选择</text>
@@ -97,34 +99,37 @@
           <text class="row-amount num {{item.type === 'income' ? 'text-income' : 'text-expense'}}">{{item.amountText}}</text>
         </view>
       </scroll-view>
+      <view class="preview-empty" wx:if="{{!viewRows.length}}">没有新增账单，无需重复导入</view>
     </view>
 
     <!-- 第三步：导入设置 -->
-    <view class="card">
+    <view class="card motion-section">
       <view class="card-head">
         <text class="card-head-title">导入到账本</text>
         <text class="card-head-more">{{ledger ? ledger.name : ''}}</text>
       </view>
-      <picker range="{{categoryOptions}}" range-key="name" value="{{categoryIndex}}" onchange="onCategoryChange">
+      <picker range="{{categoryOptions}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
         <view class="set-row">
           <text class="set-label">统一分类</text>
           <text class="set-value">{{categoryOptions[categoryIndex].name}} ›</text>
         </view>
       </picker>
-      <picker range="{{accountOptions}}" range-key="name" value="{{accountIndex}}" onchange="onAccountChange">
+      <picker range="{{accountOptions}}" range-key="name" value="{{accountIndex}}" bindchange="onAccountChange">
         <view class="set-row">
           <text class="set-label">记账账户</text>
           <text class="set-value">{{accountOptions[accountIndex].name}} ›</text>
         </view>
       </picker>
-      <view class="btn-primary import-btn" bindtap="doImport">导入 {{summary.count}} 笔</view>
+      <view class="skip-note" wx:if="{{limitNote}}">{{limitNote}}</view>
+      <button class="btn-primary import-btn" disabled="{{!importCount}}" bindtap="doImport" hover-class="press-button" hover-start-time="0" hover-stay-time="70">{{importCount ? '导入 ' + importCount + ' 笔新增账单' : '没有新增账单'}}</button>
 
       <view class="import-ok" wx:if="{{importResult}}">
         <view class="import-ok-title">✅ 导入完成</view>
         <view class="import-ok-sub">新增 {{importResult.added}} 笔 · 判重跳过 {{importResult.dupes}} 笔 · 无效跳过 {{importResult.skipped}} 笔</view>
+        <view class="import-ok-sub" wx:if="{{importResult.remaining}}">还有 {{importResult.remaining}} 笔新增账单，可继续导入</view>
         <view class="import-ok-actions">
-          <view class="btn-ghost act" bindtap="goReconcile">去对账</view>
-          <view class="btn-plain act" bindtap="reInput">再导一份</view>
+          <view class="btn-ghost act" bindtap="goReconcile" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">去对账</view>
+          <view class="btn-plain act" bindtap="reInput" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">再导一份</view>
         </view>
       </view>
     </view>

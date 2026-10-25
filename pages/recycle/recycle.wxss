@@ -1,0 +1,32 @@
+.recycle-page { padding-top: 8rpx; }
+.recycle-intro { padding: 28rpx 32rpx 12rpx; }
+.recycle-title { font-size: 36rpx; font-weight: 700; color: var(--ink); }
+.recycle-explain { margin-top: 14rpx; color: var(--ink-2); font-size: 25rpx; line-height: 1.7; }
+.recycle-tools { padding: 20rpx 24rpx; }
+.recycle-search { display: flex; align-items: center; background: var(--gold-soft); border-radius: 18rpx; padding: 0 20rpx; }
+.recycle-input { flex: 1; min-width: 0; height: 96rpx; font-size: 28rpx; line-height: normal; }
+.recycle-clear { width: 72rpx; height: 80rpx; display: flex; align-items: center; justify-content: center; font-size: 38rpx; color: var(--ink-2); flex-shrink: 0; }
+.recycle-filter-row { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding-top: 14rpx; }
+.recycle-picker { min-width: 0; max-width: 80%; }
+.recycle-filter { display: flex; align-items: center; gap: 18rpx; min-height: 80rpx; padding: 0 12rpx; color: var(--ink); font-size: 27rpx; }
+.recycle-ledger-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recycle-count { color: var(--ink-3); font-size: 24rpx; flex-shrink: 0; }
+.recycle-record { padding: 26rpx; }
+.recycle-record-head { display: flex; justify-content: space-between; align-items: center; gap: 16rpx; flex-wrap: wrap; }
+.recycle-category { display: flex; align-items: center; gap: 14rpx; color: var(--ink); font-weight: 600; font-size: 29rpx; }
+.recycle-icon { width: 58rpx; height: 58rpx; background: var(--gold-soft); border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
+.recycle-amount { font-size: 34rpx; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.recycle-meta { margin-top: 18rpx; font-size: 24rpx; color: var(--ink-3); line-height: 1.6; overflow-wrap: anywhere; }
+.recycle-note { color: var(--ink-2); font-size: 27rpx; line-height: 1.6; margin-top: 14rpx; overflow-wrap: anywhere; }
+.recycle-record-foot { display: flex; justify-content: space-between; align-items: center; gap: 16rpx; margin-top: 22rpx; padding-top: 18rpx; border-top: 1rpx solid var(--line); }
+.recycle-deleted { color: var(--ink-3); font-size: 22rpx; line-height: 1.6; }
+.recycle-restore { min-width: 164rpx; min-height: 80rpx; display: flex; align-items: center; justify-content: center; padding: 12rpx 22rpx; flex-shrink: 0; background: var(--gold-soft); color: var(--accent-ink); border: 1rpx solid var(--line); border-radius: 18rpx; font-size: 26rpx; font-weight: 600; }
+.recycle-disabled { opacity: 0.5; }
+.recycle-warning { margin-top: 16rpx; font-size: 24rpx; line-height: 1.6; color: var(--accent-ink); }
+.recycle-empty { text-align: center; padding: 56rpx 32rpx; }
+.recycle-empty-mark { width: 104rpx; height: 104rpx; margin: 0 auto 24rpx; border-radius: 50%; color: var(--accent-ink); background: var(--gold-soft); display: flex; align-items: center; justify-content: center; }
+.recycle-return-arc { position: relative; width: 44rpx; height: 44rpx; border: 4rpx solid var(--accent-ink); border-left-color: transparent; border-radius: 50%; transform: rotate(-35deg); }
+.recycle-return-arc::before { content: ''; position: absolute; width: 14rpx; height: 14rpx; left: -3rpx; top: -1rpx; border-left: 4rpx solid var(--accent-ink); border-bottom: 4rpx solid var(--accent-ink); transform: rotate(15deg); }
+.recycle-empty-title { font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.recycle-more { margin: 12rpx 24rpx; padding: 28rpx; text-align: center; color: var(--accent-ink); font-size: 27rpx; }
+.recycle-policy { padding: 12rpx 36rpx 32rpx; font-size: 23rpx; line-height: 1.8; color: var(--ink-3); }

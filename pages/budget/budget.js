@@ -1,5 +1,6 @@
 const db = require('../../utils/db.js')
 const u = require('../../utils/util.js')
+const insight = require('../../utils/budget-insight.js')
 
 Page({
   data: {
@@ -13,6 +14,7 @@ Page({
     limitText: '',
     totalPct: 0,
     totalOver: false,
+    insight: null,
     showCatPicker: false,
     pickedCat: '',
     pickedLimit: '',
@@ -33,11 +35,13 @@ Page({
     var ledger = db.currentLedger()
     if (!ledger) return
     var budget = db.budgetOf(ledger.id)
+    var categories = db.categoriesOf(ledger.id, 'expense')
+    var categoryMap = {}
+    categories.forEach(function (c) { categoryMap[c.key] = c })
     var recs = db.recordsOf(ledger.id).filter(function (r) {
       return String(r.date).slice(0, 7) === u.currentMonthKey()
     })
-    var status = u.budgetStatus(budget, recs, null)
-    var cats = u.categoryStats(recs, 'expense')
+    var status = u.budgetStatus(budget, recs, function (key) { return categoryMap[key] })
     var catBudgets = status.items.map(function (it) {
       return Object.assign({}, it, {
         usedText: u.formatCents(it.used),
@@ -45,17 +49,22 @@ Page({
         remainText: ((it.limit - it.used) / 100).toFixed(2)
       })
     })
-    var available = u.categoryStats(recs, 'expense').length
-      ? cats.map(function (c) { return { key: c.key, name: c.name, icon: c.icon, amountText: c.amountText, pct: c.pct } })
-      : db.categoriesOf(ledger.id, 'expense')
+    var forecast = insight.calculate(budget.monthlyTotal, recs)
+    forecast.remainingText = u.formatCents(Math.abs(forecast.remaining))
+    forecast.dailyText = u.formatCents(forecast.dailyAvailable)
+    forecast.projectedText = u.formatCents(forecast.projected)
+    forecast.futureText = u.formatCents(forecast.futureExpense)
+    forecast.projectedOver = forecast.projected > budget.monthlyTotal
     this.setData({
+      monthKey: u.currentMonthKey(), monthLabel: u.formatMonth(u.currentMonthKey()),
+      insight: forecast,
       monthlyInput: budget.monthlyTotal > 0 ? (budget.monthlyTotal / 100).toFixed(2) : '',
       usedText: status.total ? u.formatCents(status.total.used) : u.formatCents(u.calcSummary(recs).expense),
       limitText: status.total ? u.formatCents(status.total.limit) : '',
       totalPct: status.total ? status.total.pct : 0,
       totalOver: status.total ? status.total.over : false,
       categoryBudgets: catBudgets,
-      expCategories: available
+      expCategories: categories
     })
   },
 
@@ -69,6 +78,10 @@ Page({
   },
 
   saveTotal() {
+    if (this.data.monthlyInput && !/^\d+(\.\d{0,2})?$/.test(this.data.monthlyInput)) {
+      wx.showToast({ title: '请输入有效预算，最多两位小数', icon: 'none' })
+      return
+    }
     var cents = u.yuanToCents(this.data.monthlyInput)
     var ledger = db.currentLedger()
     if (!ledger) return
@@ -81,31 +94,27 @@ Page({
   },
 
   openCatPicker() {
-    var self = this
     var cats = this.data.expCategories
     if (!cats.length) {
       wx.showToast({ title: '暂无可设置的分类', icon: 'none' })
       return
     }
-    wx.showActionSheet({
-      itemList: cats.map(function (c) { return c.icon + ' ' + c.name }),
-      success(res) {
-        var cat = cats[res.tapIndex]
-        var budget = db.budgetOf(self.ledgerIdOf())
-        var exist = budget.categoryBudgets[cat.key]
-        self.setData({
-          showCatPicker: true,
-          pickedCat: cat.key,
-          pickedCatName: cat.name,
-          editLimit: exist ? (exist / 100).toFixed(2) : ''
-        })
-      }
-    })
+    this.pickCategory(cats[0].key)
+    this.setData({ showCatPicker: true })
   },
 
-  ledgerIdOf() {
-    var l = db.currentLedger()
-    return l ? l.id : ''
+  pickCategory(key) {
+    var cat = this.data.expCategories.filter(function (c) { return c.key === key })[0]
+    if (!cat) return
+    var exist = db.budgetOf(this.ledgerIdOf()).categoryBudgets[key]
+    this.setData({ pickedCat: key, pickedCatName: cat.name, editLimit: exist ? (exist / 100).toFixed(2) : '' })
+  },
+
+  onPickCategory(e) { this.pickCategory(e.currentTarget.dataset.key) },
+
+  editCategory(e) {
+    this.pickCategory(e.currentTarget.dataset.key)
+    if (this.data.pickedCat === e.currentTarget.dataset.key) this.setData({ showCatPicker: true })
   },
 
   onCatLimitInput(e) {
@@ -116,7 +125,7 @@ Page({
     var ledger = db.currentLedger()
     if (!ledger || !this.data.pickedCat) return
     var cents = u.yuanToCents(this.data.editLimit)
-    if (cents <= 0) {
+    if (cents <= 0 || !/^\d+(\.\d{0,2})?$/.test(this.data.editLimit)) {
       wx.showToast({ title: '请输入金额', icon: 'none' })
       return
     }

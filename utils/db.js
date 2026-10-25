@@ -4,6 +4,8 @@
  */
 
 var u = require('./util.js')
+var templateModel = require('./template-model.js')
+var billIdentity = require('./bill-identity.js')
 
 var STORAGE_KEY = 'jizhang.db.v1'
 var HIDDEN_KEY = 'jizhang.hidden.v1'
@@ -12,6 +14,10 @@ var listeners = []
 var hiddenIds = {}
 
 function isoNow() { return new Date().toISOString() }
+function nextRecordVersion(record) {
+  var previous = Date.parse(record.updatedAt) || 0
+  return new Date(Math.max(Date.now(), previous + 1)).toISOString()
+}
 
 /** 兼容旧数据的数字时间戳 → ISO 字符串 */
 function toIso(v) {
@@ -36,7 +42,7 @@ function notifyCloud() {
 }
 
 function saveHidden() {
-  try { wx.setStorageSync(HIDDEN_KEY, JSON.stringify(Object.keys(hiddenIds))) } catch (e) {}
+  try { wx.setStorageSync(HIDDEN_KEY, JSON.stringify(hiddenIds)) } catch (e) {}
 }
 
 function defaultDb() {
@@ -56,18 +62,21 @@ function defaultLedgerExtras() {
     budget: { monthlyTotal: 0, categoryBudgets: {} },
     recurring: [],
     categories: [],
-    challenges: []
+    challenges: [],
+    templates: []
   }
 }
 
 function ensureExtras(l) {
   var d = defaultLedgerExtras()
-  if (!Array.isArray(l.accounts) || !l.accounts.length) l.accounts = d.accounts
+  // 空数组是用户删除全部账户后的有效状态，只有缺失字段才迁移默认账户。
+  if (!Array.isArray(l.accounts)) l.accounts = d.accounts
   if (!l.budget || typeof l.budget !== 'object') l.budget = d.budget
   if (!l.budget.categoryBudgets) l.budget.categoryBudgets = {}
   if (!Array.isArray(l.recurring)) l.recurring = []
   if (!Array.isArray(l.categories)) l.categories = []
   if (!Array.isArray(l.challenges)) l.challenges = []
+  l.templates = templateModel.list(l.templates)
   l.defaultAccountId = String(l.defaultAccountId || '')
   if (!l.cfgAt) l.cfgAt = isoNow()
 }
@@ -97,11 +106,15 @@ function ensure() {
 
 function init() {
   db = loadRaw() || defaultDb()
+  hiddenIds = {}
   try {
     var hid = wx.getStorageSync(HIDDEN_KEY)
     if (hid) {
-      var arr = JSON.parse(hid)
-      for (var i = 0; i < arr.length; i++) hiddenIds[String(arr[i])] = true
+      var saved = JSON.parse(hid)
+      if (Array.isArray(saved)) {
+        // 老版只在本机隐藏，升级后补传，避免换设备再次拉回。
+        for (var i = 0; i < saved.length; i++) hiddenIds[String(saved[i])] = { pending: true }
+      } else if (saved && typeof saved === 'object') hiddenIds = saved
     }
   } catch (e) {}
   if (!db.me || !db.me.id) db.me = { id: u.genId('u'), name: '', profile: { avatar: '' } }
@@ -109,10 +122,31 @@ function init() {
   if (!db.imported || typeof db.imported !== 'object') db.imported = {}
   if (!Array.isArray(db.ledgers)) db.ledgers = []
   if (!Array.isArray(db.records)) db.records = []
+  db.ledgers = db.ledgers.filter(function (l) { return !hiddenIds[l.id] })
+  db.records = db.records.filter(function (r) { return !hiddenIds[r.ledgerId] })
   var li
   for (li = 0; li < db.ledgers.length; li++) ensureExtras(db.ledgers[li])
-  if (db.ledgers.length === 0) createLedger('我的账本')
+  if (db.ledgers.length === 0) createLedger('我的账本', null, true)
   if (!getLedger(db.currentLedgerId)) db.currentLedgerId = db.ledgers[0].id
+  // 旧版全局冗余键缺少账本信息：优先按原记录归属迁移，孤立键归当前账本。
+  if (!db.importedByLedger || typeof db.importedByLedger !== 'object') db.importedByLedger = {}
+  Object.keys(db.imported).forEach(function (key) {
+    var owners = db.records.filter(function (r) { return r.external && r.external.txn && txnKey(r.external) === key })
+      .map(function (r) { return r.ledgerId })
+    if (!owners.length) owners = [db.currentLedgerId]
+    owners.forEach(function (id) {
+      if (!db.importedByLedger[id]) db.importedByLedger[id] = {}
+      db.importedByLedger[id][key] = true
+    })
+  })
+  db.imported = {}
+  // 旧版 external 从未随账单同步：一次性补传，保留原 ID 和财务字段。
+  db.records.forEach(function (r) {
+    if (r.external && r.external.src && !r.importIdentitySynced) {
+      r.importIdentitySynced = true
+      r.importIdentityPending = true
+    }
+  })
   persist()
 }
 
@@ -221,7 +255,7 @@ function setMyName(name) {
 
 /* ---------------- 账本 ---------------- */
 
-function createLedger(name, cover) {
+function createLedger(name, cover, bootstrap) {
   ensure()
   var me = db.me
   var ledger = {
@@ -238,10 +272,13 @@ function createLedger(name, cover) {
   ledger.budget = extras.budget
   ledger.recurring = extras.recurring
   ledger.categories = extras.categories
+  ledger.challenges = extras.challenges
+  ledger.templates = extras.templates
   ledger.cfgAt = isoNow()
   ledger.members[me.id] = { id: me.id, name: me.name || '我', joinedAt: Date.now() }
   db.ledgers.push(ledger)
   db.currentLedgerId = ledger.id
+  if (bootstrap) db.bootstrapLedgerId = ledger.id
   persist()
   return ledger
 }
@@ -287,14 +324,68 @@ function setLedgerCover(id, cover) {
 
 function deleteLedger(id) {
   ensure()
+  if (!getLedger(id)) return currentLedger()
   db.ledgers = db.ledgers.filter(function (l) { return l.id !== id })
   db.records = db.records.filter(function (r) { return r.ledgerId !== id })
-  hiddenIds[id] = true
+  hiddenIds[id] = { pending: true }
   saveHidden()
-  if (db.ledgers.length === 0) createLedger('我的账本')
+  if (db.ledgers.length === 0) createLedger('我的账本', null, true)
   else if (db.currentLedgerId === id) db.currentLedgerId = db.ledgers[0].id
   persist()
   return currentLedger()
+}
+
+/** 待确认的账号级移除操作；断网时留在本机，下次同步继续发送。 */
+function removedLedgerIds() {
+  ensure()
+  return Object.keys(hiddenIds).filter(function (id) { return hiddenIds[id].pending })
+}
+
+function acknowledgeRemovedLedgers(ids) {
+  ensure()
+  ;(ids || []).forEach(function (id) {
+    if (hiddenIds[id]) hiddenIds[id].pending = false
+  })
+  saveHidden()
+}
+
+/** 用户主动输入邀请码重新加入时，才撤销本机未发送的移除操作。 */
+function restoreLedger(id) {
+  ensure()
+  delete hiddenIds[id]
+  saveHidden()
+}
+
+/** 在任何回推前消费服务端移除状态，同时避免新设备重复创建空账本。 */
+function prepareCloudSnapshot(snapshot) {
+  ensure()
+  var remote = (snapshot.ledgers || []).filter(function (l) { return l && l.id })
+  if (Array.isArray(snapshot.removedLedgerIds)) {
+    snapshot.removedLedgerIds.forEach(function (id) {
+      if (typeof id === 'string' && id) hiddenIds[id] = hiddenIds[id] || { pending: false }
+    })
+    remote.forEach(function (l) {
+      // 已确认的旧隐藏状态可由主动重新加入后的服务端快照撤销。
+      if (hiddenIds[l.id] && !hiddenIds[l.id].pending) delete hiddenIds[l.id]
+    })
+    saveHidden()
+  }
+  var visible = remote.filter(function (l) { return !hiddenIds[l.id] })
+  db.ledgers = db.ledgers.filter(function (l) { return !hiddenIds[l.id] })
+  db.records = db.records.filter(function (r) { return !hiddenIds[r.ledgerId] })
+  var bootstrap = getLedger(db.bootstrapLedgerId)
+  if (bootstrap && visible.some(function (l) { return l.id !== bootstrap.id }) &&
+      bootstrap.name === '我的账本' && !bootstrap.inviteCode &&
+      !db.records.some(function (r) { return r.ledgerId === bootstrap.id }) &&
+      JSON.stringify(bootstrap.accounts) === JSON.stringify(u.defaultAccounts()) &&
+      !bootstrap.budget.monthlyTotal && !Object.keys(bootstrap.budget.categoryBudgets).length &&
+      !bootstrap.recurring.length && !bootstrap.categories.length && !bootstrap.challenges.length && !bootstrap.templates.length &&
+      !bootstrap.defaultAccountId && bootstrap.cover.kind === 'preset' && bootstrap.cover.key === 'default') {
+    db.ledgers = db.ledgers.filter(function (l) { return l.id !== bootstrap.id })
+    db.bootstrapLedgerId = ''
+  }
+  if (!getLedger(db.currentLedgerId)) db.currentLedgerId = db.ledgers.length ? db.ledgers[0].id : ''
+  if (!db.ledgers.length && !visible.length) createLedger('我的账本', null, true)
 }
 
 function listLedgers() {
@@ -347,13 +438,10 @@ function addRecord(fields) {
     updatedAt: now,
     dirty: true
   }
-  // 外部账单导入来源（微信/支付宝流水），仅存本机，用于对账与去重
+  // 保存原始交易快照；用户修改金额、日期、备注不会改变导入身份。
   if (fields.external && fields.external.src) {
-    rec.external = {
-      src: String(fields.external.src).slice(0, 16),
-      txn: String(fields.external.txn || '').slice(0, 64),
-      party: String(fields.external.party || '').slice(0, 40)
-    }
+    rec.external = billIdentity.normalize(fields.external)
+    rec.importIdentitySynced = true
   }
   if (type === 'transfer') {
     rec.accountId = String(fields.accountId || '')
@@ -371,26 +459,31 @@ function addRecord(fields) {
 function updateRecord(id, fields) {
   ensure()
   var rec = getRecord(id)
-  if (!rec) return null
+  if (!rec || rec.deleted || !getLedger(rec.ledgerId)) return null
   var amount = Math.round(Number(fields.amount))
   if (!isFinite(amount) || amount <= 0) return null
+  var type = fields.type === 'income' ? 'income' : (fields.type === 'transfer' ? 'transfer' : 'expense')
+  var accountId = String(fields.accountId || '')
+  var transferTo = String(fields.transferTo || '')
+  // 先校验后写入，避免无效表单悄悄改坏内存中的原记录。
+  if (type === 'transfer' && (!accountId || !transferTo || accountId === transferTo)) return null
   rec.amount = amount
-  rec.type = fields.type === 'income' ? 'income' : (fields.type === 'transfer' ? 'transfer' : 'expense')
+  rec.type = type
   if (rec.type === 'transfer') {
-    rec.accountId = String(fields.accountId || '')
-    rec.transferTo = String(fields.transferTo || '')
+    rec.accountId = accountId
+    rec.transferTo = transferTo
     rec.transferToName = String(fields.transferToName || '')
     rec.category = 'transfer'
-    if (!rec.accountId || !rec.transferTo || rec.accountId === rec.transferTo) return null
   } else {
     rec.category = fields.category
-    if (fields.accountId) rec.accountId = String(fields.accountId)
+    // 未传字段保留原账户；显式选择「不指定」则解除关联。
+    if (fields.accountId !== undefined) rec.accountId = accountId
     delete rec.transferTo
     delete rec.transferToName
   }
   rec.date = fields.date
   rec.note = String(fields.note == null ? '' : fields.note).trim().slice(0, 50)
-  rec.updatedAt = isoNow()
+  rec.updatedAt = nextRecordVersion(rec)
   rec.dirty = true
   persist()
   return rec
@@ -416,10 +509,48 @@ function deleteRecord(id) {
   var rec = getRecord(id)
   if (!rec || rec.deleted) return false
   rec.deleted = true
-  rec.updatedAt = isoNow()
+  rec.updatedAt = nextRecordVersion(rec)
   rec.dirty = true
   persist()
   return true
+}
+
+/** 保留云端删除墓碑，供用户主动恢复；已移除账本不出现在回收站。 */
+function deletedRecordsOf(ledgerId) {
+  ensure()
+  return db.records.filter(function (r) {
+    return r.deleted && (!ledgerId || r.ledgerId === ledgerId) && !!getLedger(r.ledgerId)
+  }).sort(function (a, b) { return String(b.updatedAt).localeCompare(String(a.updatedAt)) })
+}
+
+function recordRestoreState(id) {
+  var rec = getRecord(id)
+  if (!rec || !getLedger(rec.ledgerId)) return { ok: false, reason: '账单或所属账本已不可用' }
+  if (!rec.deleted) return { ok: false, reason: '这笔账单已经恢复' }
+  if (rec.external && rec.external.src && (rec.external.txn || rec.external.version === 2)) {
+    var key = txnKey(rec.external)
+    var duplicate = db.records.some(function (other) {
+      return !other.deleted && other.ledgerId === rec.ledgerId && other.external && txnKey(other.external) === key
+    })
+    if (duplicate) return { ok: false, reason: '同一交易已在原账本入账，请先检查重复账单' }
+  }
+  var ids = accountsOf(rec.ledgerId).map(function (a) { return a.id })
+  if (rec.type === 'transfer' && (!rec.accountId || !rec.transferTo || rec.accountId === rec.transferTo || ids.indexOf(rec.accountId) < 0 || ids.indexOf(rec.transferTo) < 0)) {
+    return { ok: false, reason: '原转账账户已不可用，暂无法恢复' }
+  }
+  return { ok: true, missingAccount: !!rec.accountId && ids.indexOf(rec.accountId) < 0 }
+}
+
+/** 使用原 ID 撤销删除，并生成新版本，防止删除请求的旧确认覆盖恢复状态。 */
+function restoreRecord(id) {
+  var state = recordRestoreState(id)
+  if (!state.ok) return state
+  var rec = getRecord(id)
+  rec.deleted = false
+  rec.updatedAt = nextRecordVersion(rec)
+  rec.dirty = true
+  persist()
+  return { ok: true }
 }
 
 /** 账本累计统计 */
@@ -437,12 +568,55 @@ function withLedger(ledgerId, fn) {
   if (!l) return null
   ensureExtras(l)
   var out = fn(l)
-  l.cfgAt = isoNow()
+  l.cfgAt = nextRecordVersion({ updatedAt: l.cfgAt })
   persist()
   return out === undefined ? null : out
 }
 
 /* ---- 账户 ---- */
+
+function templatesOf(ledgerId) {
+  var l = getLedger(ledgerId)
+  if (!l) return []
+  ensureExtras(l)
+  return l.templates.map(function (t) { return Object.assign({}, t) })
+}
+
+function getTemplate(ledgerId, id) {
+  return templatesOf(ledgerId).find(function (t) { return t.id === id }) || null
+}
+
+function saveTemplate(ledgerId, fields) {
+  var l = getLedger(ledgerId)
+  if (!l) return { ok: false, reason: '账本已不可用' }
+  var t = templateModel.normalize(fields)
+  if (!t) return { ok: false, reason: '请填写模板名称和有效金额' }
+  var items = templatesOf(ledgerId)
+  var index = items.findIndex(function (item) { return item.id === t.id })
+  if (t.id && index < 0) return { ok: false, reason: '模板已删除，请返回查看' }
+  if (!t.id && items.length >= 50) return { ok: false, reason: '每个账本最多保存 50 个模板' }
+  var ids = accountsOf(ledgerId).filter(function (a) { return !u.accountIsFixed(a.type) }).map(function (a) { return a.id })
+  if (t.accountId && ids.indexOf(t.accountId) < 0) return { ok: false, reason: '账户已变更，请重新选择' }
+  if (t.type === 'transfer') {
+    if (!t.accountId || !t.transferTo || t.accountId === t.transferTo || ids.indexOf(t.transferTo) < 0) return { ok: false, reason: '请选择有效的转出和转入账户' }
+  } else if (!categoriesOf(ledgerId, t.type).some(function (c) { return c.key === t.category })) {
+    return { ok: false, reason: '分类已变更，请重新选择' }
+  }
+  if (!t.id) t.id = u.genId('T')
+  withLedger(ledgerId, function (ledger) {
+    if (index < 0) items.push(t)
+    else items[index] = t
+    ledger.templates = items
+  })
+  return { ok: true, template: Object.assign({}, t) }
+}
+
+function removeTemplate(ledgerId, id) {
+  var items = templatesOf(ledgerId)
+  if (!items.some(function (t) { return t.id === id })) return false
+  withLedger(ledgerId, function (l) { l.templates = items.filter(function (t) { return t.id !== id }) })
+  return true
+}
 
 function accountsOf(ledgerId) {
   ensure()
@@ -664,7 +838,7 @@ function runDueRecurring(ledgerId, today) {
     }
   }
   if (generated.length) {
-    l.cfgAt = now
+    l.cfgAt = nextRecordVersion({ updatedAt: l.cfgAt })
     persist()
   }
   return generated
@@ -715,6 +889,9 @@ function searchRecords(ledgerId, query) {
   ensure()
   query = query || {}
   var q = String(query.q || '').trim().toLowerCase()
+  var ledger = getLedger(ledgerId)
+  var categoryNames = {}
+  ;((ledger && ledger.categories) || []).forEach(function (c) { categoryNames[c.key] = c.name })
   var out = db.records.filter(function (r) {
     if (r.ledgerId !== ledgerId || r.deleted) return false
     if (query.type && r.type !== query.type) return false
@@ -722,10 +899,10 @@ function searchRecords(ledgerId, query) {
     if (query.memberId && r.memberId !== query.memberId) return false
     if (query.start && r.date < query.start) return false
     if (query.end && r.date > query.end) return false
-    if (query.minAmount && r.amount < query.minAmount) return false
-    if (query.maxAmount && r.amount > query.maxAmount) return false
+    if (query.minAmount != null && r.amount < query.minAmount) return false
+    if (query.maxAmount != null && r.amount > query.maxAmount) return false
     if (q) {
-      var catName = r.type === 'transfer' ? '转账' : u.categoryName(r.type, r.category)
+      var catName = r.type === 'transfer' ? '转账' : (categoryNames[r.category] || u.categoryName(r.type, r.category))
       var hay = (r.note + ' ' + catName + ' ' + (r.accountName || '') + ' ' + r.memberName).toLowerCase()
       if (hay.indexOf(q) < 0) return false
     }
@@ -737,30 +914,42 @@ function searchRecords(ledgerId, query) {
 
 /* ---------------- 外部账单导入 / 对账 ---------------- */
 
-/** 生成一条外部流水的稳定键：有交易单号用单号，否则退化为 日期+金额+序号 */
-function txnKey(row) {
-  var src = String(row.src || '').slice(0, 16)
-  var txn = String(row.txn || '').trim()
-  if (txn) return src + '#' + txn
-  return src + '#' + String(row.date || '') + '#' + (Number(row.amount) || 0) + '#' + String(row.party || '').slice(0, 20)
+/** 平台单号优先；无单号使用完整原始流水指纹。 */
+function txnKey(row) { return billIdentity.key(row) }
+
+/** 以目标账本为边界，保留回收站中的身份，防止删除后被再次导入。 */
+function importedKeySet(ledgerId) {
+  ensure()
+  var keys = Object.create(null)
+  db.records.forEach(function (r) {
+    if ((ledgerId && r.ledgerId !== ledgerId) || !r.external || !r.external.src) return
+    if (r.external.version === 2 || r.external.txn) keys[txnKey(r.external)] = true
+    else keys[billIdentity.legacyKey(Object.assign({}, r.external, { date: r.date, type: r.type, amount: r.amount, note: r.note }))] = true
+  })
+  var saved = ledgerId ? (db.importedByLedger || {})[ledgerId] : null
+  Object.keys(saved || {}).forEach(function (k) { keys[k] = true })
+  return keys
 }
 
-/** 本机已入账的外部键集合（从记录快照反推，兼容换设备后首次对账） */
-function importedKeySet() {
+/** 只读预检；提交时重新计算，防止预览后同步到来的记录重复入账。 */
+function previewImportRows(ledgerId, rows) {
   ensure()
-  var keys = {}
-  var i
-  for (i = 0; i < db.records.length; i++) {
-    var r = db.records[i]
-    if (!r.deleted && r.external && r.external.src) keys[txnKey(r.external)] = true
-  }
-  // db.imported 是旧版冗余表，保留兼容
-  var saved = db.imported || {}
-  for (i = 0; i < Object.keys(saved).length; i++) {
-    var k = Object.keys(saved)[i]
-    keys[k] = true
-  }
-  return keys
+  var out = { rows: [], dupes: 0, invalid: 0 }
+  if (!getLedger(ledgerId)) return out
+  var seen = importedKeySet(ledgerId)
+  ;(rows || []).forEach(function (row) {
+    var amount = row && Math.round(Number(row.amount))
+    if (!row || (row.type !== 'expense' && row.type !== 'income') || !isFinite(amount) || amount <= 0 ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(row.date || '') || !row.src) { out.invalid++; return }
+    var key = txnKey(row)
+    var oldKey = row.src + '#' + row.date + '#' + amount + '#' + String(row.party || '').slice(0, 20)
+    if (seen[key] || (!billIdentity.normalize(row).txn && (seen[billIdentity.legacyKey(row)] || seen[oldKey]))) {
+      out.dupes++; return
+    }
+    seen[key] = true
+    out.rows.push(row)
+  })
+  return out
 }
 
 /** 分类 key 是否属于指定收/支类型（防止手动分类串到另一类型上） */
@@ -781,17 +970,14 @@ function importRows(ledgerId, rows, opts) {
   ensure()
   if (!getLedger(ledgerId)) return { added: [], skipped: 0, dupes: 0 }
   opts = opts || {}
-  var seen = importedKeySet()
+  var preview = previewImportRows(ledgerId, rows)
+  var candidates = preview.rows
+  var limit = Number(opts.limit)
+  if (isFinite(limit) && limit > 0) candidates = candidates.slice(0, Math.floor(limit))
   var added = []
-  var dupes = 0
-  for (var i = 0; i < rows.length; i++) {
-    var row = rows[i]
-    if (row.type !== 'expense' && row.type !== 'income') continue
+  for (var i = 0; i < candidates.length; i++) {
+    var row = candidates[i]
     var amount = Math.round(Number(row.amount))
-    if (!isFinite(amount) || amount <= 0) continue
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date || '')) continue
-    var key = txnKey(row)
-    if (seen[key]) { dupes++; continue }
     // 手动指定分类只套到同类型的行上：用户选了「支出｜餐饮」时，
     // 收入行仍走自动识别，避免工资被记成餐饮支出、统计错乱。
     var category = row.category
@@ -805,13 +991,12 @@ function importRows(ledgerId, rows, opts) {
       category: category,
       accountId: opts.accountId || '',
       note: row.note || (row.party || ''),
-      external: { src: row.src, txn: row.txn, party: row.party }
+      external: row
     })
     if (!rec) continue
-    seen[key] = true
     added.push(rec.id)
   }
-  return { added: added, skipped: rows.length - added.length, dupes: dupes }
+  return { added: added, skipped: preview.dupes + preview.invalid, dupes: preview.dupes, remaining: preview.rows.length - added.length }
 }
 
 /**
@@ -898,11 +1083,14 @@ function exportCSV(ledgerId) {
   ensureExtras(l)
   var accName = {}
   for (var i = 0; i < l.accounts.length; i++) accName[l.accounts[i].id] = l.accounts[i].name
+  var catName = {}
+  ;(l.categories || []).forEach(function (c) { catName[c.type + ':' + c.key] = c.name })
   var records = db.records
     .filter(function (r) { return r.ledgerId === ledgerId && !r.deleted })
     .map(function (r) {
       var c = Object.assign({}, r)
       c.accountName = r.accountId ? (accName[r.accountId] || '') : ''
+      c.categoryName = catName[r.type + ':' + r.category] || u.categoryName(r.type, r.category)
       c.transferToName = r.transferTo ? (accName[r.transferTo] || '') : (r.transferToName || '')
       return c
     })
@@ -951,9 +1139,10 @@ function importSharePackage(text) {
       createdAt: Number(l.createdAt) || Date.now(),
       inviteCode: String(l.inviteCode || ''),
       members: {},
-      accounts: Array.isArray(l.accounts) && l.accounts.length ? l.accounts : fx.accounts,
+      accounts: Array.isArray(l.accounts) ? l.accounts : fx.accounts,
       budget: l.budget && typeof l.budget === 'object' ? l.budget : fx.budget,
       recurring: Array.isArray(l.recurring) ? l.recurring : [],
+      templates: templateModel.list(l.templates),
       categories: Array.isArray(l.categories) ? l.categories : [],
       defaultAccountId: String(l.defaultAccountId || ''),
       cfgAt: isoNow()
@@ -1067,6 +1256,7 @@ function exportLedgersForSync() {
       recurring: l.recurring,
       categories: l.categories,
       challenges: l.challenges,
+      templates: l.templates,
       defaultAccountId: l.defaultAccountId || '',
       cfgAt: toIso(l.cfgAt)
     }
@@ -1078,7 +1268,8 @@ function drainDirty() {
   ensure()
   var out = []
   for (var i = 0; i < db.records.length; i++) {
-    if (db.records[i].dirty) out.push({
+    if (db.records[i].dirty || db.records[i].importIdentityPending) out.push({
+      identityOnly: !!db.records[i].importIdentityPending && !db.records[i].dirty,
       id: db.records[i].id,
       ledgerId: db.records[i].ledgerId,
       memberId: db.records[i].memberId,
@@ -1091,6 +1282,7 @@ function drainDirty() {
       transferToName: db.records[i].transferToName || '',
       date: db.records[i].date,
       note: db.records[i].note,
+      external: billIdentity.normalize(db.records[i].external),
       deleted: !!db.records[i].deleted,
       createdAt: toIso(db.records[i].createdAt),
       updatedAt: toIso(db.records[i].updatedAt)
@@ -1099,12 +1291,23 @@ function drainDirty() {
   return out
 }
 
-function clearDirty(ids) {
+function clearDirty(items) {
   ensure()
   var set = {}
-  for (var i = 0; i < ids.length; i++) set[ids[i]] = true
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i]
+    set[typeof item === 'string' ? item : item.id] = item
+  }
+  var current = {}
+  drainDirty().forEach(function (record) { current[record.id] = record })
   for (var j = 0; j < db.records.length; j++) {
-    if (set[db.records[j].id]) db.records[j].dirty = false
+    var rec = db.records[j]
+    var sent = set[rec.id]
+    if (!sent) continue
+    // 按实际发送的字段确认，避免同毫秒编辑/删除被旧请求误标为已同步。
+    if (typeof sent === 'string' || (current[rec.id] && Object.keys(sent).every(function (key) {
+      return key === 'external' ? JSON.stringify(current[rec.id][key]) === JSON.stringify(sent[key]) : current[rec.id][key] === sent[key]
+    }))) { rec.dirty = false; rec.importIdentityPending = false }
   }
 }
 
@@ -1133,11 +1336,12 @@ function applyRemoteLedger(o) {
       members: members
     }
     var fx = defaultLedgerExtras()
-    fresh.accounts = Array.isArray(o.accounts) && o.accounts.length ? o.accounts : fx.accounts
+    fresh.accounts = Array.isArray(o.accounts) ? o.accounts : fx.accounts
     fresh.budget = o.budget && typeof o.budget === 'object' ? o.budget : fx.budget
     fresh.recurring = Array.isArray(o.recurring) ? o.recurring : []
     fresh.categories = Array.isArray(o.categories) ? o.categories : []
     fresh.challenges = Array.isArray(o.challenges) ? o.challenges : []
+    fresh.templates = templateModel.list(o.templates)
     fresh.defaultAccountId = String(o.defaultAccountId || '')
     fresh.cfgAt = toIso(o.cfgAt)
     db.ledgers.push(fresh)
@@ -1172,11 +1376,12 @@ function applyRemoteLedger(o) {
   // 账本级配置（账户/预算/周期/分类/默认账户）：按 cfgAt 时间戳 LWW
   var cfgAt = toIso(o.cfgAt)
   if (cfgAt && (!existing.cfgAt || cfgAt > existing.cfgAt)) {
-    if (Array.isArray(o.accounts) && o.accounts.length) existing.accounts = o.accounts
+    if (Array.isArray(o.accounts)) existing.accounts = o.accounts
     if (o.budget && typeof o.budget === 'object') existing.budget = o.budget
     if (Array.isArray(o.recurring)) existing.recurring = o.recurring
     if (Array.isArray(o.categories)) existing.categories = o.categories
     if (Array.isArray(o.challenges)) existing.challenges = o.challenges
+    if (Array.isArray(o.templates)) existing.templates = templateModel.list(o.templates)
     if (o.defaultAccountId !== undefined) existing.defaultAccountId = String(o.defaultAccountId || '')
     if (o.cover && typeof o.cover === 'object') existing.cover = u.ledgerCoverInfo(o.cover)
     existing.cfgAt = cfgAt
@@ -1198,7 +1403,16 @@ function applyRemoteRecord(o) {
   var updatedAt = toIso(o.updatedAt)
   var existing = getRecord(o.id)
   if (existing) {
-    if (existing.updatedAt >= updatedAt) return false
+    // 身份补齐独立于财务版本，同版本/旧快照也可补齐缺失身份，不覆盖金额或删除状态。
+    var identityChanged = false
+    var external = billIdentity.normalize(o.external)
+    if (external && (!existing.external || !existing.external.src || (!existing.external.version && external.version === 2))) {
+      existing.external = external
+      existing.importIdentitySynced = true
+      existing.importIdentityPending = false
+      identityChanged = true
+    }
+    if (existing.updatedAt >= updatedAt) return identityChanged
     existing.amount = amount
     existing.type = o.type
     existing.category = o.type === 'transfer' ? 'transfer' : String(o.category || 'other_out')
@@ -1208,6 +1422,7 @@ function applyRemoteRecord(o) {
     existing.date = date
     existing.note = String(o.note == null ? '' : o.note).slice(0, 50)
     existing.memberName = String(o.memberName || '成员').slice(0, 12)
+    if (o.external) { existing.external = billIdentity.normalize(o.external); existing.importIdentitySynced = true; existing.importIdentityPending = false }
     existing.deleted = !!o.deleted
     existing.updatedAt = updatedAt
     existing.dirty = false
@@ -1226,6 +1441,8 @@ function applyRemoteRecord(o) {
     transferToName: String(o.transferToName || ''),
     date: date,
     note: String(o.note == null ? '' : o.note).slice(0, 50),
+    external: billIdentity.normalize(o.external),
+    importIdentitySynced: !!o.external,
     createdAt: toIso(o.createdAt),
     updatedAt: updatedAt,
     deleted: !!o.deleted,
@@ -1358,15 +1575,26 @@ module.exports = {
   renameLedger: renameLedger,
   setLedgerCover: setLedgerCover,
   deleteLedger: deleteLedger,
+  removedLedgerIds: removedLedgerIds,
+  acknowledgeRemovedLedgers: acknowledgeRemovedLedgers,
+  restoreLedger: restoreLedger,
+  prepareCloudSnapshot: prepareCloudSnapshot,
   listLedgers: listLedgers,
   recordsOf: recordsOf,
   getRecord: getRecord,
   addRecord: addRecord,
   updateRecord: updateRecord,
   deleteRecord: deleteRecord,
+  deletedRecordsOf: deletedRecordsOf,
+  recordRestoreState: recordRestoreState,
+  restoreRecord: restoreRecord,
   addTransfer: addTransfer,
   statsOf: statsOf,
   accountsOf: accountsOf,
+  templatesOf: templatesOf,
+  getTemplate: getTemplate,
+  saveTemplate: saveTemplate,
+  removeTemplate: removeTemplate,
   saveAccounts: saveAccounts,
   assetSummary: assetSummary,
   budgetOf: budgetOf,
@@ -1390,6 +1618,7 @@ module.exports = {
   exportReconcileCSV: exportReconcileCSV,
   txnKey: txnKey,
   importedKeySet: importedKeySet,
+  previewImportRows: previewImportRows,
   importRows: importRows,
   reconcile: reconcile,
   sharePackage: sharePackage,

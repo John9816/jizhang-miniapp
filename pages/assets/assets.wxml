@@ -1,19 +1,25 @@
-<view class="page">
+<view class="page motion-page">
   <!-- 净资产 -->
-  <view class="net-card {{netWorthPositive ? 'net-positive' : 'net-negative'}}">
-    <text class="net-label">净资产（全部账户合计）</text>
+  <view class="net-card {{netWorthPositive ? 'net-positive' : 'net-negative'}} motion-section">
+    <text class="net-label">净资产 · 当前账本</text>
     <view class="net-value-row">
       <text class="net-sign">{{netWorthPositive ? '¥' : '-¥'}}</text>
       <text class="net-value">{{netWorthPositive ? netWorthText : netWorthAbs}}</text>
     </view>
+    <view class="asset-overview"><view><text>总资产</text><text class="overview-value">¥{{totalAssetsText}}</text></view><view><text>总负债</text><text class="overview-value">¥{{totalDebtText}}</text></view><view><text>负债 / 资产</text><text class="overview-value">{{debtRatio}}</text></view></view>
     <view class="net-actions">
-      <view class="net-btn" bindtap="goTransfer">🔀 记一笔转账</view>
-      <view class="net-btn" bindtap="openManage">⚙️ 管理账户</view>
+      <view class="net-btn" bindtap="goTransfer" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">🔀 记一笔转账</view>
+      <view class="net-btn" bindtap="openManage" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋ 添加账户</view>
     </view>
   </view>
 
+  <view class="empty" wx:if="{{accounts.length === 0}}">
+    <text class="empty-text">添加现金、银行卡或信用卡账户，开始管理余额和流水</text>
+    <view class="btn-primary empty-btn" bindtap="openManage" hover-class="press-button">添加第一个账户</view>
+  </view>
+
   <!-- 分组小计：资金 / 固定资产 / 负债 -->
-  <view class="card sum-card" wx:if="{{groups.length > 1}}">
+  <view class="card sum-card motion-section" wx:if="{{groups.length > 1}}">
     <view class="sum-row" wx:for="{{groups}}" wx:key="key">
       <view class="sum-left">
         <text class="sum-name">{{item.name}}</text>
@@ -24,12 +30,12 @@
   </view>
 
   <!-- 账户列表（按分组） -->
-  <view class="card" wx:for="{{groups}}" wx:key="key" wx:for-item="group">
+  <view class="card motion-section" wx:for="{{groups}}" wx:key="key" wx:for-item="group">
     <view class="section-title">
       <text>{{group.name}}</text>
       <text class="section-hint">{{group.hint}}</text>
     </view>
-    <view class="acc-row" wx:for="{{group.accounts}}" wx:for-item="item" bindtap="editAccount" data-id="{{item.id}}">
+    <view class="acc-row" wx:for="{{group.accounts}}" wx:key="id" wx:for-item="item" bindtap="editAccount" data-id="{{item.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
       <view class="acc-icon">{{item.icon}}</view>
       <view class="acc-main">
         <view class="acc-name-row">
@@ -38,7 +44,7 @@
         </view>
         <text class="acc-type">{{item.typeName}} · {{item.isFixed ? '估值' : '余额'}}</text>
       </view>
-      <text class="acc-balance {{item.balance < 0 ? 'text-expense' : 'text-income'}}">{{item.balance < 0 ? '-¥' : '¥'}}{{item.balanceText}}</text>
+      <view class="acc-right"><text class="acc-balance {{item.balance < 0 ? 'text-expense' : ''}}">{{item.balance < 0 ? '-¥' : '¥'}}{{item.balanceAbsText}}</text><view class="acc-tools"><view role="button" aria-label="查看{{item.name}}流水" catchtap="filterAccount" data-id="{{item.id}}">流水</view><view role="button" aria-label="校准{{item.name}}余额" catchtap="calibrateAccount" data-id="{{item.id}}">校准</view></view></view>
     </view>
     <view class="group-total">
       <text>小计</text>
@@ -47,7 +53,10 @@
   </view>
 
   <!-- 账户流水 -->
+  <view class="flow-title">账户流水 · {{selectedAccountName}}</view>
+  <scroll-view class="account-filter" scroll-x><view class="filter-items"><view role="button" class="filter-chip {{!selectedAccount ? 'filter-active' : ''}}" aria-label="查看全部账户流水" data-id="" bindtap="filterAccount">全部账户</view><view wx:for="{{accounts}}" wx:key="id" role="button" class="filter-chip {{selectedAccount === item.id ? 'filter-active' : ''}}" aria-label="查看{{item.name}}流水" data-id="{{item.id}}" bindtap="filterAccount">{{item.name}}</view></view></scroll-view>
   <block wx:if="{{recordGroups.length > 0}}">
+
     <view class="card group-card" wx:for="{{recordGroups}}" wx:key="date" wx:for-item="group">
       <view class="group-head">
         <text class="group-date">{{group.label}}</text>
@@ -56,7 +65,7 @@
           <text class="text-expense" wx:if="{{group.expense > 0}}">支 ¥{{group.expenseText}}</text>
         </view>
       </view>
-      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="rec-icon">{{rec.icon}}</view>
         <view class="rec-main">
           <view class="rec-title">
@@ -65,7 +74,7 @@
           </view>
           <text class="rec-note" wx:if="{{rec.note}}">{{rec.note}}</text>
         </view>
-        <view class="rec-amount {{rec.type === 'income' ? 'text-income' : 'text-expense'}}">{{rec.amountText}}</view>
+        <view class="rec-amount {{rec.type === 'transfer' ? '' : (rec.type === 'income' ? 'text-income' : 'text-expense')}}">{{rec.amountText}}</view>
       </view>
     </view>
   </block>
@@ -73,22 +82,23 @@
   <view class="empty" wx:elif="{{accounts.length > 0}}">
     <text class="empty-icon">💰</text>
     <text class="empty-text">还没有关联账户的记录。记账时选择账户，这里就能看到每笔流水</text>
-    <view class="btn-primary empty-btn" bindtap="goEdit">去记一笔</view>
+    <view class="btn-primary empty-btn" bindtap="goEdit" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">去记一笔</view>
   </view>
 
   <!-- 账户管理弹层 -->
   <view class="modal-mask" wx:if="{{showManage}}">
     <view class="modal">
       <scroll-view scroll-y class="modal-scroll">
-        <view class="modal-title">{{editingId ? '编辑账户' : '新增账户'}}</view>
+        <view class="modal-title">{{balanceMode === 'current' ? '校准当前余额' : (editingId ? '编辑账户' : '新增账户')}}</view>
         <view class="modal-row">
           <text class="modal-label">名称</text>
           <input class="modal-input-inline" value="{{editName}}" placeholder="如：招行工资卡" maxlength="12" bindinput="onEditName" />
         </view>
         <view class="modal-row">
           <text class="modal-label">类型</text>
-          <view class="type-chips">
-            <view class="account-chip {{editType === item.key ? 'account-active' : ''}}" wx:for="{{accountTypes}}" wx:key="key" bindtap="setEditType" data-type="{{item.key}}">
+          <text wx:if="{{balanceMode === 'current'}}">校准保留原账户类型</text>
+          <view class="type-chips" wx:else>
+            <view class="account-chip {{editType === item.key ? 'account-active' : ''}}" wx:for="{{accountTypes}}" wx:key="key" bindtap="setEditType" data-type="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
               <text>{{item.icon}} {{item.name}}</text>
             </view>
           </view>
@@ -96,29 +106,31 @@
         <view class="modal-row" wx:if="{{editingId && !editIsFixed}}">
           <text class="modal-label">默认账户</text>
           <view class="type-chips">
-            <view class="account-chip {{defaultAccountId === editingId ? 'account-active' : ''}}" bindtap="toggleDefault" data-id="{{editingId}}">
+            <view class="account-chip {{defaultAccountId === editingId ? 'account-active' : ''}}" bindtap="toggleDefault" data-id="{{editingId}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
               <text>{{defaultAccountId === editingId ? '✓ 记一笔时预选' : '设为默认'}}</text>
             </view>
           </view>
         </view>
         <view class="modal-row">
-          <text class="modal-label">{{editIsFixed ? '当前估值' : '初始余额'}}</text>
+          <text class="modal-label">{{balanceMode === 'current' ? '实际余额' : (editIsFixed ? '期初估值' : '初始余额')}}</text>
           <view class="initial-row">
             <text class="initial-sign">¥</text>
             <input class="modal-input-inline" type="digit" value="{{editInitial}}" placeholder="0.00" bindinput="onEditInitial" />
+            <button class="balance-sign-btn" size="mini" bindtap="toggleBalanceSign" hover-class="press-button" aria-label="切换余额正负">±</button>
           </view>
         </view>
         <view class="modal-actions-modal">
-          <view class="btn-primary" bindtap="saveAccount">保存</view>
-          <view class="btn-danger-outline" wx:if="{{editingId}}" bindtap="removeAccount" data-id="{{editingId}}">删除此账户</view>
-          <view class="btn-ghost" bindtap="closeManage">取消</view>
+          <view class="btn-primary" bindtap="saveAccount" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">保存</view>
+          <view class="btn-danger-outline" wx:if="{{editingId}}" bindtap="removeAccount" data-id="{{editingId}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">删除此账户</view>
+          <view class="btn-ghost" bindtap="closeManage" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
         </view>
-        <view class="manage-hint" wx:if="{{editIsFixed}}">房产 / 车产按当前估值计入总资产，房价车价变动时改这里即可</view>
-        <view class="manage-hint" wx:else>信用卡等负债账户可填负数初始余额，如 -3000</view>
+        <view class="manage-hint" wx:if="{{balanceMode === 'current'}}">填入核对后的实际余额。校准只调整期初余额，历史流水保持完整，不计入收入和支出。欠款请填负数。</view>
+        <view class="manage-hint" wx:elif="{{editIsFixed}}">期初估值与关联流水合计。更新实际估值时，请使用账户右侧的“校准”。</view>
+        <view class="manage-hint" wx:else>点击 ± 切换正负。信用卡欠款填负数，如 -3000；初始余额会与历史流水合计。</view>
       </scroll-view>
     </view>
   </view>
 
   <!-- 悬浮按钮 -->
-  <view class="fab" bindtap="goEdit">＋</view>
+  <view class="fab" bindtap="goEdit" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋</view>
 </view>

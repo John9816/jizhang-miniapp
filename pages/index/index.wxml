@@ -1,10 +1,10 @@
-<view class="page">
-  <view class="nav-holder" style="height:{{statusBar}}px"></view>
+<view class="page motion-page {{pageMotion}}">
+  <view class="nav-holder" style="height:{{contentTop}}px"></view>
 
   <!-- 顶部：账本名（点击切换） + 问候；右侧仅保留更多入口 -->
-  <view class="topbar">
+  <view class="topbar motion-section">
     <view class="topbar-l">
-      <view class="brand-row" bindtap="openLedgerSheet">
+      <view class="brand-row" bindtap="openLedgerSheet" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="brand-cover brand-cover-img" wx:if="{{ledgerCover && ledgerCover.kind === 'image'}}">
           <image src="{{ledgerCover.image}}" mode="aspectFill" />
         </view>
@@ -15,17 +15,17 @@
       <text class="brand-sub">{{greeting}}，今天也要存一点哦！</text>
     </view>
     <view class="topbar-r">
-      <view class="icon-btn" bindtap="toggleMore">⋯</view>
+      <view class="icon-btn" bindtap="toggleMore" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">⋯</view>
     </view>
   </view>
 
   <!-- 首屏合并资料卡（非阻断，可关闭）：头像 + 昵称同一屏并排完成，昵称用 bindnickname 一键填入 -->
   <profile-fill wx:if="{{showOnboard}}" mode="onboard" bind:done="onOnboardDone" />
 
-  <!-- 本月汇总主卡：支出大数 + 月切换 + 收入/结余 + 内嵌预算进度；支持左右滑动翻月 -->
-  <view class="hero" wx:if="{{ledger}}" bindtouchstart="onHeroTouchStart" bindtouchend="onHeroTouchEnd">
+  <!-- 本月汇总主卡：结余大数 + 月切换 + 收入/支出 + 内嵌预算进度；支持左右滑动翻月 -->
+  <view class="hero motion-section motion-delay-1" wx:if="{{ledger}}" bindtouchstart="onHeroTouchStart" bindtouchend="onHeroTouchEnd">
     <view class="hero-head">
-      <text class="hero-label">支出（元）</text>
+      <text class="hero-label">本月结余（元）</text>
       <view class="month-pill">
         <text class="mp-btn" bindtap="prevMonth">‹</text>
         <text class="mp-label">{{monthShort}}</text>
@@ -33,16 +33,16 @@
       </view>
     </view>
 
-    <text class="hero-amount num">{{summary.expenseText}}</text>
+    <text class="hero-amount num">{{summary.balanceText}}</text>
 
     <view class="hero-foot">
       <text class="hero-foot-item">收入 <text class="num">{{summary.incomeText}}</text></text>
       <text class="hero-sep"></text>
-      <text class="hero-foot-item">结余 <text class="num">{{summary.balanceText}}</text></text>
+      <text class="hero-foot-item">支出 <text class="num">{{summary.expenseText}}</text></text>
     </view>
 
     <!-- 预算进度内嵌主卡底部（替代独立预算卡与超支提醒条）；点击进预算管理 -->
-    <view class="hero-budget" wx:if="{{heroBudget}}" bindtap="goBudget">
+    <view class="hero-budget" wx:if="{{heroBudget}}" bindtap="goBudget" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
       <view class="hb-track">
         <view class="hb-fill {{heroBudget.over ? 'hb-over' : ''}}" style="width:{{heroBudget.pct}}%"></view>
       </view>
@@ -58,7 +58,7 @@
   </view>
 
   <!-- 今日速览条：一行薄卡（翻看历史月份时隐藏） -->
-  <view class="today-strip" wx:if="{{ledger && isCurrentMonth}}">
+  <view class="today-strip motion-section motion-delay-2" wx:if="{{ledger && isCurrentMonth}}">
     <text class="ts-item">今日支出 <text class="num ts-val">{{today.expenseText}}</text></text>
     <text class="ts-sep"></text>
     <text class="ts-item">今日收入 <text class="num ts-val text-income">{{today.incomeText}}</text></text>
@@ -69,14 +69,14 @@
   </view>
 
   <!-- 周期记账提示条：有启用中规则时常驻，点击进管理页；到期后打开首页即自动入账 -->
-  <view class="recur-hint" wx:if="{{ledger && recurringHint}}" bindtap="goRecurring">
+  <view class="recur-hint" wx:if="{{ledger && recurringHint}}" bindtap="goRecurring" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
     <text class="recur-hint-icon">🔁</text>
     <text class="recur-hint-text">周期记账 {{recurringHint.count}} 条 · 下次 {{recurringHint.name}} {{recurringHint.nextText}}</text>
     <text class="recur-hint-go">管理 ›</text>
   </view>
 
   <!-- 存钱挑战（仅在进行中有挑战时占用首屏；创建入口在更多面板） -->
-  <view class="card challenge-card" wx:if="{{ledger && challenge}}" bindtap="goChallenge">
+  <view class="card challenge-card motion-section" wx:if="{{ledger && challenge}}" bindtap="goChallenge" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
     <view class="ch-row">
       <view class="ch-icon-wrap">
         <text class="ch-emoji">🏆</text>
@@ -101,12 +101,13 @@
   </view>
 
   <!-- 快速记一笔：常用分类横滑 -->
-  <block wx:if="{{topCats.length > 0}}">
+  <block wx:if="{{ledger}}">
     <view class="qc-head">
       <text class="qc-title">快速记一笔</text>
+      <view class="qc-templates" role="button" bindtap="goTemplates" hover-class="press-soft">常用模板 ›</view>
     </view>
-    <scroll-view scroll-x class="quick-cats" enhanced="{{true}}" show-scrollbar="{{false}}">
-      <view class="qc-item" wx:for="{{topCats}}" wx:key="key" bindtap="goEditWithCategory" data-key="{{item.key}}">
+    <scroll-view wx:if="{{topCats.length > 0}}" scroll-x class="quick-cats" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="qc-item" wx:for="{{topCats}}" wx:key="key" bindtap="goEditWithCategory" data-key="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="qc-icon" style="background:{{item.tint}}">
           <text class="qc-emoji">{{item.icon}}</text>
         </view>
@@ -117,24 +118,24 @@
 
   <!-- 成员筛选 -->
   <scroll-view scroll-x class="member-filter" wx:if="{{members.length > 1}}" enhanced="{{true}}" show-scrollbar="{{false}}">
-    <view class="chip {{memberFilter === 'all' ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="all">全部</view>
-    <view wx:for="{{members}}" wx:key="id" class="chip {{memberFilter === item.id ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="{{item.id}}">{{item.name}}</view>
+    <view class="chip {{memberFilter === 'all' ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="all" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">全部</view>
+    <view wx:for="{{members}}" wx:key="id" class="chip {{memberFilter === item.id ? 'chip-active' : ''}}" bindtap="setMemberFilter" data-id="{{item.id}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{item.name}}</view>
   </scroll-view>
 
   <!-- 列表视图：账单流为页面主体；组头含完整日期+星期+当日收支，行内含记账时间 -->
   <block wx:if="{{viewMode === 'list'}}">
     <view class="bills-head">
       <text class="bills-title">最近账单</text>
-      <view class="bills-more" bindtap="goSearch">全部 {{recordCount}} 笔 ›</view>
+      <view class="bills-more" bindtap="goSearch" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">全部 {{recordCount}} 笔 ›</view>
     </view>
 
-    <view class="card bill-card" wx:if="{{groups.length > 0}}">
+    <view class="card bill-card {{listMotion || 'motion-a'}}" wx:if="{{groups.length > 0}}">
       <block wx:for="{{groups}}" wx:for-item="group" wx:key="date">
         <view class="bill-date">
           <text>{{group.label}}</text>
           <text class="bill-date-sum"><text wx:if="{{group.expense > 0}}">支 {{group.expenseText}}</text><text class="bill-date-in" wx:if="{{group.income > 0}}"> 收 {{group.incomeText}}</text></text>
         </view>
-        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
           <view class="bill-icon" style="background:{{rec.tint}}">
             <text class="bill-emoji">{{rec.icon}}</text>
           </view>
@@ -153,7 +154,7 @@
     <view class="empty" wx:elif="{{!loading}}">
       <text class="empty-icon">🐷</text>
       <text class="empty-text">{{emptyText}}</text>
-      <view class="btn-primary empty-btn" bindtap="goEdit">记第一笔</view>
+      <view class="btn-primary empty-btn" bindtap="goEdit" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">记第一笔</view>
     </view>
   </block>
 
@@ -161,16 +162,16 @@
   <block wx:else>
     <view class="bills-head">
       <text class="bills-title">{{monthLabel}}</text>
-      <view class="bills-more" bindtap="toggleCalendar">切回列表 ›</view>
+      <view class="bills-more" bindtap="toggleCalendar" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">切回列表 ›</view>
     </view>
 
-    <view class="card cal-card">
+    <view class="card cal-card {{listMotion || 'motion-a'}}">
       <view class="cal-weekdays">
         <text class="cal-weekday" wx:for="{{calendar.weekdays}}" wx:key="*this">{{item}}</text>
       </view>
       <view class="cal-grid">
         <view class="cal-cell {{item.today ? 'cal-today' : ''}} {{selectedDay === item.date ? 'cal-selected' : ''}} {{!item.inMonth ? 'cal-out' : ''}}"
-              wx:for="{{calendar.days}}" wx:key="date" bindtap="selectDay" data-day="{{item.date}}">
+              wx:for="{{calendar.days}}" wx:key="date" bindtap="selectDay" data-day="{{item.date}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
           <text class="cal-day">{{item.day}}</text>
           <view class="cal-marks">
             <text class="cal-amt cal-amt-in" wx:if="{{item.income > 0}}">{{item.incomeText}}</text>
@@ -185,9 +186,9 @@
       <text class="bills-more" wx:if="{{dayGroups.length === 0}}">当日无记录</text>
     </view>
 
-    <view class="card bill-card" wx:if="{{dayGroups.length > 0}}">
+    <view class="card bill-card {{listMotion || 'motion-a'}}" wx:if="{{dayGroups.length > 0}}">
       <block wx:for="{{dayGroups}}" wx:for-item="group" wx:key="date">
-        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+        <view class="bill-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
           <view class="bill-icon" style="background:{{rec.tint}}">
             <text class="bill-emoji">{{rec.icon}}</text>
           </view>
@@ -205,56 +206,32 @@
   </block>
 
   <!-- 更多面板 -->
-  <view class="sheet-mask" wx:if="{{showMore}}" bindtap="toggleMore"></view>
-  <view class="sheet" wx:if="{{showMore}}">
+  <view class="sheet-mask {{showMoreLeaving ? 'motion-leaving' : ''}}" wx:if="{{showMore || showMoreLeaving}}" bindtap="toggleMore"></view>
+  <view class="sheet {{showMoreLeaving ? 'motion-leaving' : ''}}" wx:if="{{showMore || showMoreLeaving}}">
     <view class="sheet-handle"></view>
-    <view class="sheet-title">更多</view>
+    <view class="sheet-title">账单工具</view>
     <view class="more-grid">
-      <view class="more-item" bindtap="openSheetItem" data-key="search">
-        <text class="more-emoji">🧾</text><text>账单搜索</text>
+      <view class="more-item" bindtap="openSheetItem" data-key="search" role="button" hover-class="press-soft">
+        <text class="more-emoji">🧾</text><text>查找账单</text>
       </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="assets">
-        <text class="more-emoji">💰</text><text>我的资产</text>
+      <view class="more-item" bindtap="openSheetItem" data-key="calendar" role="button" hover-class="press-soft">
+        <text class="more-emoji">📅</text><text>{{viewMode === 'list' ? '切换日历' : '切换列表'}}</text>
       </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="budget">
-        <text class="more-emoji">🎯</text><text>预算管理</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="challenge">
-        <text class="more-emoji">🏆</text><text>存钱挑战</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="members">
-        <text class="more-emoji">👥</text><text>成员共享</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="categories">
-        <text class="more-emoji">🏷️</text><text>分类管理</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="recurring">
-        <view class="more-icon-wrap">
-          <text class="more-emoji">🔁</text>
-          <text class="more-badge" wx:if="{{recurringCount > 0}}">{{recurringCount}}</text>
-        </view>
-        <text>周期记账</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="transfer">
-        <text class="more-emoji">🔄</text><text>账户转账</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="calendar">
-        <text class="more-emoji">📅</text><text>{{viewMode === 'list' ? '日历视图' : '列表视图'}}</text>
-      </view>
-      <view class="more-item" bindtap="openSheetItem" data-key="ledger">
-        <text class="more-emoji">📒</text><text>账本管理</text>
+      <view class="more-item" bindtap="openSheetItem" data-key="manage" role="button" hover-class="press-soft">
+        <text class="more-emoji">⚙</text><text>功能管理</text>
       </view>
     </view>
-    <view class="sheet-cancel" bindtap="toggleMore">取消</view>
+    <view class="more-hint">资产、账本、分类与预算，在「我的」统一管理</view>
+    <view class="sheet-cancel" bindtap="toggleMore" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
   </view>
 
   <!-- 账本切换弹层：点顶部账本名弹出 -->
-  <view class="sheet-mask" wx:if="{{ledgerSheet}}" bindtap="closeLedgerSheet"></view>
-  <view class="sheet" wx:if="{{ledgerSheet}}">
+  <view class="sheet-mask {{ledgerSheetLeaving ? 'motion-leaving' : ''}}" wx:if="{{ledgerSheet || ledgerSheetLeaving}}" bindtap="closeLedgerSheet"></view>
+  <view class="sheet {{ledgerSheetLeaving ? 'motion-leaving' : ''}}" wx:if="{{ledgerSheet || ledgerSheetLeaving}}">
     <view class="sheet-handle"></view>
     <view class="sheet-title">切换账本</view>
     <scroll-view scroll-y class="ledger-scroll">
-      <view class="ledger-item {{item.isCurrent ? 'ledger-item-on' : ''}}" wx:for="{{ledgerOptions}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}">
+      <view class="ledger-item {{item.isCurrent ? 'ledger-item-on' : ''}}" wx:for="{{ledgerOptions}}" wx:key="id" bindtap="switchLedger" data-id="{{item.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="ledger-item-l">
           <view class="ledger-item-cover ledger-item-cover-img" wx:if="{{item.cover.kind === 'image'}}">
             <image src="{{item.cover.image}}" mode="aspectFill" />
@@ -268,7 +245,7 @@
         <text class="ledger-check" wx:if="{{item.isCurrent}}">✓</text>
       </view>
     </scroll-view>
-    <view class="sheet-item ledger-manage" bindtap="goLedgerFromSheet">⚙️ 账本管理 / 新建账本</view>
-    <view class="sheet-cancel" bindtap="closeLedgerSheet">取消</view>
+    <view class="sheet-item ledger-manage" bindtap="goLedgerFromSheet" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">⚙️ 账本管理 / 新建账本</view>
+    <view class="sheet-cancel" bindtap="closeLedgerSheet" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
   </view>
 </view>

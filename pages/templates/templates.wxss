@@ -1,0 +1,24 @@
+.templates-page { padding-top: 8rpx; }
+.templates-intro { padding: 28rpx 32rpx 20rpx; }
+.templates-title { font-size: 36rpx; font-weight: 700; color: var(--ink); }
+.templates-subtitle { margin-top: 16rpx; font-size: 25rpx; color: var(--accent-ink); overflow-wrap: anywhere; }
+.templates-description { margin-top: 16rpx; font-size: 26rpx; color: var(--ink-2); line-height: 1.8; }
+.templates-create { margin-top: 28rpx; min-height: 92rpx; padding: 18rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; color: var(--ink); background: var(--gold); font-size: 29rpx; font-weight: 600; }
+.templates-filters { margin: 12rpx 24rpx 24rpx; padding: 8rpx; display: flex; background: var(--gold-soft); border-radius: 20rpx; }
+.templates-filter { flex: 1; min-width: 0; min-height: 80rpx; padding: 12rpx 8rpx; display: flex; justify-content: center; align-items: center; color: var(--ink-2); font-size: 27rpx; border-radius: 16rpx; }
+.templates-filter-on { background: var(--card); color: var(--ink); font-weight: 600; }
+.templates-card-top { display: flex; align-items: center; gap: 16rpx; flex-wrap: wrap; }
+.templates-icon { width: 72rpx; height: 72rpx; background: var(--gold-soft); border-radius: 20rpx; font-size: 36rpx; display: flex; justify-content: center; align-items: center; }
+.templates-card-main { flex: 1; min-width: 140rpx; }
+.templates-name { color: var(--ink); font-size: 30rpx; font-weight: 600; overflow-wrap: anywhere; }
+.templates-meta { color: var(--ink-3); font-size: 23rpx; margin-top: 8rpx; }
+.templates-amount { font-size: 34rpx; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; max-width: 100%; }
+.templates-account { margin-top: 22rpx; font-size: 25rpx; color: var(--ink-2); line-height: 1.7; overflow-wrap: anywhere; }
+.templates-note { margin-top: 10rpx; font-size: 26rpx; color: var(--ink-2); line-height: 1.7; overflow-wrap: anywhere; }
+.templates-warning { margin-top: 14rpx; font-size: 24rpx; color: var(--accent-ink); line-height: 1.7; }
+.templates-card-actions { margin-top: 22rpx; border-top: 1rpx solid var(--line); padding-top: 18rpx; display: flex; align-items: center; gap: 8rpx; flex-wrap: wrap; }
+.templates-secondary { min-width: 88rpx; min-height: 80rpx; padding: 14rpx 12rpx; display: flex; justify-content: center; align-items: center; border-radius: 14rpx; color: var(--ink-2); font-size: 25rpx; }
+.templates-use { margin-left: auto; min-height: 80rpx; padding: 16rpx 22rpx; background: var(--gold-soft); color: var(--accent-ink); border-radius: 16rpx; font-size: 26rpx; font-weight: 600; display: flex; justify-content: center; align-items: center; }
+.templates-empty { text-align: center; padding: 48rpx 32rpx; }
+.templates-empty-title { color: var(--ink); font-size: 30rpx; font-weight: 600; line-height: 1.6; }
+.templates-policy { padding: 8rpx 36rpx 32rpx; font-size: 23rpx; line-height: 1.8; color: var(--ink-3); }

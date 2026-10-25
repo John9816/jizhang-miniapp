@@ -173,6 +173,19 @@ async function main() {
     assert(pull.data.records.length === 3, '墓碑记录应仍在快照中，实际 ' + pull.data.records.length)
   })
 
+  await test('恢复原 ID 传播到 B，迟到的删除重试不会覆盖恢复状态', async function () {
+    const before = await api('GET', '/api/sync?since=', null, tokenA)
+    const tombstone = before.data.records.find(r => r.id === rec2Id)
+    const restored = Object.assign({}, tombstone, { deleted: false, updatedAt: new Date(Date.parse(tombstone.updatedAt) + 1).toISOString() })
+    const up = await api('POST', '/api/sync', { since: '', records: [restored] }, tokenA)
+    assert(up.data.ok, '恢复推送失败')
+    await api('POST', '/api/sync', { since: '', records: [tombstone] }, tokenA)
+    const pull = await api('GET', '/api/sync?since=', null, tokenB)
+    const restoredRecords = pull.data.records.filter(r => r.id === rec2Id)
+    assert(restoredRecords.length === 1, '恢复不应新增重复记录')
+    assert(restoredRecords[0].deleted === false && restoredRecords[0].amount === 1200000, '恢复状态被旧删除覆盖或金额丢失')
+  })
+
   await test('LWW：A 用旧 updatedAt 更新 R_3 应被忽略', async function () {
     const stale = iso(-7200000)
     const up = await api('POST', '/api/sync', {
@@ -310,6 +323,24 @@ async function main() {
     assert(dl.accounts[0].name === '微信钱包', '脏封面影响了同包账户配置')
   })
 
+  await test('常用模板跨设备同步，旧客户端省略字段保留，显式清空后旧配置不能复活', async function () {
+    const id = 'L_templates'
+    const template = { id: 'T_breakfast', name: '早餐', type: 'expense', amount: 1500, category: 'food', accountId: '', transferTo: '', note: '早餐' }
+    const config = { id, name: '模板同步测试', members: [{ id: openidA }, { id: openidB }], templates: [template], cfgAt: '2030-01-01T00:00:00.000Z' }
+    const created = await api('POST', '/api/sync', { ledgers: [config] }, tokenA)
+    assert(created.data.ok, '模板配置推送失败')
+    const pull = await api('GET', '/api/sync?since=', null, tokenB)
+    const shared = pull.data.ledgers.find(l => l.id === id)
+    assert(shared && JSON.stringify(shared.templates) === JSON.stringify([template]), 'B 拉不到模板')
+    const oldClient = await api('POST', '/api/sync', { ledgers: [{ id, name: config.name, cfgAt: '2030-01-02T00:00:00.000Z' }] }, tokenB)
+    assert(oldClient.data.ledgers.find(l => l.id === id).templates.length === 1, '旧客户端省略字段清空了模板')
+    const cleared = await api('POST', '/api/sync', { ledgers: [{ id, templates: [], cfgAt: '2030-01-03T00:00:00.000Z' }] }, tokenA)
+    assert(cleared.data.ledgers.find(l => l.id === id).templates.length === 0, '显式删除模板未同步')
+    const stale = await api('POST', '/api/sync', { ledgers: [config] }, tokenB)
+    assert(stale.data.ledgers.find(l => l.id === id).templates.length === 0, '旧配置复活了已删除模板')
+    assert(!stale.data.records.some(r => r.ledgerId === id), '模板同步生成了账单')
+  })
+
   await test('transfer 记录：推送 / 拉取 / 缺字段拒绝', async function () {
     const ok = await api('POST', '/api/sync', {
       since: '',
@@ -333,6 +364,26 @@ async function main() {
     assert(sameAcc.data.ok, '接口应正常返回')
     const pull3 = await api('GET', '/api/sync?since=', null, tokenA)
     assert(!pull3.data.records.some(function (r) { return r.id === 'R_tr3' }), '同账户自转账不应落库')
+  })
+
+  await test('移除账本跨同账号设备生效，旧副本回推不能复活，其他成员不受影响', async function () {
+    const removed = await api('POST', '/api/sync', { removedLedgerIds: [ledgerId] }, tokenA)
+    assert(removed.data.removedLedgerIds.includes(ledgerId), '缺少服务端移除标记')
+    assert(!removed.data.ledgers.some(l => l.id === ledgerId), '移除后仍返回账本')
+    assert(!removed.data.records.some(r => r.ledgerId === ledgerId), '移除后仍返回记录')
+    const second = await api('POST', '/api/login', { code: 'code-a' })
+    assert(second.data.removedLedgerIds.includes(ledgerId), '同账号新登录未继承移除状态')
+    const stale = await api('POST', '/api/sync', {
+      ledgers: [{ id: ledgerId, name: '旧设备的旧副本', members: [{ id: openidA }] }],
+      records: [{ id: 'R_stale_removed', ledgerId, amount: 100, type: 'expense', date: '2026-10-24' }]
+    }, second.data.token)
+    assert(!stale.data.ledgers.some(l => l.id === ledgerId), '旧设备推送复活了账本')
+    const friend = await api('GET', '/api/sync', null, tokenB)
+    assert(friend.data.ledgers.some(l => l.id === ledgerId && l.name !== '旧设备的旧副本'), '其他成员账本受影响')
+    assert(!friend.data.records.some(r => r.id === 'R_stale_removed'), '移除后的设备仍能写入')
+    const rejoin = await api('POST', '/api/ledgers/join', { inviteCode }, tokenA)
+    assert(rejoin.data.ledgers.some(l => l.id === ledgerId), '主动重新加入应恢复可见')
+    assert(!rejoin.data.removedLedgerIds.includes(ledgerId), '重新加入未清除移除状态')
   })
 
   await test('老库自动迁移：旧 schema 启动后新列就位', async function () {
@@ -385,6 +436,45 @@ async function main() {
     assert(lledger.cover && lledger.cover.kind === 'preset' && lledger.cover.key === 'default', '封面列未迁移到账本')
     srv.kill()
     fs.rmSync(legacyDir, { recursive: true, force: true })
+  })
+
+  await test('导入交易身份经服务端往返后，新设备重复导入仍被跳过', async function () {
+    let memory = {}
+    global.wx = { getStorageSync: k => memory[k] || '', setStorageSync: (k, v) => { memory[k] = v } }
+    const local = require('../utils/db')
+    local.init(); local.replaceMyId(openidA)
+    const ledger = local.createLedger('导入往返')
+    const rows = [
+      { src: 'wechat', txn: 'external-001', type: 'expense', amount: 1500, date: '2026-10-25', party: '早餐店', note: '早餐' },
+      { src: 'alipay', txn: '', type: 'expense', amount: 2600, date: '2026-10-25', time: '2026-10-25 12:30:00', party: '面馆', note: '午饭' }
+    ]
+    local.importRows(ledger.id, rows)
+    const up = await api('POST', '/api/sync', { ledgers: local.exportLedgersForSync(), records: local.drainDirty() }, tokenA)
+    assert(up.data.ok, '导入数据推送失败')
+    const login = await api('POST', '/api/login', { code: 'code-a' })
+    const records = login.data.records.filter(r => r.ledgerId === ledger.id)
+    assert(records.length === 2 && records.every(r => r.external && r.external.src), '服务端丢失交易身份')
+    memory = {}; local.init()
+    local.applyRemoteLedger(login.data.ledgers.find(l => l.id === ledger.id))
+    records.forEach(r => local.applyRemoteRecord(r))
+    const again = local.importRows(ledger.id, rows)
+    assert(again.added.length === 0 && again.dupes === 2, '换设备重复入账')
+    // 旧客户端不发送 external 时，服务端应保留原始身份。
+    const edited = Object.assign({}, records[0], { updatedAt: iso(60000), note: '旧客户端编辑' })
+    delete edited.external
+    const edit = await api('POST', '/api/sync', { records: [edited] }, tokenA)
+    const saved = edit.data.records.find(r => r.id === edited.id)
+    assert(saved.external && saved.external.txn === 'external-001', '旧客户端更新抹掉交易身份')
+
+    const old = Object.assign({}, records[0], { id: 'R_legacy_identity', external: undefined, amount: 2500, deleted: true, updatedAt: '2026-01-02T00:00:00.000Z' })
+    await api('POST', '/api/sync', { records: [old] }, tokenA)
+    const patch = Object.assign({}, old, { identityOnly: true, amount: 1200, deleted: false, updatedAt: '2026-01-01T00:00:00.000Z', external: { src: 'wechat', txn: 'old-identity' } })
+    const patched = await api('POST', '/api/sync', { records: [patch] }, tokenA)
+    const current = patched.data.records.find(r => r.id === old.id)
+    assert(current.external && current.external.txn === 'old-identity', '旧版本身份未补齐')
+    assert(current.amount === 2500 && current.deleted === true && current.updatedAt === old.updatedAt, '身份补传覆盖了新财务状态')
+    const incremental = await api('GET', '/api/sync?since=2026-10-01T00:00:00.000Z', null, tokenA)
+    assert(incremental.data.records.some(r => r.id === old.id && r.external.txn === 'old-identity'), '只补身份的旧账单未传播到增量设备')
   })
 
   console.log('\n结果: ' + passed + ' 通过, ' + failed + ' 失败')

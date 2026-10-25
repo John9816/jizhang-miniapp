@@ -6,7 +6,7 @@
 
 .cat-add {
   font-size: 24rpx;
-  color: #F5B417;
+  color: var(--gold-deep);
   padding: 8rpx 16rpx;
 }
 
@@ -19,15 +19,17 @@
 
 .total-sign {
   font-size: 34rpx;
-  color: #2E2A22;
+  color: var(--ink);
   font-weight: 600;
 }
 
 .total-input {
   flex: 1;
+  min-width: 0;
+  height: 96rpx;
   font-size: 40rpx;
   font-weight: 600;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 .total-save {
@@ -43,14 +45,14 @@
 .total-bar,
 .cat-bar {
   height: 16rpx;
-  background: #F7F1E2;
+  background: var(--surface-soft);
   border-radius: 999rpx;
   overflow: hidden;
 }
 
 .total-bar-inner {
   height: 100%;
-  background: linear-gradient(90deg, #5EEAD4, #0D9488);
+  background: linear-gradient(90deg, var(--gold), var(--chart-strong));
   border-radius: 999rpx;
   transition: width 0.3s;
 }
@@ -63,19 +65,19 @@
   display: flex;
   justify-content: space-between;
   font-size: 22rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   padding-top: 8rpx;
 }
 
 .total-hint {
   font-size: 22rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
   padding-top: 12rpx;
 }
 
 .cat-budget {
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F7F1E2;
+  border-bottom: 1rpx solid var(--surface-soft);
 }
 
 .cat-budget-head {
@@ -86,14 +88,14 @@
 
 .cat-budget-name {
   font-size: 26rpx;
-  color: #6B6455;
+  color: var(--ink-2);
 }
 
 .cat-budget-nums {
   flex: 1;
   text-align: right;
   font-size: 24rpx;
-  color: #2E2A22;
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -109,7 +111,7 @@
 
 .cat-budget .cat-bar-inner {
   height: 100%;
-  background: linear-gradient(90deg, #818CF8, #F5B417);
+  background: linear-gradient(90deg, var(--gold), var(--gold-deep));
   border-radius: 999rpx;
 }
 
@@ -121,12 +123,27 @@
   display: flex;
   justify-content: space-between;
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .cat-empty {
   font-size: 24rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
   line-height: 1.6;
   padding: 12rpx 0;
 }
+.budget-guide { background: linear-gradient(135deg, var(--gold-soft), #FFFDF7); border: 1rpx solid var(--line); }
+.guide-head { display: flex; justify-content: space-between; align-items: center; gap: 12rpx; color: var(--ink-2); font-size: 26rpx; }
+.guide-days { font-size: 21rpx; color: var(--ink-3); }
+.guide-remaining { font-size: 52rpx; font-weight: 700; color: var(--ink); margin: 12rpx 0 24rpx; word-break: break-all; }
+.guide-metrics { display: flex; gap: 20rpx; }
+.guide-metrics > view { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8rpx; }
+.guide-label { font-size: 22rpx; color: var(--ink-3); }
+.guide-number { font-size: 30rpx; font-weight: 600; color: var(--ink); word-break: break-all; }
+.guide-status { margin-top: 24rpx; font-size: 25rpx; color: var(--accent-ink); line-height: 1.6; }
+.guide-method, .guide-future { font-size: 21rpx; color: var(--ink-3); line-height: 1.7; margin-top: 12rpx; }
+.guide-future { display: block; }
+.budget-category-scroll { max-height: 30vh; margin-bottom: 20rpx; }
+.budget-category-grid { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 4rpx; }
+.budget-category { padding: 14rpx 18rpx; border-radius: 14rpx; font-size: 25rpx; border: 1rpx solid var(--line); color: var(--ink-2); }
+.budget-category-on { background: var(--gold-soft); border-color: var(--gold-deep); color: var(--accent-ink); font-weight: 600; }

@@ -7,31 +7,44 @@
 
 .search-input {
   flex: 1;
+  min-width: 0;
+  height: 88rpx;
   background: #FFFFFF;
   border-radius: 999rpx;
-  padding: 18rpx 32rpx;
+  padding: 0 24rpx;
   font-size: 26rpx;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 .search-btn {
-  padding: 16rpx 36rpx;
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 28rpx;
   border-radius: 999rpx;
-  background: #F5B417;
-  color: #FFFFFF;
+  background: var(--gold);
+  color: var(--ink);
   font-size: 26rpx;
 }
+.search-clear { display: flex; align-items: center; justify-content: center; min-height: 88rpx; min-width: 64rpx; font-size: 36rpx; color: var(--ink-3); }
+.filter-toolbar { display: flex; align-items: center; gap: 16rpx; min-height: 88rpx; padding: 0 28rpx; }
+.filter-summary { flex: 1; min-width: 0; color: var(--ink-2); font-size: 24rpx; line-height: 1.6; }
+.filter-toggle { flex-shrink: 0; color: var(--accent-ink); font-size: 26rpx; font-weight: 600; }
+.filter-apply { display: flex; align-items: center; justify-content: center; min-height: 88rpx; margin-top: 20rpx; border-radius: 16rpx; background: var(--gold); color: var(--ink); font-size: 28rpx; font-weight: 600; }
 
 .filter-card {
   margin: 0 24rpx;
 }
+.date-shortcuts { display: flex; flex-wrap: wrap; gap: 12rpx; padding-bottom: 20rpx; border-bottom: 1rpx solid var(--line); }
+.date-shortcuts .fchip { padding: 16rpx 20rpx; }
+.filter-error { margin-top: 16rpx; padding: 16rpx 20rpx; border-radius: 12rpx; color: var(--gold-deep); background: var(--gold-soft); font-size: 24rpx; line-height: 1.6; }
 
 .filter-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
   padding: 14rpx 0;
-  border-bottom: 1rpx solid #F7F1E2;
+  border-bottom: 1rpx solid var(--surface-soft);
 }
 
 .filter-row:last-child {
@@ -41,7 +54,7 @@
 .filter-label {
   width: 64rpx;
   font-size: 24rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   flex-shrink: 0;
 }
 
@@ -55,32 +68,34 @@
 .fchip {
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
-  background: #F7F1E2;
-  color: #6B6455;
+  background: var(--surface-soft);
+  color: var(--ink-2);
   font-size: 24rpx;
   flex-shrink: 0;
 }
 
 .fchip-active {
-  background: #FFF3D0;
-  color: #F5B417;
+  background: var(--gold-soft);
+  color: var(--gold-deep);
 }
 
 .fchip-input {
   width: 140rpx;
+  height: 72rpx;
+  padding: 0 12rpx;
   text-align: center;
-  background: #F7F1E2;
+  background: var(--surface-soft);
 }
 
 .filter-sep {
   font-size: 24rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .filter-reset {
   margin-left: auto;
   font-size: 24rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .result-summary {
@@ -99,7 +114,7 @@
 
 .result-summary .sum-label {
   font-size: 22rpx;
-  color: #6B6455;
+  color: var(--ink-2);
 }
 
 .result-summary .sum-value {
@@ -109,5 +124,5 @@
 
 .result-summary .sum-divider {
   width: 1rpx;
-  background: #F0E9D8;
+  background: var(--line);
 }

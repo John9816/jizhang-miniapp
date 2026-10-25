@@ -2,6 +2,7 @@ const db = require('../../utils/db.js')
 const cloud = require('../../utils/cloud.js')
 const u = require('../../utils/util.js')
 const vip = require('../../utils/vip.js')
+const csvExport = require('../../utils/csvExport.js')
 
 Page({
   data: {
@@ -60,6 +61,8 @@ Page({
   },
 
   /* ---------------- 账本切换与管理 ---------------- */
+
+  goMembers() { wx.navigateTo({ url: '/pages/members/members' }) },
 
   switchLedger(e) {
     var id = e.currentTarget.dataset.id
@@ -147,9 +150,9 @@ Page({
     var self = this
     wx.showModal({
       title: '删除账本',
-      content: '将同时删除本机上的「' + name + '」及其全部记录，且不可恢复。好友手机上的副本不受影响。',
+      content: '将从你的账本列表移除「' + name + '」及本机记录。开启云同步时，同账号其他设备也会移除，其他成员不受影响。删除最后一个账本后会保留一个空白账本。',
       confirmText: '删除',
-      confirmColor: '#F04646',
+      confirmColor: '#D65A45',
       success(r) {
         if (r.confirm) {
           db.deleteLedger(id)
@@ -254,7 +257,7 @@ Page({
     if (vip.featureEnabled() && !db.isVip()) {
       wx.showModal({
         title: '导出为会员功能',
-        content: '升级会员后可解锁 Excel / PDF 数据导出，方便备份与报税。',
+        content: '升级会员后可解锁 CSV 数据导出，方便用表格查看和整理。',
         confirmText: '去开通',
         cancelText: '知道了',
         success: function (r) { if (r.confirm) wx.navigateTo({ url: '/pages/vip/vip' }) }
@@ -266,27 +269,7 @@ Page({
       wx.showToast({ title: '没有可导出的记录', icon: 'none' })
       return
     }
-    var count = csv.split('\n').length - 2
-    var self = this
-    wx.showActionSheet({
-      itemList: ['复制 CSV 内容（可粘贴到表格）', '发送给微信好友'],
-      success(res) {
-        if (res.tapIndex === 0) {
-          wx.setClipboardData({
-            data: csv,
-            success() { wx.showToast({ title: '已复制 ' + count + ' 条', icon: 'success' }) }
-          })
-        } else if (res.tapIndex === 1) {
-          // 通过聊天记录分享 CSV 文本
-          wx.setClipboardData({
-            data: csv,
-            success() {
-              wx.showToast({ title: '已复制，去聊天框粘贴发送', icon: 'none' })
-            }
-          })
-        }
-      }
-    })
+    return csvExport.show({ csv: csv, name: this.data.ledger.name, count: db.recordsOf(this.data.ledger.id).length })
   },
 
   onShareAppMessage() {

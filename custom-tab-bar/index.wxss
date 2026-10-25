@@ -4,75 +4,113 @@
   right: 0;
   bottom: 0;
   height: calc(112rpx + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(255, 255, 255, 0.98);
-  display: flex;
-  align-items: flex-start;
-  border-radius: 32rpx 32rpx 0 0;
-  box-shadow: 0 -6rpx 28rpx rgba(196, 158, 54, 0.10);
+  box-sizing: border-box;
+  background: transparent;
   z-index: 900;
+  /* 触控容器与白色底板同高，凸起按钮自然溢出，不覆盖上方内容的点击。 */
+}
+
+.tabbar-surface {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(112rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-radius: 28rpx 28rpx 0 0;
+  box-shadow: 0 -8rpx 28rpx rgba(86, 54, 14, 0.12);
+  z-index: 1;
 }
 
 .tab {
-  flex: 1;
+  pointer-events: auto;
+  position: absolute;
+  bottom: env(safe-area-inset-bottom);
+  width: 25%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 112rpx;
   padding-top: 8rpx;
+  z-index: 2;
 }
+.tab-left { left: 0; }
+.tab-stats { left: 50%; }
+.tab-profile { left: 75%; }
 
-.tab-icon {
-  width: 46rpx;
-  height: 46rpx;
+.tab-icon-wrap {
+  width: 80rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 180ms ease, transform 100ms ease;
+}
+.tab-icon-active { background: #FFF0C2; }
+.tab-icon { width: 44rpx; height: 44rpx; display: block; }
+.add-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: block;
 }
 
 .tab-text {
   font-size: 20rpx;
-  color: #B9B2A3;
+  color: #9A896D;
   margin-top: 6rpx;
   line-height: 1.2;
+  transition: color 180ms ease;
 }
 
 .tab-text-on {
-  color: #2E2A22;
+  color: #3B2A18;
   font-weight: 600;
 }
 
 /* 中间凸起的记一笔 */
 .tab-add {
-  flex: 1;
+  pointer-events: auto;
+  position: absolute;
+  left: 25%;
+  bottom: env(safe-area-inset-bottom);
+  width: 25%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 112rpx;
+  height: 160rpx;
+  z-index: 3;
 }
 
 .add-btn {
+  position: relative;
+  z-index: 3;
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  margin-top: -46rpx;
-  background: linear-gradient(135deg, #FFD64F 0%, #F5B417 100%);
-  box-shadow: 0 10rpx 24rpx rgba(233, 164, 0, 0.38), 0 0 0 8rpx #FFFFFF;
+  margin-top: 4rpx;
+  background: #F6C95B;
+  box-shadow: 0 10rpx 24rpx rgba(232, 167, 45, 0.34), 0 0 0 8rpx #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 100ms ease, box-shadow 160ms ease;
 }
 
 .add-btn:active {
   transform: scale(0.94);
 }
-
-.add-icon {
-  width: 44rpx;
-  height: 44rpx;
+.tab-pressed .tab-icon-wrap { transform: scale(0.92); background: #FFF6E4; }
+.tab-pressed .add-btn { transform: scale(0.94); box-shadow: 0 4rpx 12rpx rgba(232, 167, 45, 0.26), 0 0 0 8rpx #FFFFFF; }
+@media (prefers-reduced-motion: reduce) {
+  .tab-icon-wrap, .tab-text, .add-btn { transition: none; }
+  .tab-pressed .tab-icon-wrap, .tab-pressed .add-btn, .add-btn:active { transform: none; }
 }
 
 .add-text {
   font-size: 20rpx;
-  color: #B08A20;
+  color: #9A6D21;
   margin-top: 8rpx;
   font-weight: 600;
   line-height: 1.2;

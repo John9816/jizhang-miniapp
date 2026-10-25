@@ -1,7 +1,9 @@
 {
   "navigationBarTitleText": "存钱挑战",
-  "navigationBarBackgroundColor": "#FAF5E8",
+  "navigationBarBackgroundColor": "#FFF9EE",
   "navigationBarTextStyle": "black",
-  "backgroundColor": "#FAF5E8",
-  "usingComponents": {}
+  "backgroundColor": "#FFF9EE",
+  "usingComponents": {
+    "date-picker": "/components/date-picker/date-picker"
+  }
 }

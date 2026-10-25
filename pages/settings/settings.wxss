@@ -1,0 +1,10 @@
+.settings-page { padding-top: 12rpx; }
+.settings-intro { margin: 16rpx 32rpx 24rpx; color: var(--ink-2); font-size: 26rpx; }
+.settings-profile { margin-top: 28rpx; }
+.settings-hint { margin-top: 24rpx; color: var(--ink-3); font-size: 23rpx; line-height: 1.6; }
+.settings-note { margin-top: 20rpx; color: var(--ink-2); font-size: 25rpx; line-height: 1.8; }
+.settings-status { overflow-wrap: anywhere; }
+.sync-button { flex-shrink: 0; min-width: 164rpx; height: 80rpx; margin: 0 0 0 16rpx; padding: 0 20rpx; font-size: 25rpx; line-height: 80rpx; }
+.settings-footer { padding: 24rpx; text-align: center; color: var(--ink-3); font-size: 22rpx; }
+.settings-link { min-height: 112rpx; margin-top: 12rpx; }
+.settings-chevron { font-size: 40rpx; color: var(--ink-3); padding-left: 20rpx; }

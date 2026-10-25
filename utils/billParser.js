@@ -20,6 +20,7 @@
 
 var gbk = require('./gbk.js')
 var u = require('./util.js')
+var identity = require('./bill-identity.js')
 
 var SOURCE_LABELS = {
   wechat: '微信账单',
@@ -241,11 +242,8 @@ function guessCategory(type, party, note, categoryField) {
 
 /* ---------------- 主流程 ---------------- */
 
-/** 退化键：与 utils/db.js 的 txnKey 公式保持一致（无单号时去重用） */
-function rowKey(row) {
-  if (row.txn) return row.src + '#' + row.txn
-  return row.src + '#' + row.date + '#' + row.amount + '#' + String(row.party || '').slice(0, 20)
-}
+/** 解析与入账共用交易身份规则。 */
+function rowKey(row) { return identity.key(row) }
 
 function buildRow(src, cells, col, lineNo) {
   var get = function (name) {
@@ -274,7 +272,8 @@ function buildRow(src, cells, col, lineNo) {
   var categoryField = String(get('catKey') || '').trim()
   return {
     src: src,
-    txn: String(get('txnKey') || '').trim(),
+    txn: (identity.normalize({ src: src, txn: get('txnKey') }) || {}).txn,
+    time: identity.time(get('时间')),
     date: date,
     type: type,
     amount: amount,

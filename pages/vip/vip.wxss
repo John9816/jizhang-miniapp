@@ -1,19 +1,19 @@
 .page {
   min-height: 100vh;
-  background: #FAF5E8;
+  background: var(--bg);
   padding: 32rpx 28rpx 60rpx;
   box-sizing: border-box;
 }
 
 .hero {
-  background: linear-gradient(135deg, #F3E6C4, #EAD7A8);
+  background: linear-gradient(135deg, var(--hero-light), var(--gold));
   border-radius: 24rpx;
   padding: 40rpx 36rpx;
-  color: #4A3F2A;
+  color: var(--ink);
 }
 .hero-vip {
-  background: linear-gradient(135deg, #3A3326, #5A4E36);
-  color: #F4E9C9;
+  background: linear-gradient(135deg, var(--gold-soft), var(--gold-deep));
+  color: var(--ink);
 }
 .hero-badge {
   display: inline-block;
@@ -49,9 +49,9 @@
 }
 .b-icon { font-size: 40rpx; margin-right: 20rpx; }
 .b-text { flex: 1; }
-.b-title { font-size: 30rpx; font-weight: 600; color: #2E2A22; }
+.b-title { font-size: 30rpx; font-weight: 600; color: var(--ink); }
 .b-desc { font-size: 24rpx; color: #8A8275; margin-top: 4rpx; }
-.b-check { color: #2E8B57; font-size: 34rpx; font-weight: 700; }
+.b-check { color: var(--income); font-size: 34rpx; font-weight: 700; }
 
 .card {
   margin-top: 24rpx;
@@ -73,8 +73,8 @@
 .price-period { font-size: 24rpx; color: #8A8275; margin-top: 10rpx; }
 .buy-btn {
   margin-top: 28rpx;
-  background: #C8841E;
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  color: var(--ink);
   font-size: 32rpx;
   border-radius: 999rpx;
   font-weight: 600;

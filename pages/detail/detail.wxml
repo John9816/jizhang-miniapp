@@ -1,0 +1,32 @@
+<view class="page detail-page motion-page {{pageMotion}}">
+  <block wx:if="{{record}}">
+    <view class="detail-hero motion-section">
+      <view class="detail-category"><text class="detail-icon">{{record.icon}}</text><text>{{record.categoryName}}</text></view>
+      <text class="detail-kind">{{record.typeLabel}}金额</text>
+      <view class="detail-amount num"><text class="detail-sign">{{record.sign}}¥</text><text>{{record.amountText}}</text></view>
+      <text class="detail-sync">{{record.syncText}}</text>
+      <text class="detail-transfer" wx:if="{{record.type === 'transfer'}}">转账仅调整账户余额，不计入收入和支出</text>
+    </view>
+    <view class="card detail-info motion-section motion-delay-1">
+      <view class="detail-row"><text class="detail-label">账单日期</text><text class="detail-value">{{record.date}}</text></view>
+      <view class="detail-row"><text class="detail-label">所属账本</text><text class="detail-value">{{record.ledgerName}}</text></view>
+      <view class="detail-row"><text class="detail-label">{{record.type === 'transfer' ? '转出账户' : '记账账户'}}</text><text class="detail-value">{{record.accountName}}</text></view>
+      <view class="detail-row" wx:if="{{record.type === 'transfer'}}"><text class="detail-label">转入账户</text><text class="detail-value">{{record.transferToName}}</text></view>
+      <view class="detail-row"><text class="detail-label">记录人</text><text class="detail-value">{{record.memberName}}</text></view>
+      <view class="detail-row detail-note"><text class="detail-label">备注</text><text class="detail-value" selectable="{{true}}">{{record.note}}</text></view>
+    </view>
+    <view class="detail-meta motion-section motion-delay-2">
+      <text>{{record.sourceText}}</text>
+      <text>创建于 {{record.createdText}}</text>
+      <text>更新于 {{record.updatedText}}</text>
+    </view>
+    <view class="detail-actions">
+      <button class="btn-ghost detail-more" bindtap="openMore" hover-class="press-button" aria-label="更多账单操作">更多 ···</button>
+      <button class="btn-primary" bindtap="onEdit" hover-class="press-button">编辑账单</button>
+    </view>
+  </block>
+  <view class="detail-empty card motion-section" wx:else>
+    <text class="detail-empty-title">账单已不可用</text>
+    <text>这笔账单或所属账本已删除，请返回账单列表查看。</text>
+  </view>
+</view>

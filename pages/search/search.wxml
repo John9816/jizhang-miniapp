@@ -1,53 +1,65 @@
-<view class="page">
+<view class="page motion-page {{pageMotion}}">
   <!-- 搜索栏 -->
-  <view class="search-bar">
-    <input class="search-input" value="{{q}}" placeholder="搜索备注 / 分类 / 记录人" confirm-type="search" bindinput="onQInput" bindconfirm="doSearch" />
-    <view class="search-btn" bindtap="doSearch">搜索</view>
+  <view class="search-bar motion-section">
+    <input class="search-input" value="{{q}}" placeholder="搜索备注 / 分类 / 记录人" confirm-type="search" bindinput="onQInput" bindconfirm="applyFilters" />
+    <view class="search-clear" wx:if="{{q}}" role="button" aria-label="清空关键词" bindtap="clearQuery">×</view>
+    <view class="search-btn" bindtap="applyFilters" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">搜索</view>
   </view>
 
-  <!-- 筛选条件 -->
-  <view class="card filter-card">
+  <view class="filter-toolbar" role="button" bindtap="toggleFilters" hover-class="press-soft">
+    <text class="filter-summary">{{filterSummary}}</text><text class="filter-toggle">{{showFilters ? '收起' : '筛选'}}{{filterCount ? '（' + filterCount + '）' : ''}} {{showFilters ? '⌃' : '⌄'}}</text>
+  </view>
+  <!-- 按需展开筛选，让账单结果先进入视野 -->
+  <view class="card filter-card motion-section" wx:if="{{showFilters}}">
+    <view class="date-shortcuts">
+      <view class="fchip {{datePreset === 'all' ? 'fchip-active' : ''}}" bindtap="setDatePreset" data-preset="all" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">全部时间</view>
+      <view class="fchip {{datePreset === 'month' ? 'fchip-active' : ''}}" bindtap="setDatePreset" data-preset="month" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">本月</view>
+      <view class="fchip {{datePreset === 'quarter' ? 'fchip-active' : ''}}" bindtap="setDatePreset" data-preset="quarter" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">近三个月</view>
+      <view class="fchip {{datePreset === 'year' ? 'fchip-active' : ''}}" bindtap="setDatePreset" data-preset="year" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">今年</view>
+    </view>
     <view class="filter-row">
       <text class="filter-label">类型</text>
       <view class="filter-chips">
-        <view class="fchip {{type === 'expense' ? 'fchip-active' : ''}}" bindtap="setType" data-type="expense">支出</view>
-        <view class="fchip {{type === 'income' ? 'fchip-active' : ''}}" bindtap="setType" data-type="income">收入</view>
-        <view class="fchip {{type === 'transfer' ? 'fchip-active' : ''}}" bindtap="setType" data-type="transfer">转账</view>
+        <view class="fchip {{type === 'expense' ? 'fchip-active' : ''}}" bindtap="setType" data-type="expense" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">支出</view>
+        <view class="fchip {{type === 'income' ? 'fchip-active' : ''}}" bindtap="setType" data-type="income" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">收入</view>
+        <view class="fchip {{type === 'transfer' ? 'fchip-active' : ''}}" bindtap="setType" data-type="transfer" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">转账</view>
       </view>
     </view>
     <view class="filter-row" wx:if="{{members.length > 1}}">
       <text class="filter-label">成员</text>
       <scroll-view scroll-x class="filter-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
-        <view class="fchip {{memberId === item.id ? 'fchip-active' : ''}}" wx:for="{{members}}" wx:key="id" bindtap="setMember" data-id="{{item.id}}">{{item.name}}</view>
+        <view class="fchip {{memberId === item.id ? 'fchip-active' : ''}}" wx:for="{{members}}" wx:key="id" bindtap="setMember" data-id="{{item.id}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{item.name}}</view>
       </scroll-view>
     </view>
-    <view class="filter-row">
+    <view class="filter-row" wx:if="{{type !== 'transfer'}}">
       <text class="filter-label">分类</text>
       <scroll-view scroll-x class="filter-chips" enhanced="{{true}}" show-scrollbar="{{false}}">
-        <view class="fchip {{category === item.key ? 'fchip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">{{item.icon}}{{item.name}}</view>
+        <view class="fchip {{category === item.key ? 'fchip-active' : ''}}" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{item.icon}}{{item.name}}</view>
       </scroll-view>
     </view>
     <view class="filter-row">
       <text class="filter-label">日期</text>
-      <picker mode="date" value="{{start}}" start="2020-01-01" end="2035-12-31" onchange="onStartChange">
+      <date-picker value="{{start}}" start="2020-01-01" end="2035-12-31" bindchange="onStartChange">
         <view class="fchip">{{start || '开始'}}</view>
-      </picker>
+      </date-picker>
       <text class="filter-sep">至</text>
-      <picker mode="date" value="{{end}}" start="2020-01-01" end="2035-12-31" onchange="onEndChange">
+      <date-picker value="{{end}}" start="2020-01-01" end="2035-12-31" bindchange="onEndChange">
         <view class="fchip">{{end || '结束'}}</view>
-      </picker>
+      </date-picker>
     </view>
     <view class="filter-row">
       <text class="filter-label">金额</text>
       <input class="fchip fchip-input" type="digit" value="{{minAmount}}" placeholder="最低" bindinput="onMinInput" />
       <text class="filter-sep">-</text>
       <input class="fchip fchip-input" type="digit" value="{{maxAmount}}" placeholder="最高" bindinput="onMaxInput" />
-      <view class="filter-reset" bindtap="resetFilters">重置</view>
+      <view class="filter-reset" bindtap="resetFilters" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">重置</view>
     </view>
+    <view class="filter-error" wx:if="{{filterError}}">{{filterError}}；修改后点「查看结果」。</view>
+    <view class="filter-apply" role="button" bindtap="applyFilters" hover-class="press-button">查看结果</view>
   </view>
 
   <!-- 结果汇总 -->
-  <view class="card result-summary" wx:if="{{searched}}">
+  <view class="card result-summary {{resultsMotion || 'motion-a'}}" wx:if="{{searched}}">
     <view class="sum-col">
       <text class="sum-label">找到</text>
       <text class="sum-value">{{summary.count}} 笔</text>
@@ -66,7 +78,7 @@
 
   <!-- 结果列表 -->
   <block wx:if="{{groups.length > 0}}">
-    <view class="card group-card" wx:for="{{groups}}" wx:key="date" wx:for-item="group">
+    <view class="card group-card {{resultsMotion || 'motion-a'}}" wx:for="{{groups}}" wx:key="date" wx:for-item="group">
       <view class="group-head">
         <text class="group-date">{{group.label}}</text>
         <view class="group-sub">
@@ -74,7 +86,7 @@
           <text class="text-expense" wx:if="{{group.expense > 0}}">支 ¥{{group.expenseText}}</text>
         </view>
       </view>
-      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}">
+      <view class="record-row" wx:for="{{group.records}}" wx:key="id" wx:for-item="rec" bindtap="onRecordTap" data-id="{{rec.id}}" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
         <view class="rec-icon">{{rec.icon}}</view>
         <view class="rec-main">
           <view class="rec-title">

@@ -1,6 +1,6 @@
 .ch-page {
   min-height: 100vh;
-  background: #FAF5E8;
+  background: var(--bg);
   padding: 20rpx 0 calc(220rpx + env(safe-area-inset-bottom));
 }
 
@@ -11,7 +11,7 @@
   /* 右侧 190rpx 留给吉祥物 */
   padding: 30rpx 190rpx 34rpx 30rpx;
   border-radius: 32rpx;
-  background: linear-gradient(135deg, #FFEDA0 0%, #FFD75E 48%, #FFC93C 100%);
+  background: linear-gradient(135deg, var(--hero-light) 0%, var(--gold) 48%, var(--gold-deep) 100%);
   box-shadow: 0 14rpx 34rpx rgba(240, 180, 23, 0.26);
   overflow: hidden;
 }
@@ -66,7 +66,7 @@
 .ch-card-name {
   font-size: 30rpx;
   font-weight: 700;
-  color: #2E2A22;
+  color: var(--ink);
   max-width: 340rpx;
   overflow: hidden;
   white-space: nowrap;
@@ -75,16 +75,16 @@
 .ch-badge {
   font-size: 18rpx;
   color: #A8811C;
-  background: #FFF7E0;
+  background: var(--surface-soft);
   border: 1rpx solid #F3E2B4;
   border-radius: 6rpx;
   padding: 3rpx 10rpx;
   flex-shrink: 0;
 }
 .ch-badge-done {
-  color: #3F9A6B;
-  background: #EDF8F1;
-  border-color: #CDE9D9;
+  color: var(--income);
+  background: var(--surface-soft);
+  border-color: var(--line);
 }
 .ch-card-pct {
   font-size: 30rpx;
@@ -98,7 +98,7 @@
   justify-content: space-between;
   margin-top: 14rpx;
   font-size: 22rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 .ch-card-foot {
   display: flex;
@@ -110,7 +110,7 @@
 }
 .ch-deadline {
   font-size: 21rpx;
-  color: #B9B2A3;
+  color: var(--ink-3);
 }
 .ch-actions { display: flex; gap: 12rpx; }
 .ch-btn {
@@ -120,11 +120,11 @@
   font-weight: 600;
 }
 .ch-btn-ghost {
-  background: #FAF6EA;
+  background: var(--surface-soft);
   color: #8A8474;
 }
 .ch-btn-primary {
-  background: linear-gradient(135deg, #FFDE6B, #FFC93C);
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
   color: #4A3200;
 }
 
@@ -152,17 +152,17 @@
   justify-content: space-between;
   margin-top: 20rpx;
   padding: 22rpx 24rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
 }
 .modal-picker-label { font-size: 25rpx; color: #8A8474; }
-.modal-picker-value { font-size: 25rpx; color: #2E2A22; }
+.modal-picker-value { font-size: 25rpx; color: var(--ink); }
 .modal-picker-ph { color: #BEB5A1; }
 
 .form-error {
   margin-top: 18rpx;
   font-size: 22rpx;
-  color: #E2543F;
+  color: var(--danger);
   text-align: center;
 }
 
@@ -176,7 +176,7 @@
   text-align: center;
   padding: 16rpx 0;
   border-radius: 14rpx;
-  background: #FAF6EA;
+  background: var(--surface-soft);
   font-size: 24rpx;
   color: #8A6410;
 }

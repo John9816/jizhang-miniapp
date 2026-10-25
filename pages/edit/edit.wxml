@@ -1,19 +1,19 @@
-<view class="edit-page" style="height:{{pageH}}px">
-  <view style="height:{{statusBar}}px"></view>
+<view class="edit-page motion-page {{pageMotion}}" style="height:{{pageH - keyboardHeight}}px">
+  <view style="height:{{contentTop}}px; flex-shrink:0"></view>
 
-  <!-- 顶部：取消 / 支出·收入·转账 三段切换 / 完成 -->
+  <!-- 顶部返回与类型，保存统一在底部主按钮 -->
   <view class="nav">
-    <text class="nav-btn" bindtap="onCancel">取消</text>
+    <view class="nav-btn" role="button" aria-label="返回上一页" bindtap="onCancel" hover-class="press-soft">返回</view>
     <view class="seg">
-      <view class="seg-item {{mode !== 'transfer' && type === 'expense' ? 'seg-on' : ''}}" bindtap="setType" data-type="expense">支出</view>
-      <view class="seg-item {{mode !== 'transfer' && type === 'income' ? 'seg-on' : ''}}" bindtap="setType" data-type="income">收入</view>
-      <view class="seg-item {{mode === 'transfer' ? 'seg-on' : ''}}" bindtap="setType" data-type="transfer">转账</view>
+      <view class="seg-item {{mode !== 'transfer' && type === 'expense' ? 'seg-on' : ''}}" bindtap="setType" data-type="expense" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">支出</view>
+      <view class="seg-item {{mode !== 'transfer' && type === 'income' ? 'seg-on' : ''}}" bindtap="setType" data-type="income" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">收入</view>
+      <view class="seg-item {{mode === 'transfer' ? 'seg-on' : ''}}" bindtap="setType" data-type="transfer" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">转账</view>
     </view>
-    <text class="nav-done {{canSave ? '' : 'nav-done-off'}}" bindtap="onSave">完成</text>
+    <text class="nav-caption">{{templateMode ? '模板' : (editingId ? '编辑' : '记一笔')}}</text>
   </view>
 
   <!-- 金额 -->
-  <view class="amount-block">
+  <view class="amount-block motion-section">
     <view class="amount-row">
       <text class="amount-cur">¥</text>
       <text class="amount-val num {{amountInput ? '' : 'amount-ghost'}}">{{amountInput || '0.00'}}</text>
@@ -32,16 +32,11 @@
   <!-- 主体：分类 / 转账账户 + 备注日期 -->
   <view class="mid">
     <scroll-view scroll-y class="mid-scroll">
+      <view class="template-form-hint" wx:if="{{templateMode}}">{{templateEditingId ? '编辑常用模板' : '新建常用模板'}} · 保存模板不会记账</view>
+      <view class="template-form-warning" wx:if="{{templateWarning}}">{{templateWarning}}</view>
       <block wx:if="{{mode === 'normal'}}">
-        <!-- 最近使用：按近 30 天频次排序，横滑快选 -->
-        <scroll-view scroll-x class="recent-scroll" wx:if="{{recentCats.length > 0}}" enhanced="{{true}}" show-scrollbar="{{false}}">
-          <view class="recent-chip {{category === item.key ? 'recent-chip-on' : ''}}" wx:for="{{recentCats}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
-            <text class="recent-emoji">{{item.icon}}</text>
-            <text>{{item.name}}</text>
-          </view>
-        </scroll-view>
         <view class="cat-grid">
-          <view class="cat-item" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}">
+          <view class="cat-item" wx:for="{{categories}}" wx:key="key" bindtap="setCategory" data-key="{{item.key}}" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
             <view class="cat-icon {{category === item.key ? 'cat-icon-on' : ''}}" style="background:{{item.tint}}">
               <text class="cat-emoji">{{item.icon}}</text>
             </view>
@@ -55,7 +50,7 @@
           <view class="tf-group">
             <text class="tf-label">转出账户</text>
             <scroll-view scroll-x class="tf-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
-              <view class="tf-chip {{accountId === item.id ? 'tf-chip-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">
+              <view class="tf-chip {{accountId === item.id ? 'tf-chip-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
                 <text class="tf-chip-icon">{{item.icon}}</text>
                 <text>{{item.name}}</text>
               </view>
@@ -65,7 +60,7 @@
           <view class="tf-group">
             <text class="tf-label">转入账户</text>
             <scroll-view scroll-x class="tf-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
-              <view class="tf-chip {{transferTo === item.id ? 'tf-chip-on' : ''}} {{item.id === accountId ? 'tf-chip-off' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="to">
+              <view class="tf-chip {{transferTo === item.id ? 'tf-chip-on' : ''}} {{item.id === accountId ? 'tf-chip-off' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="to" hover-class="press-button" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">
                 <text class="tf-chip-icon">{{item.icon}}</text>
                 <text>{{item.name}}</text>
               </view>
@@ -74,58 +69,63 @@
         </view>
       </block>
 
-      <!-- 账户（普通模式选填） -->
-      <view class="account-line" wx:if="{{mode === 'normal' && accounts.length > 0}}" bindtap="openAccounts">
-        <text class="account-label">账户</text>
-        <text class="account-value">{{accountName || '不指定'}}</text>
-        <text class="account-arrow">›</text>
-      </view>
-
-      <!-- 备注 + 日期 -->
-      <view class="meta-row">
-        <input class="note-input" value="{{note}}" placeholder="点击写备注..." placeholder-class="note-ph"
-               maxlength="50" bindinput="onNoteInput" adjust-position="{{false}}" />
-        <picker mode="date" value="{{date}}" start="2020-01-01" end="2035-12-31" bindchange="onDateChange">
-          <view class="date-btn">
-            <text>{{dateLabel}}</text>
-            <text class="date-icon">📅</text>
-          </view>
-        </picker>
-      </view>
-
-      <view class="delete-line" wx:if="{{editingId}}" bindtap="onDelete">删除这条记录</view>
     </scroll-view>
   </view>
 
+  <!-- 日期、账户和备注固定可见，不随分类列表滚走 -->
+  <view class="entry-meta">
+    <view class="entry-tools">
+      <date-picker wx:if="{{!templateMode}}" value="{{date}}" start="2020-01-01" end="2035-12-31" bindchange="onDateChange">
+        <view class="entry-tool" role="button"><text class="entry-tool-value">{{dateLabel}}</text><text class="entry-chevron">⌄</text></view>
+      </date-picker>
+      <view class="entry-tool entry-account" wx:if="{{mode === 'normal'}}" role="button" aria-label="选择记账账户" bindtap="openAccounts" hover-class="press-soft">
+        <text class="entry-tool-value">{{accountName || '不指定账户'}}</text><text class="entry-chevron">⌄</text>
+      </view>
+      <view class="entry-continue" wx:if="{{!editingId && !recordUnavailable && !templateMode}}" role="checkbox" aria-checked="{{continueEntry}}" bindtap="toggleContinue" hover-class="press-soft">
+        <view class="entry-check {{continueEntry ? 'entry-check-on' : ''}}">{{continueEntry ? '✓' : ''}}</view><text>连续记账</text>
+      </view>
+    </view>
+    <view class="entry-note-row">
+      <text class="entry-note-label">备注</text>
+      <input class="note-input" value="{{note}}" placeholder="添加备注（选填）" placeholder-class="note-ph" maxlength="50"
+        focus="{{noteFocused}}" confirm-type="done" bindinput="onNoteInput" bindfocus="onNoteFocus" bindblur="onNoteBlur"
+        bindconfirm="finishNote" bindkeyboardheightchange="onNoteKeyboard" adjust-position="{{false}}" />
+      <view class="note-finish" wx:if="{{noteFocused}}" role="button" bindtap="finishNote">完成</view>
+    </view>
+    <view class="entry-feedback" wx:if="{{saveFeedback}}" aria-live="polite">{{saveFeedback}}</view>
+  </view>
+
   <!-- 数字键盘 -->
-  <view class="keypad">
-    <view class="key" bindtap="pressKey" data-k="7">7</view>
-    <view class="key" bindtap="pressKey" data-k="8">8</view>
-    <view class="key" bindtap="pressKey" data-k="9">9</view>
-    <view class="key key-fn" bindtap="pressKey" data-k="del">⌫</view>
+  <view class="keypad" wx:if="{{!noteFocused}}">
+    <view class="key" bindtap="pressKey" data-k="7" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">7</view>
+    <view class="key" bindtap="pressKey" data-k="8" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">8</view>
+    <view class="key" bindtap="pressKey" data-k="9" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">9</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="del" bindlongpress="clearAmount" aria-label="退格，长按清空金额" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">⌫</view>
 
-    <view class="key" bindtap="pressKey" data-k="4">4</view>
-    <view class="key" bindtap="pressKey" data-k="5">5</view>
-    <view class="key" bindtap="pressKey" data-k="6">6</view>
-    <view class="key key-fn" bindtap="pressKey" data-k="+">＋</view>
+    <view class="key" bindtap="pressKey" data-k="4" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">4</view>
+    <view class="key" bindtap="pressKey" data-k="5" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">5</view>
+    <view class="key" bindtap="pressKey" data-k="6" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">6</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="+" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">＋</view>
 
-    <view class="key" bindtap="pressKey" data-k="1">1</view>
-    <view class="key" bindtap="pressKey" data-k="2">2</view>
-    <view class="key" bindtap="pressKey" data-k="3">3</view>
-    <view class="key key-fn" bindtap="pressKey" data-k="-">−</view>
+    <view class="key" bindtap="pressKey" data-k="1" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">1</view>
+    <view class="key" bindtap="pressKey" data-k="2" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">2</view>
+    <view class="key" bindtap="pressKey" data-k="3" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">3</view>
+    <view class="key key-fn" bindtap="pressKey" data-k="-" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">−</view>
 
-    <view class="key" bindtap="pressKey" data-k=".">.</view>
-    <view class="key" bindtap="pressKey" data-k="0">0</view>
-    <view class="key key-done {{canSave ? '' : 'key-done-off'}}" bindtap="onSave">完成</view>
+    <view class="key" bindtap="pressKey" data-k="." hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">.</view>
+    <view class="key" bindtap="pressKey" data-k="0" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">0</view>
+    <view class="key key-done {{canSave && !saving ? '' : 'key-done-off'}}" bindtap="onSave" hover-class="press-key" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{saving ? '保存中' : (templateMode ? '保存模板' : (continueEntry && !editingId ? '保存并继续' : '保存'))}}</view>
   </view>
 
   <!-- 账户选择弹层 -->
-  <view class="sheet-mask" wx:if="{{showAccounts}}" bindtap="closeAccounts"></view>
-  <view class="sheet" wx:if="{{showAccounts}}">
+  <view class="sheet-mask {{showAccountsLeaving ? 'motion-leaving' : ''}}" wx:if="{{showAccounts || showAccountsLeaving}}" bindtap="closeAccounts"></view>
+  <view class="sheet account-sheet {{showAccountsLeaving ? 'motion-leaving' : ''}}" wx:if="{{showAccounts || showAccountsLeaving}}">
     <view class="sheet-handle"></view>
     <view class="sheet-title">选择账户</view>
-    <view class="sheet-item {{accountId === '' ? 'sheet-item-on' : ''}}" bindtap="setAccount" data-id="" data-field="from">不指定账户</view>
-    <view class="sheet-item {{accountId === item.id ? 'sheet-item-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from">{{item.icon}} {{item.name}}</view>
-    <view class="sheet-cancel" bindtap="closeAccounts">取消</view>
+    <scroll-view scroll-y class="accounts-options">
+      <view class="sheet-item {{accountId === '' ? 'sheet-item-on' : ''}}" bindtap="setAccount" data-id="" data-field="from" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">不指定账户 {{accountId === '' ? '✓' : ''}}</view>
+      <view class="sheet-item {{accountId === item.id ? 'sheet-item-on' : ''}}" wx:for="{{accounts}}" wx:key="id" bindtap="setAccount" data-id="{{item.id}}" data-field="from" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">{{item.icon}} {{item.name}} {{accountId === item.id ? '✓' : ''}}</view>
+    </scroll-view>
+    <view class="sheet-cancel" bindtap="closeAccounts" hover-class="press-soft" hover-start-time="0" hover-stay-time="70" hover-stop-propagation="{{true}}">取消</view>
   </view>
 </view>

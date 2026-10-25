@@ -4,7 +4,7 @@
 
 .cover-picker-title {
   font-size: 26rpx;
-  color: var(--ink-2, #6B6455);
+  color: var(--ink-2, #7A6A53);
   margin-bottom: 16rpx;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .cover-tile-on {
-  border-color: var(--gold-deep, #F5B417);
+  border-color: var(--gold-deep, #E8A72D);
 }
 
 .cover-tile-emoji {
@@ -45,7 +45,7 @@
 .cover-tile-name {
   margin-top: 8rpx;
   font-size: 20rpx;
-  color: var(--ink-2, #6B6455);
+  color: var(--ink-2, #7A6A53);
 }
 
 .cover-tile-img {
@@ -65,6 +65,6 @@
 }
 
 .cover-tile-album {
-  background: var(--gold-soft, #FFF3D0);
-  border: 3rpx dashed var(--gold-deep, #F5B417);
+  background: var(--gold-soft, #FFF0C2);
+  border: 3rpx dashed var(--gold-deep, #E8A72D);
 }

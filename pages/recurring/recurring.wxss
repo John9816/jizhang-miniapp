@@ -10,14 +10,14 @@
 .preset-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 .preset-sub {
   display: block;
   margin-top: 6rpx;
   font-size: 21rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .preset-row {
@@ -39,7 +39,7 @@
   width: 84rpx;
   height: 84rpx;
   border-radius: 24rpx;
-  background: #FFF3D0;
+  background: var(--gold-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,7 +48,7 @@
 
 .preset-name {
   font-size: 22rpx;
-  color: #6B6455;
+  color: var(--ink-2);
 }
 
 .rule-card {
@@ -69,11 +69,11 @@
   align-items: center;
   justify-content: center;
   font-size: 32rpx;
-  background: #F7F1E2;
+  background: var(--surface-soft);
 }
 
 .rule-expense { background: #FEF2F2; }
-.rule-income { background: #ECFDF5; }
+.rule-income { background: var(--gold-soft); }
 
 .rule-main {
   flex: 1;
@@ -85,13 +85,13 @@
 
 .rule-name {
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
   font-weight: 500;
 }
 
 .rule-meta {
   font-size: 20rpx;
-  color: #A79E8B;
+  color: var(--ink-3);
 }
 
 .rule-amount {
@@ -104,26 +104,26 @@
   gap: 16rpx;
   margin-top: 16rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid #F7F1E2;
+  border-top: 1rpx solid var(--surface-soft);
 }
 
 .rule-op {
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: #F5B417;
+  color: var(--gold-deep);
   padding: 12rpx 0;
   border-radius: 12rpx;
-  background: #FFF3D0;
+  background: var(--gold-soft);
 }
 
 .rule-op-paused {
-  color: #A79E8B;
-  background: #F7F1E2;
+  color: var(--ink-3);
+  background: var(--surface-soft);
 }
 
 .rule-op-del {
-  color: #E2543F;
+  color: var(--danger);
   background: #FEF2F2;
 }
 
@@ -132,8 +132,8 @@
   padding: 22rpx 0;
   text-align: center;
   border-radius: 16rpx;
-  background: #F5B417;
-  color: #FFFFFF;
+  background: var(--gold);
+  color: var(--ink);
   font-size: 28rpx;
 }
 
@@ -147,7 +147,7 @@
 
 .form-label {
   font-size: 24rpx;
-  color: #6B6455;
+  color: var(--ink-2);
   padding: 16rpx 0 8rpx;
 }
 
@@ -161,14 +161,14 @@
   text-align: center;
   padding: 14rpx 0;
   border-radius: 12rpx;
-  background: #F7F1E2;
-  color: #6B6455;
+  background: var(--surface-soft);
+  color: var(--ink-2);
   font-size: 26rpx;
 }
 
 .form-type-active {
-  background: #FFF3D0;
-  color: #F5B417;
+  background: var(--gold-soft);
+  color: var(--gold-deep);
   font-weight: 500;
 }
 
@@ -181,15 +181,17 @@
 .amount-sign {
   font-size: 30rpx;
   font-weight: 600;
-  color: #2E2A22;
+  color: var(--ink);
 }
 
 .modal-input-inline {
   flex: 1;
+  min-width: 0;
+  height: 88rpx;
   font-size: 32rpx;
-  color: #2E2A22;
-  border-bottom: 1rpx solid #F0E9D8;
-  padding: 8rpx 0;
+  color: var(--ink);
+  border-bottom: 1rpx solid var(--line);
+  padding: 0 8rpx;
 }
 
 .cat-chips {
@@ -201,22 +203,22 @@
 .cat-chip {
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
-  background: #F7F1E2;
-  color: #6B6455;
+  background: var(--surface-soft);
+  color: var(--ink-2);
   font-size: 24rpx;
   flex-shrink: 0;
 }
 
 .cat-chip-active {
-  background: #FFF3D0;
-  color: #F5B417;
+  background: var(--gold-soft);
+  color: var(--gold-deep);
 }
 
 .form-value {
   font-size: 28rpx;
-  color: #2E2A22;
+  color: var(--ink);
   padding: 12rpx 0;
-  border-bottom: 1rpx solid #F0E9D8;
+  border-bottom: 1rpx solid var(--line);
 }
 
 .modal-actions-modal {

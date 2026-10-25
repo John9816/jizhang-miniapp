@@ -1,0 +1,41 @@
+<view class="page page-plain recycle-page motion-page {{pageMotion}}">
+  <view class="recycle-intro motion-section">
+    <view class="recycle-title">给误删一次反悔的机会</view>
+    <view class="recycle-explain">已删除 {{totalCount}} 笔 · 恢复后重新计入原账本</view>
+  </view>
+  <view class="card recycle-tools motion-section">
+    <view class="recycle-search">
+      <input class="recycle-input" value="{{keyword}}" bindinput="onKeyword" placeholder="搜索备注、分类、金额" maxlength="50" confirm-type="search" aria-label="搜索已删除账单" />
+      <view wx:if="{{keyword}}" class="recycle-clear" role="button" aria-label="清空搜索" bindtap="clearKeyword" hover-class="press-soft">×</view>
+    </view>
+    <view class="recycle-filter-row">
+      <picker class="recycle-picker" range="{{ledgers}}" range-key="name" value="{{ledgerIndex}}" bindchange="onLedgerChange">
+        <view class="recycle-filter" hover-class="press-soft"><text class="recycle-ledger-name">{{ledgers[ledgerIndex].name}}</text><text>⌄</text></view>
+      </picker>
+      <text class="recycle-count">{{matchedCount}} 笔</text>
+    </view>
+  </view>
+  <view class="recycle-list motion-section motion-delay-1">
+    <view class="card recycle-record" wx:for="{{records}}" wx:key="id">
+      <view class="recycle-record-head">
+        <view class="recycle-category"><text class="recycle-icon">{{item.icon}}</text><text>{{item.categoryName}}</text></view>
+        <text class="recycle-amount num">{{item.sign}}¥{{item.amountText}}</text>
+      </view>
+      <view class="recycle-meta">{{item.date}} · {{item.typeLabel}} · {{item.ledgerName}}</view>
+      <view class="recycle-note" wx:if="{{item.note}}">{{item.note}}</view>
+      <view class="recycle-warning" wx:if="{{!item.canRestore}}">{{item.reason}}</view>
+      <view class="recycle-warning" wx:elif="{{item.missingAccount}}">原记账账户已删除，恢复后可重新选择账户</view>
+      <view class="recycle-record-foot">
+        <text class="recycle-deleted">删除于 {{item.deletedText}}</text>
+        <view class="recycle-restore {{!item.canRestore ? 'recycle-disabled' : ''}}" role="button" aria-label="恢复{{item.categoryName}}账单" aria-disabled="{{!item.canRestore}}" data-id="{{item.id}}" bindtap="onRestore" hover-class="press-button">恢复账单</view>
+      </view>
+    </view>
+  </view>
+  <view class="card recycle-empty" wx:if="{{!records.length}}">
+    <view class="recycle-empty-mark" aria-hidden="{{true}}"><view class="recycle-return-arc"></view></view>
+    <view class="recycle-empty-title">{{totalCount === 0 ? '没有已删除账单' : '没有找到符合条件的账单'}}</view>
+    <view class="recycle-explain">{{totalCount === 0 ? '误删的账单会出现在这里，可逐笔确认恢复。' : '试试其他关键词，或切换到全部账本。'}}</view>
+  </view>
+  <view wx:if="{{hasMore}}" class="recycle-more" role="button" bindtap="loadMore" hover-class="press-soft">加载更多账单</view>
+  <view class="recycle-policy">显示已保存在本机的删除记录，不自动清理。云端记录需同步后查看；已移除账本不在此恢复。共享账本恢复后也会同步给其他成员。</view>
+</view>

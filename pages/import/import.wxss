@@ -6,7 +6,7 @@
 .mode-tabs {
   display: flex;
   gap: 12rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 999rpx;
   padding: 8rpx;
   margin-bottom: 24rpx;
@@ -46,7 +46,7 @@
 .tip-list {
   margin-top: 24rpx;
   padding: 20rpx 24rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
 }
 .tip {
@@ -59,7 +59,7 @@
 .raw {
   width: 100%;
   height: 360rpx;
-  background: #FAF7EC;
+  background: var(--surface-soft);
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
   font-size: 24rpx;
@@ -89,6 +89,16 @@
   margin-top: 10rpx;
   line-height: 1.6;
 }
+.dedup-note {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  background: var(--gold-soft);
+  color: var(--ink-2);
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+.preview-empty { padding: 32rpx 0; text-align: center; color: var(--ink-3); font-size: 26rpx; }
 
 /* ---- 明细预览 ---- */
 .preview-list {
@@ -144,15 +154,16 @@
 .set-value { font-size: 25rpx; color: var(--ink-2); max-width: 420rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .import-btn { margin-top: 26rpx; padding: 22rpx 0; font-size: 28rpx; }
+.import-btn[disabled] { background: var(--surface-soft); color: var(--ink-3); box-shadow: none; }
 
 .import-ok {
   margin-top: 24rpx;
-  background: #F2FAF3;
-  border: 1rpx solid #D6EBD9;
+  background: var(--surface-soft);
+  border: 1rpx solid var(--line);
   border-radius: 20rpx;
   padding: 24rpx;
 }
-.import-ok-title { font-size: 27rpx; font-weight: 700; color: #1E7A38; }
-.import-ok-sub { font-size: 24rpx; color: #3F6B4B; margin-top: 8rpx; }
+.import-ok-title { font-size: 27rpx; font-weight: 700; color: var(--income); }
+.import-ok-sub { font-size: 24rpx; color: var(--ink-2); margin-top: 8rpx; }
 .import-ok-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
 .act { flex: 1; padding: 16rpx 0; font-size: 26rpx; }

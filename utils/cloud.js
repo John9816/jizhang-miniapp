@@ -31,6 +31,7 @@ var state = {
 
 /** 状态订阅者（phase / 同步状态变化时通知页面刷新） */
 var listeners = []
+var applyingSnapshot = false
 
 function emit() {
   for (var i = 0; i < listeners.length; i++) {
@@ -115,8 +116,8 @@ function login() {
       state.since = ''
       // 服务端首次见这个 openid 会自动开户，因此只要拿到 token 就等于完成注册/登录
       state.registered = true
-      if (res.me) db.applyCloudMe(res.me)
-      else if (res.me === undefined && db.getMe().id) db.replaceMyId(db.getMe().id)
+      // 登录响应已包含全量快照：必须先恢复/移除账本，再推送本机数据。
+      mergeSnapshot(res)
       setPhase('ready', '')
       return res
     }).catch(function (e) {
@@ -138,48 +139,63 @@ function login() {
 /* ---------------- 同步 ---------------- */
 
 function mergeSnapshot(res) {
-  var changed = false
-  var ledgers = res.ledgers || []
-  var members = res.members || []
-  var i
-  // 服务端返回的 members 是带 ledgerId 的扁平数组，先按账本分组再交给 db.applyRemoteLedger
-  var membersByLedger = {}
-  for (i = 0; i < members.length; i++) {
-    var m = members[i]
-    if (!m || !m.ledgerId || !m.id) continue
-    if (!membersByLedger[m.ledgerId]) membersByLedger[m.ledgerId] = []
-    membersByLedger[m.ledgerId].push(m)
+  applyingSnapshot = true
+  try {
+    db.prepareCloudSnapshot(res)
+    var ledgers = res.ledgers || []
+    var members = res.members || []
+    var i
+    // 服务端返回的 members 是带 ledgerId 的扁平数组，先按账本分组再交给 db.applyRemoteLedger
+    var membersByLedger = {}
+    for (i = 0; i < members.length; i++) {
+      var m = members[i]
+      if (!m || !m.ledgerId || !m.id) continue
+      if (!membersByLedger[m.ledgerId]) membersByLedger[m.ledgerId] = []
+      membersByLedger[m.ledgerId].push(m)
+    }
+    for (i = 0; i < ledgers.length; i++) {
+      if (!ledgers[i] || !ledgers[i].id) continue
+      if (membersByLedger[ledgers[i].id]) ledgers[i].members = membersByLedger[ledgers[i].id]
+      db.applyRemoteLedger(ledgers[i])
+    }
+    var records = res.records || []
+    for (i = 0; i < records.length; i++) {
+      db.applyRemoteRecord(records[i])
+    }
+    // 云端下发的身份（头像/昵称）
+    if (res.me) db.applyCloudMe(res.me)
+    // 即使没有新增记录，也要保存 prepareCloudSnapshot 应用的移除状态。
+    db.flush()
+  } finally {
+    applyingSnapshot = false
   }
-  for (i = 0; i < ledgers.length; i++) {
-    if (!ledgers[i] || !ledgers[i].id) continue
-    if (membersByLedger[ledgers[i].id]) ledgers[i].members = membersByLedger[ledgers[i].id]
-    if (db.applyRemoteLedger(ledgers[i])) changed = true
-  }
-  var records = res.records || []
-  for (i = 0; i < records.length; i++) {
-    if (db.applyRemoteRecord(records[i])) changed = true
-  }
-  // 云端下发的身份（头像/昵称）
-  if (res.me) {
-    db.applyCloudMe(res.me)
-    changed = true
-  }
-  if (changed) db.flush()
 }
 
+var syncPending = null
 function sync() {
   if (!enabled()) return Promise.resolve()
+  if (syncPending) return syncPending
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer)
+    state.debounceTimer = null
+  }
   var chain = state.token ? Promise.resolve() : login()
-  return chain.then(function () {
+  syncPending = chain.then(function () {
     state.syncing = true
     var sent = db.drainDirty()
+    var removed = db.removedLedgerIds()
     return request('/api/sync', {
       method: 'POST',
-      data: { since: state.since, ledgers: db.exportLedgersForSync(), records: sent }
+      data: { since: state.since, ledgers: db.exportLedgersForSync(), records: sent, removedLedgerIds: removed }
     }).then(function (res) {
+      // 只确认本次发送且仍未改变的版本，随后快照落盘一并保存确认状态。
+      db.clearDirty(sent)
       mergeSnapshot(res)
+      // 兼容尚未升级的后端：未返回移除状态时保留待发送标记。
+      if (Array.isArray(res.removedLedgerIds)) {
+        db.acknowledgeRemovedLedgers(removed.filter(function (id) { return res.removedLedgerIds.indexOf(id) >= 0 }))
+      }
       state.since = res.serverTime || nowIso()
-      db.clearDirty(sent.map(function (r) { return r.id }))
       state.lastOkAt = Date.now()
       state.lastError = ''
     })
@@ -192,9 +208,11 @@ function sync() {
     }
   }).then(function () {
     state.syncing = false
+    syncPending = null
     emit()
     return null
   })
+  return syncPending
 }
 
 /** 重新注册/登录并立刻同步一次（网络恢复、域名配好后点「重试」用） */
@@ -216,7 +234,7 @@ function retry() {
 
 /** 本地写入后的防抖推送 */
 function kick() {
-  if (!enabled()) return
+  if (!enabled() || applyingSnapshot) return
   if (state.debounceTimer) clearTimeout(state.debounceTimer)
   state.debounceTimer = setTimeout(function () {
     state.debounceTimer = null
@@ -377,6 +395,7 @@ function joinLedger(code) {
       data: { inviteCode: String(code || '').trim(), nickname: db.getMe().name || '成员' }
     })
   }).then(function (res) {
+    if (res.ledgerId) db.restoreLedger(res.ledgerId)
     mergeSnapshot(res)
     if (res.ledgerId) db.setCurrentLedger(res.ledgerId)
     state.lastOkAt = Date.now()

@@ -1,0 +1,38 @@
+<view class="page page-plain templates-page motion-page {{pageMotion}}">
+  <view class="templates-intro motion-section">
+    <view class="templates-title">把常用的，留在手边</view>
+    <view class="templates-subtitle">{{ledgerName}} · {{count}} / 50 个模板</view>
+    <view class="templates-description">点选模板预填今天的账单，确认保存后才会入账。</view>
+    <view wx:if="{{!unavailable}}" class="templates-create" role="button" bindtap="createTemplate" hover-class="press-button">＋ 新建模板</view>
+  </view>
+  <block wx:if="{{!unavailable}}">
+    <view class="templates-filters">
+      <view role="button" class="templates-filter {{filter === 'all' ? 'templates-filter-on' : ''}}" data-type="all" bindtap="setFilter">全部</view>
+      <view role="button" class="templates-filter {{filter === 'expense' ? 'templates-filter-on' : ''}}" data-type="expense" bindtap="setFilter">支出</view>
+      <view role="button" class="templates-filter {{filter === 'income' ? 'templates-filter-on' : ''}}" data-type="income" bindtap="setFilter">收入</view>
+      <view role="button" class="templates-filter {{filter === 'transfer' ? 'templates-filter-on' : ''}}" data-type="transfer" bindtap="setFilter">转账</view>
+    </view>
+    <view class="templates-list motion-section motion-delay-1">
+      <view class="card templates-card" wx:for="{{templates}}" wx:key="id" role="button" aria-label="使用{{item.name}}模板记一笔" data-id="{{item.id}}" bindtap="useTemplate" hover-class="press-soft">
+        <view class="templates-card-top">
+          <view class="templates-icon">{{item.icon}}</view>
+          <view class="templates-card-main"><view class="templates-name">{{item.name}}</view><view class="templates-meta">{{item.typeLabel}} · {{item.categoryName}}</view></view>
+          <text class="templates-amount num">¥{{item.amountText}}</text>
+        </view>
+        <view class="templates-account">{{item.accountText}}</view>
+        <view class="templates-note" wx:if="{{item.note}}">{{item.note}}</view>
+        <view class="templates-warning" wx:if="{{item.warning}}">{{item.warning}}</view>
+        <view class="templates-card-actions">
+          <view class="templates-secondary" role="button" aria-label="管理{{item.name}}模板" data-id="{{item.id}}" catchtap="openTemplateMenu" hover-class="press-soft">更多 ···</view>
+          <text class="templates-use">用模板记一笔 ›</text>
+        </view>
+      </view>
+    </view>
+    <view class="card templates-empty" wx:if="{{!templates.length}}">
+      <view class="templates-empty-title">{{count ? '这个类型还没有模板' : '从一顿早餐、一杯咖啡开始'}}</view>
+      <view class="templates-description">{{count ? '切换到其他类型，或新建一个模板。' : '保存常用的金额、分类、账户和备注。也可以在账单详情中「存为模板」。'}}</view>
+    </view>
+    <view class="templates-policy">模板属于当前账本。编辑或删除模板不会改动历史账单，使用时仍可调整金额和日期。</view>
+  </block>
+  <view class="card templates-empty" wx:else><view class="templates-empty-title">账本已不可用</view><view class="templates-description">请返回选择其他账本。</view></view>
+</view>
