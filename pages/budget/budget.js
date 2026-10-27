@@ -141,12 +141,26 @@ Page({
   removeCatLimit(e) {
     var key = e.currentTarget.dataset.key
     var ledger = db.currentLedger()
-    if (!ledger) return
-    var budget = db.budgetOf(ledger.id)
-    var cats = Object.assign({}, budget.categoryBudgets)
-    delete cats[key]
-    db.saveBudget(ledger.id, { monthlyTotal: budget.monthlyTotal, categoryBudgets: cats })
-    this.refresh()
+    if (!ledger || !key) return
+    var item = this.data.categoryBudgets.filter(function (c) { return c.key === key })[0]
+    var name = item ? item.name : '该分类'
+    var self = this
+    wx.showModal({
+      title: '删除分类预算？',
+      content: '仅删除「' + name + '」的预算额度，不会删除该分类的记账记录。',
+      confirmText: '删除',
+      confirmColor: '#D65A45',
+      success: function (res) {
+        if (!res.confirm) return
+        // 使用打开弹窗时的账本，避免异步确认期间误删其他账本的预算。
+        var budget = db.budgetOf(ledger.id)
+        var cats = Object.assign({}, budget.categoryBudgets)
+        delete cats[key]
+        db.saveBudget(ledger.id, { monthlyTotal: budget.monthlyTotal, categoryBudgets: cats })
+        self.refresh()
+        wx.showToast({ title: '分类预算已删除', icon: 'none' })
+      }
+    })
   },
 
   closePicker() {

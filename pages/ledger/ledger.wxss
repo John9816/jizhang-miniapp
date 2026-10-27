@@ -251,11 +251,17 @@
 }
 /* 操作改为小药丸，和整体圆角语言一致 */
 .op-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88rpx;
+  min-height: 72rpx;
+  box-sizing: border-box;
   font-size: 22rpx;
   color: var(--ink-2);
   background: var(--surface-soft);
   border-radius: 999rpx;
-  padding: 8rpx 20rpx;
+  padding: 16rpx 20rpx;
   line-height: 1.4;
 }
 .op-pill:active { background: var(--gold-soft); }

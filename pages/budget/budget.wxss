@@ -5,9 +5,12 @@
 }
 
 .cat-add {
+  display: flex;
+  align-items: center;
+  min-height: 72rpx;
   font-size: 24rpx;
-  color: var(--gold-deep);
-  padding: 8rpx 16rpx;
+  color: var(--accent-ink);
+  padding: 12rpx 20rpx;
 }
 
 .total-row {
@@ -100,9 +103,15 @@
 }
 
 .cat-budget-del {
-  font-size: 24rpx;
-  color: #DDD4BE;
-  padding: 0 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  margin: -18rpx -12rpx -18rpx 0;
+  font-size: 26rpx;
+  color: var(--ink-2);
 }
 
 .cat-budget .cat-bar {

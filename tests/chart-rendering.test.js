@@ -7,8 +7,9 @@ function test(name, fn) {
   try { fn(); console.log('PASS ' + name) }
   catch (e) { failures++; console.error('FAIL ' + name + ': ' + e.message) }
 }
-function setup() {
-  var exports = [], canvases = {}, definition
+function setup(options) {
+  options = options || {}
+  var exports = [], canvases = {}, definition, toasts = []
   var context = new Proxy({}, { get: function (o, key) {
     if (key === 'measureText') return function () { return { width: 24 } }
     if (key === 'createLinearGradient') return function () { return { addColorStop: function () {} } }
@@ -17,13 +18,19 @@ function setup() {
   var wx = {
     getWindowInfo: function () { return { pixelRatio: 3 } },
     canvasToTempFilePath: function (options) { exports.push(options) },
+    showToast: function (options) { toasts.push(options) },
     createSelectorQuery: function () {
       var selectors = [], current
       var query = {
+        in: function () { return query },
         select: function (selector) { current = selector; return query },
         fields: function () {
+          if (current === '#posterCanvas' && options.missingPoster) {
+            selectors.push({ node: null, width: 0, height: 0 })
+            return query
+          }
           canvases[current] = canvases[current] || { getContext: function () { return context } }
-          selectors.push({ node: canvases[current], width: 1, height: 1 }); return query
+          selectors.push({ node: canvases[current], width: current === '#posterCanvas' ? 320 : 1, height: 1 }); return query
         },
         boundingClientRect: function (cb) {
           var rect = { left: 24, width: current === '#pieChart' ? 150 : 320, height: current === '#lineChart' ? 200 : 150 }
@@ -35,9 +42,10 @@ function setup() {
     }
   }
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../pages/stats/stats.js'), 'utf8'), {
-    Page: function (p) { definition = p }, wx: wx, setTimeout: setTimeout, clearTimeout: clearTimeout,
+    Page: function (p) { definition = p }, wx: wx, setTimeout: function () { return 1 }, clearTimeout: clearTimeout,
     require: function (p) {
-      if (/db\.js$/.test(p)) return { currentLedger: function () { return { id: 'test' } }, recordsOf: function () { return [] } }
+      if (/db\.js$/.test(p)) return { currentLedger: function () { return { id: 'test' } }, recordsOf: function () { return options.records || [] } }
+      if (/record-view\.js$/.test(p)) return { categoryInfo: function (ledgerId, type, key) { return { name: key, icon: '●' } } }
       return require(path.resolve(__dirname, '../pages/stats', p))
     }
   })
@@ -48,7 +56,7 @@ function setup() {
   page.data.hasData = true
   page.data.trend = [{ key: '2026-10-01', label: '10/01', expense: 100 }, { key: '2026-10-02', label: '10/02', expense: 200 }]
   page.data.pieItems = [{ pct: 100, color: '#E8A72D' }]
-  return { page: page, exports: exports, canvases: canvases }
+  return { page: page, exports: exports, canvases: canvases, toasts: toasts }
 }
 test('统计页面只展示普通图片，三个绘图画布均放在屏幕外', function () {
   var wxml = fs.readFileSync(path.join(__dirname, '../pages/stats/stats.wxml'), 'utf8')
@@ -105,5 +113,42 @@ test('导出失败提供重试状态，重绘时清除失败提示', function ()
   assert.strictEqual(s.page.data.chartError, true)
   s.page.drawCharts()
   assert.strictEqual(s.page.data.chartError, false)
+})
+test('海报包含支出前三名时可在 exec 回调中完成绘制并导出', function () {
+  var s = setup()
+  var recs = [
+    { type: 'expense', category: 'food', amount: 3000, memberId: 'u1' },
+    { type: 'expense', category: 'transport', amount: 2000, memberId: 'u1' },
+    { type: 'expense', category: 'shopping', amount: 1000, memberId: 'u1' }
+  ]
+  s.page.drawPoster({ id: 'test', name: '家庭账本', members: { u1: { id: 'u1', name: '我' } } }, '2026年10月', recs)
+  assert.strictEqual(s.exports.length, 1, '前三名卡片调用 roundRect 时不能丢失 Page 作用域')
+  assert.strictEqual(s.canvases['#posterCanvas'].width, 960)
+  s.exports[0].success({ tempFilePath: 'poster.png' })
+  assert.strictEqual(s.page.data.posterPath, 'poster.png')
+  assert.strictEqual(s.toasts.length, 0)
+})
+test('海报画布不存在时退出加载态并提示重试', function () {
+  var s = setup({ missingPoster: true })
+  s.page.drawPoster({ id: 'test', name: '家庭账本', members: {} }, '2026年10月', [{ type: 'expense', category: 'food', amount: 100 }])
+  assert.strictEqual(s.exports.length, 0)
+  assert.strictEqual(s.page.data.posterShow, false)
+  assert.strictEqual(s.toasts[0].title, '画布初始化失败，请重试')
+})
+test('自定义统计区间不展示伪造环比，其他分类合并金额和占比', function () {
+  var keys = ['food', 'transport', 'shopping', 'entertainment', 'medical', 'education', 'housing']
+  var records = keys.map(function (key, i) {
+    return { date: '2026-10-0' + (i + 1), type: 'expense', category: key, amount: (keys.length - i) * 100 }
+  })
+  var s = setup({ records: records })
+  s.page.setData({ period: 'custom', customStart: '2026-10-01', customEnd: '2026-10-07' })
+  s.page.loadData()
+  assert.strictEqual(s.page.data.momText, '')
+  assert.strictEqual(s.page.data.momUp, false)
+  assert.strictEqual(s.page.data.pieItems.length, 6)
+  var rest = s.page.data.pieItems[5]
+  assert.strictEqual(rest.name, '其他 2 项')
+  assert.strictEqual(rest.amountText, '3.00')
+  assert.strictEqual(rest.pct, 10.7)
 })
 if (failures) process.exit(1)

@@ -139,4 +139,71 @@ test('昵称聚焦编辑时，同步刷新不会覆盖正在输入的草稿', fu
   assert.strictEqual(db.getProfile().name, '正在写的名字')
 })
 
+test('首页展示最近四个记账日，日历明细保留完整分组并拒绝跨月占位', function () {
+  var definition
+  global.Page = function (page) { definition = page }
+  delete require.cache[require.resolve('../pages/index/index.js')]
+  require('../pages/index/index.js')
+  delete global.Page
+  var db = require('../utils/db.js')
+  var store = {}
+  global.wx = { getStorageSync: function (k) { return store[k] || '' }, setStorageSync: function (k, v) { store[k] = v } }
+  db.init()
+  var ledger = db.currentLedger()
+  var month = u.currentMonthKey()
+  for (var day = 1; day <= 5; day++) {
+    db.addRecord({ ledgerId: ledger.id, type: 'expense', amount: day * 100, category: 'food', date: month + '-0' + day })
+  }
+  var page = Object.assign({}, definition, {
+    data: JSON.parse(JSON.stringify(definition.data)),
+    setData: function (patch) { Object.assign(this.data, patch) }
+  })
+  page.setData({ monthKey: month, selectedDay: month + '-05' })
+  page.refresh()
+  assert.strictEqual(page.data.groups.length, 4)
+  assert.strictEqual(page.data.groups[0].date, month + '-05')
+  assert.strictEqual(page.data.groups[3].date, month + '-02')
+  assert.strictEqual(page.data.dayGroups.length, 1)
+  assert.strictEqual(page.data.dayGroups[0].date, month + '-05', '截断首页列表不能影响较早日期明细')
+  page.selectDay({ currentTarget: { dataset: { day: u.shiftMonth(month, -1) + '-28' } } })
+  assert.strictEqual(page.data.selectedDay, month + '-05')
+  page.applyMonth(u.shiftMonth(month, -1))
+  assert.strictEqual(page.data.selectedDay, u.shiftMonth(month, -1) + '-01')
+  page.applyMonth(month)
+  assert.strictEqual(page.data.selectedDay, u.dateStr(new Date()))
+})
+
+test('删除分类预算必须确认，取消不修改，确认只删除额度', function () {
+  var definition
+  global.Page = function (page) { definition = page }
+  require('../pages/budget/budget.js')
+  delete global.Page
+  var db = require('../utils/db.js')
+  var ledger = db.currentLedger()
+  db.saveBudget(ledger.id, { monthlyTotal: 100000, categoryBudgets: { food: 50000, transport: 20000 } })
+  var modal
+  global.wx.showModal = function (options) { modal = options }
+  global.wx.showToast = function () {}
+  var refreshes = 0
+  var page = Object.assign({}, definition, {
+    data: JSON.parse(JSON.stringify(definition.data)),
+    setData: function (patch) { Object.assign(this.data, patch) },
+    refresh: function () { refreshes++ }
+  })
+  page.setData({ categoryBudgets: [{ key: 'food', name: '餐饮' }] })
+  var event = { currentTarget: { dataset: { key: 'food' } } }
+  page.removeCatLimit(event)
+  assert.strictEqual(modal.title, '删除分类预算？')
+  assert.ok(modal.content.indexOf('不会删除该分类的记账记录') >= 0)
+  modal.success({ confirm: false })
+  assert.strictEqual(db.budgetOf(ledger.id).categoryBudgets.food, 50000)
+  assert.strictEqual(refreshes, 0)
+  page.removeCatLimit(event)
+  modal.success({ confirm: true })
+  assert.strictEqual(db.budgetOf(ledger.id).categoryBudgets.food, undefined)
+  assert.strictEqual(db.budgetOf(ledger.id).categoryBudgets.transport, 20000)
+  assert.strictEqual(db.budgetOf(ledger.id).monthlyTotal, 100000)
+  assert.strictEqual(refreshes, 1)
+})
+
 if (failures) process.exitCode = 1

@@ -10,7 +10,7 @@
         <view class="avatar-frame">
           <image class="p-avatar" src="{{me.avatar || '/images/avatar.png'}}" mode="aspectFill" binderror="onAvatarError" />
         </view>
-        <button class="avatar-cam" size="mini" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">📷</button>
+        <button class="avatar-cam" size="mini" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" aria-label="更换头像">📷</button>
       </view>
       <view class="p-info">
         <input

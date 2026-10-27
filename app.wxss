@@ -31,7 +31,7 @@ textarea { line-height: 1.6; }
   min-height: 100vh;
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
-.page-plain { padding-bottom: 40rpx; }
+.page-plain { padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); }
 
 /* 自定义导航占位 */
 .nav-holder { width: 100%; }
@@ -269,7 +269,7 @@ page {
   --card: #FFFFFF;
   --ink: #3B2A18;
   --ink-2: #7A6A53;
-  --ink-3: #9A896D;
+  --ink-3: #806D51;
   --line: #EFE3C7;
   --gold: #F6C95B;
   --gold-deep: #E8A72D;

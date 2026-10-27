@@ -252,7 +252,8 @@ Page({
     var prevRecs = prevStart ? recs.filter(function (r) { return r.date >= prevP.start && r.date <= prevP.end }) : []
     var ps = u.calcSummary(prevRecs)
     var mom = u.momChange(s, ps)
-    var momPct = this.data.pieType === 'income' ? mom.incomePct : mom.expensePct
+    // 自定义区间没有等长的「上一周期」，不展示环比（此前 prevRecs 为空会被 momChange 算成 +100%）
+    var momPct = period === 'custom' ? null : (this.data.pieType === 'income' ? mom.incomePct : mom.expensePct)
 
     // 日均
     var today = u.dateStr(new Date())
@@ -272,13 +273,17 @@ Page({
         color: PALETTE[i % PALETTE.length]
       }
     })
-    // 超过 6 项合并尾部
+    // 超过 6 项合并尾部（金额也要合并展示，否则「其他」行只有占比没有金额）
     if (pieItems.length > 6) {
-      var rest = pieItems.slice(5)
+      var restCats = cats.slice(5)
       var restPct = 0
-      for (var i = 0; i < rest.length; i++) restPct += rest[i].pct
+      var restAmount = 0
+      for (var i = 0; i < restCats.length; i++) {
+        restPct += restCats[i].pct
+        restAmount += restCats[i].amount
+      }
       pieItems = pieItems.slice(0, 5)
-      pieItems.push({ key: '__rest', name: '其他 ' + rest.length + ' 项', icon: '✨', pct: Math.round(restPct * 10) / 10, amountText: '', color: PALETTE[6] })
+      pieItems.push({ key: '__rest', name: '其他 ' + restCats.length + ' 项', icon: '✨', pct: Math.round(restPct * 10) / 10, amountText: u.formatCents(restAmount), color: PALETTE[6] })
     }
 
     // 趋势
@@ -291,7 +296,7 @@ Page({
       hasData: mainTotal > 0,
       mainLabel: this.data.pieType === 'income' ? '总收入' : '总支出',
       mainTotal: u.formatCents(mainTotal),
-      momText: (momPct > 0 ? '+' : '') + momPct + '%',
+      momText: momPct === null ? '' : (momPct > 0 ? '+' : '') + momPct + '%',
       momUp: momPct > 0,
       dailyText: u.formatCents(Math.round(mainTotal / days)),
       pieItems: pieItems,
@@ -746,89 +751,105 @@ Page({
     var top3 = u.categoryStats(recs, 'expense').slice(0, 3)
     var mem = u.memberStats(recs, ledger.members).length
     var self = this
-    var query = wx.createSelectorQuery()
+    var query = wx.createSelectorQuery().in(this)
     query.select('#posterCanvas').fields({ node: true, size: true }).exec(function (res) {
-      if (!res || !res[0] || !res[0].node) return
-      var canvas = res[0].node
-      var w = res[0].width
-      var h = 470
-      var dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2
-      canvas.width = w * dpr
-      canvas.height = h * dpr
-      var ctx = canvas.getContext('2d')
-      ctx.scale(dpr, dpr)
-
-      var grad = ctx.createLinearGradient(0, 0, w, h)
-      grad.addColorStop(0, '#FFE9A8')
-      grad.addColorStop(0.55, '#F6C95B')
-      grad.addColorStop(1, '#E8A72D')
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, w, h)
-
-      ctx.fillStyle = 'rgba(255,255,255,0.26)'
-      ctx.beginPath()
-      ctx.arc(w - 34, 34, 84, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.beginPath()
-      ctx.arc(w - 96, h - 30, 60, 0, Math.PI * 2)
-      ctx.fill()
-
-      ctx.fillStyle = '#3B2A18'
-      ctx.textAlign = 'left'
-      ctx.font = '700 26px sans-serif'
-      ctx.fillText(title + ' 账单', 28, 58)
-      ctx.font = '14px sans-serif'
-      ctx.fillStyle = 'rgba(74,50,0,0.66)'
-      ctx.fillText(ledger.name + ' · ' + recs.length + ' 笔 · ' + mem + ' 人共记', 28, 86)
-
-      var cols = [
-        { label: '总收入', value: u.formatCents(s.income) },
-        { label: '总支出', value: u.formatCents(s.expense) },
-        { label: '结余', value: u.formatCents(s.balance) }
-      ]
-      var colW = (w - 56) / 3
-      for (var i = 0; i < cols.length; i++) {
-        var x = 28 + colW * i + colW / 2
-        ctx.textAlign = 'center'
-        ctx.fillStyle = 'rgba(74,50,0,0.6)'
-        ctx.font = '13px sans-serif'
-        ctx.fillText(cols[i].label, x, 136)
-        ctx.fillStyle = '#3B2A18'
-        ctx.font = '700 21px sans-serif'
-        ctx.fillText('¥' + cols[i].value, x, 168)
+      if (!res || !res[0] || !res[0].node) {
+        self.closePoster()
+        wx.showToast({ title: '画布初始化失败，请重试', icon: 'none' })
+        return
       }
+      // 注意：exec 回调的 this 不是 Page 实例，后续一律用 self；
+      // 此前 this.roundRect 在 top3 非空时必抛 TypeError，海报永远停在「正在生成…」
+      try {
+        self.renderPoster(res[0], ledger, title, recs, s, top3, mem)
+      } catch (e) {
+        self.closePoster()
+        wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+      }
+    })
+  },
 
-      ctx.textAlign = 'left'
+  renderPoster(nodeInfo, ledger, title, recs, s, top3, mem) {
+    var self = this
+    var canvas = nodeInfo.node
+    var w = nodeInfo.width
+    var h = 470
+    var dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    var ctx = canvas.getContext('2d')
+    ctx.scale(dpr, dpr)
+
+    var grad = ctx.createLinearGradient(0, 0, w, h)
+    grad.addColorStop(0, '#FFE9A8')
+    grad.addColorStop(0.55, '#F6C95B')
+    grad.addColorStop(1, '#E8A72D')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, w, h)
+
+    ctx.fillStyle = 'rgba(255,255,255,0.26)'
+    ctx.beginPath()
+    ctx.arc(w - 34, 34, 84, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(w - 96, h - 30, 60, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.fillStyle = '#3B2A18'
+    ctx.textAlign = 'left'
+    ctx.font = '700 26px sans-serif'
+    ctx.fillText(title + ' 账单', 28, 58)
+    ctx.font = '14px sans-serif'
+    ctx.fillStyle = 'rgba(74,50,0,0.66)'
+    ctx.fillText(ledger.name + ' · ' + recs.length + ' 笔 · ' + mem + ' 人共记', 28, 86)
+
+    var cols = [
+      { label: '总收入', value: u.formatCents(s.income) },
+      { label: '总支出', value: u.formatCents(s.expense) },
+      { label: '结余', value: u.formatCents(s.balance) }
+    ]
+    var colW = (w - 56) / 3
+    for (var i = 0; i < cols.length; i++) {
+      var x = 28 + colW * i + colW / 2
+      ctx.textAlign = 'center'
       ctx.fillStyle = 'rgba(74,50,0,0.6)'
-      ctx.font = '14px sans-serif'
-      ctx.fillText('支出前三', 28, 216)
-      for (i = 0; i < top3.length; i++) {
-        var y = 254 + i * 40
-        ctx.fillStyle = 'rgba(255,255,255,0.5)'
-        this.roundRect(ctx, 28, y - 20, w - 56, 32, 10)
-        ctx.fill()
-        ctx.fillStyle = '#3B2A18'
-        ctx.font = '16px sans-serif'
-        ctx.fillText(top3[i].icon + ' ' + top3[i].name, 42, y + 2)
-        ctx.textAlign = 'right'
-        ctx.fillText('¥' + top3[i].amountText + ' · ' + top3[i].pct + '%', w - 42, y + 2)
-        ctx.textAlign = 'left'
-      }
-      ctx.fillStyle = 'rgba(74,50,0,0.5)'
       ctx.font = '13px sans-serif'
-      ctx.fillText('—— 记账本 · 存钱罐', 28, h - 26)
+      ctx.fillText(cols[i].label, x, 136)
+      ctx.fillStyle = '#3B2A18'
+      ctx.font = '700 21px sans-serif'
+      ctx.fillText('¥' + cols[i].value, x, 168)
+    }
 
-      wx.canvasToTempFilePath({
-        canvas: canvas,
-        success: function (r) {
-          // 生成成功：收起 loading，弹出预览（保存按钮此时可用）
-          self.setData({ posterPath: r.tempFilePath })
-        },
-        fail: function () {
-          self.closePoster()
-          wx.showToast({ title: '生成失败', icon: 'none' })
-        }
-      })
+    ctx.textAlign = 'left'
+    ctx.fillStyle = 'rgba(74,50,0,0.6)'
+    ctx.font = '14px sans-serif'
+    ctx.fillText('支出前三', 28, 216)
+    for (i = 0; i < top3.length; i++) {
+      var y = 254 + i * 40
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'
+      this.roundRect(ctx, 28, y - 20, w - 56, 32, 10)
+      ctx.fill()
+      ctx.fillStyle = '#3B2A18'
+      ctx.font = '16px sans-serif'
+      ctx.fillText(top3[i].icon + ' ' + top3[i].name, 42, y + 2)
+      ctx.textAlign = 'right'
+      ctx.fillText('¥' + top3[i].amountText + ' · ' + top3[i].pct + '%', w - 42, y + 2)
+      ctx.textAlign = 'left'
+    }
+    ctx.fillStyle = 'rgba(74,50,0,0.5)'
+    ctx.font = '13px sans-serif'
+    ctx.fillText('—— 记账本 · 存钱罐', 28, h - 26)
+
+    wx.canvasToTempFilePath({
+      canvas: canvas,
+      success: function (r) {
+        // 生成成功：收起 loading，弹出预览（保存按钮此时可用）
+        self.setData({ posterPath: r.tempFilePath })
+      },
+      fail: function () {
+        self.closePoster()
+        wx.showToast({ title: '生成失败', icon: 'none' })
+      }
     })
   }
 })

@@ -189,8 +189,8 @@ Page({
     })
 
     var groups = u.groupByDate(decorated)
-    // 首页只展示最近 4 天，完整记录去「账单」页
-    this.setData({ groups: groups })
+    // 首页只展示最近 4 个记账日（groupByDate 按日期倒序），完整记录走「全部 N 笔 ›」
+    // 注意：日历的当日明细 dayGroups 仍用完整 groups，不能被截断影响
 
     var s = u.calcSummary(all)
     var calendar = u.calendarMonth(this.data.monthKey, all)
@@ -268,7 +268,7 @@ Page({
       ledger: ledger,
       ledgerCover: u.ledgerCoverInfo(ledger.cover),
       members: members,
-      groups: groups,
+      groups: groups.slice(0, 4),
       recordCount: filtered.length,
       calendar: calendar,
       dayGroups: dayGroups,
@@ -328,11 +328,14 @@ Page({
   },
 
   applyMonth(key) {
+    // 翻月后选中日重置：当前月回到今天，其他月落到 1 号，避免日历底部残留上月日期
+    var selected = key === u.dateStr(new Date()).slice(0, 7) ? u.dateStr(new Date()) : key + '-01'
     this.setData({
       monthKey: key,
       monthLabel: u.formatMonth(key),
       monthShort: parseInt(key.slice(5, 7), 10) + '月',
-      memberFilter: 'all'
+      memberFilter: 'all',
+      selectedDay: selected
     })
     this.refresh()
     motion.reveal(this, 'listMotion')
@@ -346,7 +349,10 @@ Page({
   },
 
   selectDay(e) {
-    this.setData({ selectedDay: e.currentTarget.dataset.day })
+    var day = e.currentTarget.dataset.day
+    // 月初/月末占位格属于相邻月份，仅用于对齐星期列，不可选中
+    if (!day || day.indexOf(this.data.monthKey) !== 0) return
+    this.setData({ selectedDay: day })
     this.refresh()
     motion.reveal(this, 'listMotion')
   },

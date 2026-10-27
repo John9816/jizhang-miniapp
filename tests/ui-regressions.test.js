@@ -7,6 +7,10 @@ var tabWxml = fs.readFileSync(path.join(root, 'custom-tab-bar/index.wxml'), 'utf
 var tabWxss = fs.readFileSync(path.join(root, 'custom-tab-bar/index.wxss'), 'utf8')
 var profileWxml = fs.readFileSync(path.join(root, 'pages/profile/profile.wxml'), 'utf8')
 var profileWxss = fs.readFileSync(path.join(root, 'pages/profile/profile.wxss'), 'utf8')
+var appWxss = fs.readFileSync(path.join(root, 'app.wxss'), 'utf8')
+var budgetWxml = fs.readFileSync(path.join(root, 'pages/budget/budget.wxml'), 'utf8')
+var budgetWxss = fs.readFileSync(path.join(root, 'pages/budget/budget.wxss'), 'utf8')
+var ledgerWxss = fs.readFileSync(path.join(root, 'pages/ledger/ledger.wxss'), 'utf8')
 
 assert.ok(/^<view class="tabbar"/.test(tabWxml), '底部导航使用同层 view，避免透明原生覆盖层吞掉点击')
 assert.ok(tabWxml.indexOf('<view class="tabbar-surface"></view>') >= 0, '底部导航需要独立的白色底板，避免凸起按钮被覆盖层裁切')
@@ -17,4 +21,14 @@ assert.ok(profileWxml.indexOf('<view class="avatar-frame">') >= 0, '头像必须
 assert.ok(profileWxml.indexOf('mode="aspectFill"') >= 0, '头像应使用 aspectFill 填充圆形容器')
 assert.ok(profileWxss.indexOf('overflow: hidden') >= 0, '头像容器必须裁切溢出内容')
 
+assert.ok(/\.page-plain\s*\{\s*padding-bottom:\s*calc\(40rpx \+ env\(safe-area-inset-bottom\)\)/.test(appWxss), '普通二级页面也必须预留底部安全区')
+assert.ok(/--ink-3:\s*#806D51/.test(appWxss), '次级文字使用加深后的统一令牌')
+assert.ok(/\.bill-date-sum\s*\{\s*color:\s*var\(--ink-3\)/.test(fs.readFileSync(path.join(root, 'pages/index/index.wxss'), 'utf8')), '首页日期小计不能使用过浅硬编码颜色')
+assert.ok(/button\.avatar-cam\[size='mini'\]\s*\{[\s\S]*?width:\s*64rpx;[\s\S]*?height:\s*64rpx;/.test(profileWxss), '头像相机按钮需要扩大触控区域')
+assert.ok(profileWxml.indexOf('aria-label="更换头像"') >= 0, '头像按钮需要无障碍名称')
+assert.ok(/\.cat-budget-del\s*\{[\s\S]*?width:\s*72rpx;[\s\S]*?height:\s*72rpx;/.test(budgetWxss), '预算删除入口需要扩大触控区域')
+assert.ok(budgetWxml.indexOf('aria-label="删除{{item.name}}预算"') >= 0, '预算删除按钮需要说明操作对象')
+assert.ok(/\.op-pill\s*\{[\s\S]*?min-width:\s*88rpx;[\s\S]*?min-height:\s*72rpx;/.test(ledgerWxss), '账本操作药丸需要足够触控面积')
+
 console.log('PASS  UI 回归：底部导航可见结构、头像圆形裁切')
+console.log('PASS  UI 回归：安全区、次级文字、关键操作触控区域与无障碍名称')

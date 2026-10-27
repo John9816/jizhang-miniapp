@@ -42,7 +42,7 @@
         <view class="cat-budget-head">
           <text class="cat-budget-name">{{item.icon}} {{item.name}}</text>
           <text class="cat-budget-nums">¥{{item.usedText}} / ¥{{item.limitText}}</text>
-          <text class="cat-budget-del" catchtap="removeCatLimit" data-key="{{item.key}}">✕</text>
+          <text class="cat-budget-del" catchtap="removeCatLimit" data-key="{{item.key}}" aria-label="删除{{item.name}}预算">✕</text>
         </view>
         <view class="cat-bar">
           <view class="cat-bar-inner {{item.over ? 'bar-over' : ''}}" style="width: {{item.pct > 100 ? 100 : item.pct}}%"></view>

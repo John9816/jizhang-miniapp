@@ -32,7 +32,7 @@
   <view class="card sum-card {{chartMotion || 'motion-a'}}">
     <view class="sum-line">
       <text class="sum-label">{{mainLabel}}</text>
-      <text class="sum-mom {{momUp ? 'mom-up' : 'mom-down'}}" wx:if="{{hasData}}">较上期 {{momText}}</text>
+      <text class="sum-mom {{momUp ? 'mom-up' : 'mom-down'}}" wx:if="{{hasData && momText}}">较上期 {{momText}}</text>
     </view>
     <text class="sum-amount num">{{mainTotal}}</text>
     <text class="sum-daily">日均{{pieType === 'income' ? '收入' : '支出'}} {{dailyText}}</text>

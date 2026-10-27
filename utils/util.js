@@ -381,6 +381,7 @@ function calendarMonth(monthKey, records) {
   var first = new Date(y, m - 1, 1)
   var daysInMonth = new Date(y, m, 0).getDate()
   var byDate = {}
+  var days = []
   var i
   for (i = 0; i < records.length; i++) {
     var r = records[i]
@@ -388,7 +389,22 @@ function calendarMonth(monthKey, records) {
     if (r.type === 'income') byDate[r.date].income += r.amount
     else if (r.type !== 'transfer') byDate[r.date].expense += r.amount
   }
-  var days = []
+  // 月初占位：让 1 号落在正确的星期列（此前从 1 号顺序渲染，所有月份 1 号都挤在首列）
+  var leadBlanks = first.getDay()
+  for (i = leadBlanks; i > 0; i--) {
+    var prevDate = new Date(y, m - 1, 1 - i)
+    days.push({
+      date: dateStr(prevDate),
+      day: prevDate.getDate(),
+      weekday: prevDate.getDay(),
+      income: 0,
+      expense: 0,
+      incomeText: '',
+      expenseText: '',
+      today: false,
+      inMonth: false
+    })
+  }
   for (i = 0; i < daysInMonth; i++) {
     var ds = dateStr(new Date(y, m - 1, i + 1))
     var v = byDate[ds] || { income: 0, expense: 0 }
@@ -402,6 +418,22 @@ function calendarMonth(monthKey, records) {
       expenseText: compactAmount(v.expense),
       today: ds === dateStr(new Date()),
       inMonth: true
+    })
+  }
+  // 月末补齐整行，网格不错位
+  var tailBlanks = (7 - (days.length % 7)) % 7
+  for (i = 1; i <= tailBlanks; i++) {
+    var nextDate = new Date(y, m - 1, daysInMonth + i)
+    days.push({
+      date: dateStr(nextDate),
+      day: nextDate.getDate(),
+      weekday: nextDate.getDay(),
+      income: 0,
+      expense: 0,
+      incomeText: '',
+      expenseText: '',
+      today: false,
+      inMonth: false
     })
   }
   return { days: days, weekdays: WEEKDAY_NAMES }
